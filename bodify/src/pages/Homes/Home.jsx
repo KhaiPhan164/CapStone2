@@ -21,8 +21,10 @@ const Home = () => {
         </button>
         </div>
       </div>
-      <div className="w-full md:w-[400px] h-[500px] bg-gray-400 rounded-lg lg:absolute md:right-20 md:-bottom-10">
+      <div className="w-full md:w-[400px] h-[500px] bg-gray-400 rounded-lg lg:absolute md:right-20 md:-bottom-10 flex justify-center items-center">
+        <img src="./images/gym-nu.jpg" alt="Mô tả ảnh" className="w-full h-full object-cover rounded-lg" />
       </div>
+
       </div>
 
     </div>

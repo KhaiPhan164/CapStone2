@@ -4,8 +4,10 @@ const FitnessNow = () => {
   return (
     <div>
     <div class="container-auto px-4 flex flex-col md:flex-row items-start justify-center gap-10 md:h-[490px]">
-    <div class="w-full md:w-[500px] md:h-[400px] bg-gray-400">
+    <div className="w-full md:w-[500px] md:h-[400px] bg-gray-400 overflow-hidden rounded-lg">
+      <img src="./images/fitness.jpg" alt="Mô tả ảnh" className="w-full h-full object-cover " />
     </div>
+
     <div class="w-full md:w-[540px] mt-8 md:mt-0 md:ml-8 flex items-start flex-col">
         <h2 class="text-gray-500 text-xl font-medium mt-4">
         Fitness Now
