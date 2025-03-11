@@ -1,24 +1,8 @@
-import React from 'react'
-import Header from './layout/Header'
-import Home from './pages/Homes/Home'
-import Classes from './pages/Homes/Classes'
-import FitnessNow from './pages/Homes/FitnessNow'
-import Footer from './layout/Footer'
-import Choose from './pages/Homes/Choose'
-import MeetPT from './pages/Homes/MeetPT'
+import React from "react";
+import Router from "./router";
 
 const App = () => {
-  return (
-    <div>
-      <Header/>
-      <Home/>
-      <Classes/>
-      <FitnessNow/>
-      <Choose/>
-      <MeetPT/>
-      <Footer/>
-    </div>
-  )
-}
+  return <Router />;
+};
 
-export default App
+export default App;
