@@ -1,5 +1,6 @@
 import Main from './layout/Main'
 import SignUpForm from './pages/Login/login'
+import UserInformation from './pages/UserProfile/UserInformation'
 
 export const ROUTES  = [
     {
@@ -12,5 +13,9 @@ export const ROUTES  = [
     {
         path: '/sign-in',
         element: <SignUpForm/>
+    },
+    {
+        path: '/userprofile',
+        element: <UserInformation/>
     }
 ]

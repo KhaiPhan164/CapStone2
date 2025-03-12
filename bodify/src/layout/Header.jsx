@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 const Header = () => {
   const [showMobileMenu, setShowMobileMenu] = useState(false);
@@ -20,7 +20,13 @@ const Header = () => {
   return (
     <div className=" ">
       <div className="container mx-auto flex justify-between items-center py-4 px-6">
-        <div></div>
+        <Link to="/">
+          <img
+            src="./icon/logo.svg"
+            alt="Logo"
+            className="h-10 w-auto ml-10 cursor-pointer"
+          />
+        </Link>
         <ul className="hidden md:flex gap-7 text-black">
           <a
             href="#Header"
@@ -52,7 +58,7 @@ const Header = () => {
           </a>
         </ul>
         <button
-          className="hidden md:block bg-black text-white px-8 py-2 rounded-full"
+          className="hidden md:block bg-black text-white px-8 py-2 rounded-full mr-10"
           onClick={() => {
             navigate("/sign-up");
           }}
