@@ -35,13 +35,14 @@ const Header = () => {
           >
             Home
           </a>
+          <Link to="/exercise">
           <a
-            href="#Classes"
             className="cursor-pointer 
                 hover:text-gray-400"
           >
-            Classes
+            Exercise
           </a>
+          </Link>
           <a
             href="#Programs"
             className="cursor-pointer 
