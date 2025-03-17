@@ -2,6 +2,7 @@ import React, { useMemo, useState } from 'react'
 import { SectionTitle } from '../../components/Title/SectionTitle'
 import Header from '../../layout/Header'
 import Modal from 'react-modal';
+import ExerciseDetailService from '../../services/exercise-detail.service';
 
 export const ExerciseDetail = () => {
     const [isOpen, setIsOpen] = useState(false);

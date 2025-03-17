@@ -4,30 +4,7 @@ import { SectionTitle } from "../../../components/Title/SectionTitle";
 
 export const PopularSearch = () => {
 const videos = [
-    {
-        title: "5 MIN COOL DOWN 20 MIN CARDIO HIIT WORKOUT - ALL STANDING - Full Body, No Equipment, No Repeats",
-        image: "https://storage.googleapis.com/a1aa/image/xPKBzg8e_xdhgP58Kcw5oGziRKmmPqtl5VIJ4nsHNzQ.jpg",
-    },
-    {
-      title: "5 MIN COOL DOWN 20 MIN CARDIO HIIT WORKOUT - ALL STANDING - Full Body, No Equipment, No Repeats",
-      image: "https://storage.googleapis.com/a1aa/image/PJOXS6_L0XtcT1TJxhX06iyY7-TnA5en7VxJHFp5eag.jpg",
-    },
-    {
-      title: "5 MIN COOL DOWN 20 MIN CARDIO HIIT WORKOUT - ALL STANDING - Full Body, No Equipment, No Repeats",
-      image: "https://storage.googleapis.com/a1aa/image/xPKBzg8e_xdhgP58Kcw5oGziRKmmPqtl5VIJ4nsHNzQ.jpg",
-    },
-    {
-      title: "5 MIN COOL DOWN 20 MIN CARDIO HIIT WORKOUT - ALL STANDING - Full Body, No Equipment, No Repeats",
-      image: "https://storage.googleapis.com/a1aa/image/PJOXS6_L0XtcT1TJxhX06iyY7-TnA5en7VxJHFp5eag.jpg",
-    },
-    {
-      title: "5 MIN COOL DOWN 20 MIN CARDIO HIIT WORKOUT - ALL STANDING - Full Body, No Equipment, No Repeats",
-      image: "https://storage.googleapis.com/a1aa/image/xPKBzg8e_xdhgP58Kcw5oGziRKmmPqtl5VIJ4nsHNzQ.jpg",
-    },
-    {
-      title: "5 MIN COOL DOWN 20 MIN CARDIO HIIT WORKOUT - ALL STANDING - Full Body, No Equipment, No Repeats",
-      image: "https://storage.googleapis.com/a1aa/image/PJOXS6_L0XtcT1TJxhX06iyY7-TnA5en7VxJHFp5eag.jpg",
-    },
+   
     ];
  return (
   <div className="container mx-auto px-4 xl:max-w-[1067px] flex flex-col gap-5 pb-5 mt-5">

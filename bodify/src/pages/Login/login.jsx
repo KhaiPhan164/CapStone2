@@ -2,11 +2,15 @@ import React, { useState, useEffect } from "react";
 import FacebookIcon from "@mui/icons-material/Facebook";
 import GoogleIcon from "@mui/icons-material/Google";
 import { useLocation, useNavigate } from "react-router-dom";
+import AuthService from "../../services/auth.service";
+
 const SignUpForm = () => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [email, setEmail] = useState("");
   const [isSignUp, setIsSignUp] = useState(true);
   const [isPublicProfile, setIsPublicProfile] = useState(false);
+  const [error, setError] = useState("");
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -16,9 +20,31 @@ const SignUpForm = () => {
     setIsSignUp(!isSignInRoute);
   }, [location]);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log("Form submitted:", { username, password, isPublicProfile });
+    setError("");
+    
+    try {
+      if (isSignUp) {
+        if (!username || !email || !password) {
+          setError("Please fill in all fields");
+          return;
+        }
+        await AuthService.register(username, email, password);
+        navigate("/sign-in"); // Redirect to sign in after successful registration
+      } else {
+        if (!username || !password) {
+          setError("Please fill in all fields");
+          return;
+        }
+        const response = await AuthService.login(username, password);
+        if (response.access_token) {
+          navigate("/"); // Redirect to home page after successful login
+        }
+      }
+    } catch (err) {
+      setError(err.message || "An error occurred during authentication");
+    }
   };
 
   return (
@@ -50,6 +76,12 @@ const SignUpForm = () => {
             </div>
           </div>
         </div>
+        {/* Error message */}
+        {error && (
+          <div className="mb-4 text-red-500 text-center text-sm">
+            {error}
+          </div>
+        )}
         {/* Form */}
         <form onSubmit={handleSubmit}>
           {/* Username input */}
@@ -60,8 +92,22 @@ const SignUpForm = () => {
               className="w-full py-2 border-b-2 border-gray-300 focus:border-orange-400 outline-none text-gray-400 placeholder-gray-400"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
+              required
             />
           </div>
+
+          {isSignUp && (
+            <div className="mb-6">
+              <input
+                type="email"
+                placeholder="Email"
+                className="w-full py-2 border-b-2 border-gray-300 focus:border-orange-400 outline-none text-gray-400 placeholder-gray-400"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+              />
+            </div>
+          )}
 
           {/* Password input */}
           <div className="mb-8">
@@ -71,6 +117,7 @@ const SignUpForm = () => {
               className="w-full py-2 border-b-2 border-gray-300 focus:border-orange-400 outline-none text-gray-400 placeholder-gray-400"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
+              required
             />
           </div>
 
