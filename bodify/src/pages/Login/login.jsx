@@ -71,8 +71,8 @@ const SignUpForm = () => {
               }
             >
               {isSignUp
-                ? "New to this site? Log In"
-                : "Already a member? Sign Up"}
+                ? "Already a member? Log In"
+                : "New to this site? Sign Up"}
             </div>
           </div>
         </div>
@@ -130,22 +130,6 @@ const SignUpForm = () => {
           </button>
         </form>
         {/* Or divider */}
-        <div className="my-6 flex items-center">
-          <div className="flex-grow border-t border-gray-300"></div>
-          <span className="px-4 text-gray-500">Or</span>
-          <div className="flex-grow border-t border-gray-300"></div>
-        </div>
-        {/* Social login buttons */}
-        <div className="flex justify-center space-x-4 mb-8">
-          {/* Facebook button */}
-          <a href="#facebook-login" className="inline-block">
-            <FacebookIcon />
-          </a>
-
-          <a href="#google-login" className="inline-block">
-            <GoogleIcon />
-          </a>
-        </div>
 
         {isSignUp && (
           <div className="flex items-start">
