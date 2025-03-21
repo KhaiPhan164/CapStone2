@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import PTProfile from './PTProfile';
 import PersonalTrainerSchedule from './PersonalTrainerSchedule';
-import ClassManagement from './ClassManagement';
+
 
 const PersonalTrainer = () => {
   const [activeTab, setActiveTab] = useState('profile');
@@ -69,14 +69,6 @@ const PersonalTrainer = () => {
             activeTab === 'schedule' ? 'bg-primary-500 text-white' : 'bg-gray-200 text-gray-700'
           } transition-all`}
           onClick={() => setActiveTab('schedule')}
-        >
-          Lịch dạy
-        </button>
-        <button
-          className={`w-full py-2 mb-2 rounded-lg ${
-            activeTab === 'classManagement' ? 'bg-primary-500 text-white' : 'bg-gray-200 text-gray-700'
-          } transition-all`}
-          onClick={() => setActiveTab('ExerciseManagement')}
         >
           Quản lý bài tập
         </button>
