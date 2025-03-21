@@ -65,9 +65,12 @@ const UserInformation = () => {
         setError(null);
         const currentUser = AuthService.getCurrentUser();
         
-        if (!currentUser?.id) {
+        if (!currentUser?.user_id && !currentUser?.id) {
           throw new Error('Vui lòng đăng nhập lại');
         }
+
+        // Sử dụng user_id nếu có, nếu không thì dùng id (để tương thích với cả 2 cấu trúc)
+        const userId = currentUser.user_id || currentUser.id;
 
         if (!editData.name?.trim()) {
           throw new Error('Tên không được để trống');
@@ -77,7 +80,7 @@ const UserInformation = () => {
           name: editData.name.trim()
         };
 
-        const updatedUser = await AuthService.updateProfile(currentUser.id, updateData);
+        const updatedUser = await AuthService.updateProfile(userId, updateData);
         if (updatedUser) {
           // Cập nhật cả userData và editData
           const newData = {
@@ -110,9 +113,12 @@ const UserInformation = () => {
         setError(null);
         const currentUser = AuthService.getCurrentUser();
         
-        if (!currentUser?.id) {
+        if (!currentUser?.user_id && !currentUser?.id) {
           throw new Error('Vui lòng đăng nhập lại');
         }
+
+        // Sử dụng user_id nếu có, nếu không thì dùng id
+        const userId = currentUser.user_id || currentUser.id;
 
         const updateData = {
           email: editData.email?.trim() || null,
@@ -123,7 +129,7 @@ const UserInformation = () => {
           updateData.username = editData.username.trim();
         }
 
-        const updatedUser = await AuthService.updateProfile(currentUser.id, updateData);
+        const updatedUser = await AuthService.updateProfile(userId, updateData);
         if (updatedUser) {
           // Cập nhật cả userData và editData
           const newData = {
@@ -169,14 +175,17 @@ const UserInformation = () => {
         setError(null);
         const currentUser = AuthService.getCurrentUser();
         
-        if (!currentUser?.id) {
+        if (!currentUser?.user_id && !currentUser?.id) {
           throw new Error('Vui lòng đăng nhập lại');
         }
+
+        // Sử dụng user_id nếu có, nếu không thì dùng id
+        const userId = currentUser.user_id || currentUser.id;
 
         const formData = new FormData();
         formData.append('file', file);  // Giữ nguyên key 'file', auth.service sẽ đổi thành 'image'
 
-        const updatedUser = await AuthService.updateProfile(currentUser.id, formData);
+        const updatedUser = await AuthService.updateProfile(userId, formData);
         if (updatedUser) {
           // Cập nhật cả userData và editData
           const newData = {

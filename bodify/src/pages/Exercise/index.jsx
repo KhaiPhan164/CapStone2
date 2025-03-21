@@ -6,6 +6,7 @@ import ExerciseService from '../../services/exercise.service';
 import { Link } from "react-router-dom";
 import { SectionTitle } from "../../components/Title/SectionTitle";
 import { Pagination } from "../../components/Table/Pagination";
+import AuthService from '../../services/auth.service';
 
 export const ExerciseHome = () => {
   const [exercises, setExercises] = useState([]);
@@ -22,11 +23,18 @@ export const ExerciseHome = () => {
   }, []);
 
   useEffect(() => {
+    if (!Array.isArray(exercises)) {
+      console.error('exercises is not an array:', exercises);
+      setFilteredExercises([]);
+      setTotalPages(1);
+      return;
+    }
+    
     const filtered = exercises.filter(exercise => {
       const searchLower = searchTerm.toLowerCase();
-      return exercise.name.toLowerCase().includes(searchLower) ||
-             exercise.description.toLowerCase().includes(searchLower) ||
-             exercise.tags?.some(tag => tag.tag?.tagName.toLowerCase().includes(searchLower));
+      return exercise.name?.toLowerCase().includes(searchLower) ||
+             exercise.description?.toLowerCase().includes(searchLower) ||
+             exercise.tags?.some(tag => tag.tag?.tagName?.toLowerCase().includes(searchLower));
     });
     setFilteredExercises(filtered);
     setTotalPages(Math.ceil(filtered.length / ITEMS_PER_PAGE));
@@ -36,13 +44,42 @@ export const ExerciseHome = () => {
   const fetchExercises = async () => {
     try {
       setLoading(true);
+      
+      const authHeader = AuthService.getAuthHeader();
+      if (authHeader.Authorization) {
+        // Thiết lập headers cho ExerciseService nếu cần
+        // Hiện tại ExerciseService.getAllExercises() không cần token nhưng để đề phòng API thay đổi
+      }
+      
       const response = await ExerciseService.getAllExercises();
-      setExercises(response.data);
-      setFilteredExercises(response.data);
-      setTotalPages(Math.ceil(response.data.length / ITEMS_PER_PAGE));
+      console.log('API response:', response.data);
+      
+      // Kiểm tra cấu trúc response và lấy mảng exercises từ response.data.data
+      if (response.data && Array.isArray(response.data.data)) {
+        // Trường hợp response có dạng {message: '...', data: Array(...)}
+        const exercisesData = response.data.data;
+        setExercises(exercisesData);
+        setFilteredExercises(exercisesData);
+        setTotalPages(Math.ceil(exercisesData.length / ITEMS_PER_PAGE));
+      } else if (Array.isArray(response.data)) {
+        // Trường hợp response.data đã là một mảng
+        const exercisesData = response.data;
+        setExercises(exercisesData);
+        setFilteredExercises(exercisesData);
+        setTotalPages(Math.ceil(exercisesData.length / ITEMS_PER_PAGE));
+      } else {
+        console.error('API response does not contain an array:', response.data);
+        setExercises([]);
+        setFilteredExercises([]);
+        setTotalPages(1);
+        setError('Dữ liệu bài tập không đúng định dạng');
+      }
     } catch (error) {
       setError('Không thể tải danh sách bài tập');
       console.error('Error fetching exercises:', error);
+      setExercises([]);
+      setFilteredExercises([]);
+      setTotalPages(1);
     } finally {
       setLoading(false);
     }
