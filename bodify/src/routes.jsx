@@ -5,6 +5,7 @@ import AdminLayout from './pages/Admin/AdminLayout'
 import { ExerciseHome } from './pages/Exercise'
 import { ExerciseDetail } from './pages/Exercise/ExerciseDetail'
 import ExerciseManagement from './pages/UserProfile/PT/ExerciseManagement'
+import PTManagement from './pages/UserProfile/GymOwner/PTManagement'
 
 export const ROUTES  = [
     {
@@ -38,5 +39,9 @@ export const ROUTES  = [
     {
         path: '/pt/exercise-management',
         element: <ExerciseManagement/>
+    },
+    {
+        path: '/gymowner/pt-management',
+        element: <PTManagement/>
     },
 ]
