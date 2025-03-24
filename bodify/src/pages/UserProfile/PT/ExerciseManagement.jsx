@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Button,
   Modal,
@@ -12,44 +12,37 @@ import {
   Row,
   Col,
   Typography,
-  Image
+  Image,
+  Spin
 } from 'antd';
+import axios from 'axios';
 
 const { Text, Paragraph } = Typography;
 
-// Mock data for preview
-const mockExercises = [
-  {
-    id: 1,
-    exercise_name: 'Gym Workout',
-    description: 'Full body workout routine for building strength and muscle',
-    video_url: 'https://example.com/gym-workout',
-    image_url: 'https://tranhtreotuong.vn/images/tranh-treo-tuong-2020/tranh-treo-tuong-phong-tap-gym/11-6.jpg',
-    status_id: 1
-  },
-  {
-    id: 2,
-    exercise_name: 'Morning Yoga',
-    description: 'Gentle morning yoga flow for flexibility and mindfulness',
-    video_url: 'https://example.com/morning-yoga',
-    image_url: 'https://furnibuy.com/wp-content/uploads/2020/07/tranh-treo-tuong-binh-hoa-trang-tri-dep-1490-1.jpg',
-    status_id: 2
-  },
-  {
-    id: 3,
-    exercise_name: 'Home Fitness',
-    description: 'Effective home-based exercises for overall fitness',
-    video_url: 'https://example.com/home-fitness',
-    image_url: 'https://aocuoihuongduong.com/wp-content/uploads/2021/04/gia-h-y-di-t-tranh-treo-tu-ng-trang-guong-b-3-tranh-gd43-phong-khach.jpg',
-    status_id: 1
-  }
-];
-
 const ExerciseManagement = () => {
-  const [exercises, setExercises] = useState(mockExercises);
+  const [exercises, setExercises] = useState([]);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [form] = Form.useForm();
   const [editingId, setEditingId] = useState(null);
+  const [loading, setLoading] = useState(false);
+
+  // Fetch exercises from API
+  const fetchExercises = async () => {
+    try {
+      setLoading(true);
+      const response = await axios.get('http://localhost:3001/api/exercises');
+      setExercises(response.data);
+    } catch (error) {
+      message.error('Failed to fetch exercises');
+      console.error('Error fetching exercises:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchExercises();
+  }, []);
 
   // Status render helper
   const renderStatus = (status_id) => {
@@ -78,33 +71,52 @@ const ExerciseManagement = () => {
   };
 
   // Delete exercise
-  const handleDelete = (id) => {
-    setExercises(exercises.filter(exercise => exercise.id !== id));
-    message.success('Exercise deleted successfully');
+  const handleDelete = async (id) => {
+    try {
+      await axios.delete(`http://localhost:3001/api/exercises/${id}`);
+      setExercises(exercises.filter(exercise => exercise.id !== id));
+      message.success('Exercise deleted successfully');
+    } catch (error) {
+      message.error('Failed to delete exercise');
+      console.error('Error deleting exercise:', error);
+    }
   };
 
   // Submit form
-  const handleSubmit = (values) => {
-    if (editingId) {
-      // Update existing exercise
-      setExercises(exercises.map(exercise => 
-        exercise.id === editingId 
-          ? { ...exercise, ...values }
-          : exercise
-      ));
-      message.success('Exercise updated successfully');
-    } else {
-      // Create new exercise
-      const newExercise = {
-        id: Math.max(...exercises.map(e => e.id)) + 1,
-        ...values,
-        status_id: 1 // Mặc định là pending khi tạo mới
-      };
-      setExercises([...exercises, newExercise]);
-      message.success('Exercise added successfully');
+  const handleSubmit = async (values) => {
+    try {
+      if (editingId) {
+        // Update existing exercise
+        await axios.put(`http://localhost:3001/api/exercises/${editingId}`, values);
+        setExercises(exercises.map(exercise => 
+          exercise.id === editingId 
+            ? { ...exercise, ...values }
+            : exercise
+        ));
+        message.success('Exercise updated successfully');
+      } else {
+        // Create new exercise
+        const response = await axios.post('http://localhost:3001/api/exercises', {
+          ...values,
+          status_id: 1 // Mặc định là pending khi tạo mới
+        });
+        setExercises([...exercises, response.data]);
+        message.success('Exercise added successfully');
+      }
+      setIsModalVisible(false);
+    } catch (error) {
+      message.error(editingId ? 'Failed to update exercise' : 'Failed to add exercise');
+      console.error('Error submitting exercise:', error);
     }
-    setIsModalVisible(false);
   };
+
+  if (loading) {
+    return (
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+        <Spin size="large" />
+      </div>
+    );
+  }
 
   return (
     <div style={{ padding: '24px' }}>
