@@ -8,7 +8,11 @@ class AuthService {
         username,
         name,
         password,
-        roleId: 1
+        role_id: Number(1) // Đảm bảo role_id là number type
+      }, {
+        headers: {
+          'Content-Type': 'application/json'
+        }
       });
       return response.data;
     } catch (error) {
@@ -27,7 +31,7 @@ class AuthService {
         this.setTokenCookie(response.data.access_token);
         const userData = {
           ...response.data.user,
-          id: response.data.user.id
+          id: response.data.user.user_id // Thay đổi từ id sang user_id để phù hợp với BE
         };
         localStorage.setItem('user', JSON.stringify(userData));
       }
@@ -67,11 +71,14 @@ class AuthService {
   async getProfile() {
     try {
       const currentUser = this.getCurrentUser();
-      if (!currentUser?.id) {
+      // Sửa để sử dụng user_id thay vì id
+      if (!currentUser?.user_id && !currentUser?.id) {
         throw new Error('Không tìm thấy thông tin người dùng');
       }
 
-      const response = await axios.get(`${API_URL}/users/${currentUser.id}`, {
+      const userId = currentUser.user_id || currentUser.id;
+      
+      const response = await axios.get(`${API_URL}/users/${userId}`, {
         headers: this.getAuthHeader()
       });
       
@@ -120,9 +127,16 @@ class AuthService {
       } 
       
       // Nếu là update thông tin thường
+      // Đảm bảo các trường sử dụng đúng định dạng snake_case theo BE
+      const updatedData = { ...updateData };
+      if (updatedData.healthInformation !== undefined) {
+        updatedData.Health_information = updatedData.healthInformation;
+        delete updatedData.healthInformation;
+      }
+      
       const response = await axios.patch(
         `${API_URL}/users/profile/${userId}`,
-        updateData,
+        updatedData,
         {
           headers: {
             ...this.getAuthHeader(),
@@ -144,7 +158,8 @@ class AuthService {
     } catch (error) {
       throw this.handleError(error);
     }
-}
+  }
+
   getAuthHeader() {
     const token = this.getTokenFromCookie();
     if (token) {

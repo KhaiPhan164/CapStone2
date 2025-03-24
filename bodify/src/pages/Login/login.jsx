@@ -7,7 +7,7 @@ import AuthService from "../../services/auth.service";
 const SignUpForm = () => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  const [email, setEmail] = useState("");
+  const [name, setName] = useState("");
   const [isSignUp, setIsSignUp] = useState(true);
   const [isPublicProfile, setIsPublicProfile] = useState(false);
   const [error, setError] = useState("");
@@ -26,11 +26,11 @@ const SignUpForm = () => {
     
     try {
       if (isSignUp) {
-        if (!username || !email || !password) {
+        if (!username || !name || !password) {
           setError("Please fill in all fields");
           return;
         }
-        await AuthService.register(username, email, password);
+        await AuthService.register(username, name, password);
         navigate("/sign-in"); // Redirect to sign in after successful registration
       } else {
         if (!username || !password) {
@@ -99,11 +99,11 @@ const SignUpForm = () => {
           {isSignUp && (
             <div className="mb-6">
               <input
-                type="email"
-                placeholder="Email"
+                type="text"
+                placeholder="Your name"
                 className="w-full py-2 border-b-2 border-gray-300 focus:border-orange-400 outline-none text-gray-400 placeholder-gray-400"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                value={name}
+                onChange={(e) => setName(e.target.value)}
                 required
               />
             </div>
