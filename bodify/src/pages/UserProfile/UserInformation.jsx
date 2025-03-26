@@ -212,7 +212,7 @@ const UserInformation = () => {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
+      <div className="flex items-center justify-center h-full">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary-500"></div>
       </div>
     );
@@ -220,24 +220,9 @@ const UserInformation = () => {
 
   return (
     <div>
-      <Header/>
-      <div className='flex h-screen container-auto bg-gray-100'>
-        <div className="w-1/4 bg-white p-4 rounded-xl my-5">
-          <ul className="space-y-4">
-            <li className="cursor-pointer block p-2 text-gray-600 bg-primary-500 rounded-xl border border-red-500">
-              <div className="flex items-center font-bold text-white">
-                <img
-                  src="./images/user.png" 
-                  alt="Ảnh đại diện"
-                  className="mr-3 ml-2 w-6 h-6 filter invert" 
-                />
-                Thông tin cá nhân
-              </div>
-            </li>
-          </ul>
-        </div>
+      <div className='flex h-full bg-gray-100'>
         
-        <div className="w-3/4 p-6">
+        <div className="w-full">
           {error && (
             <div className="mb-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded">
               {error}
