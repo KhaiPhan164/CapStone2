@@ -1,71 +1,30 @@
-import axios from 'axios';
-const API_URL = 'http://localhost:3000';
+import ApiService from './plan.service';
 
 class AuthService {
-  async register(username, name, password) {
-    try {
-      const response = await axios.post(`${API_URL}/users`, {
-        username,
-        name,
-        password,
-        role_id: Number(1) // Đảm bảo role_id là number type
-      }, {
-        headers: {
-          'Content-Type': 'application/json'
-        }
-      });
-      return response.data;
-    } catch (error) {
-      throw this.handleError(error);
-    }
+  getCurrentUser() {
+    return ApiService.getCurrentUser();
   }
 
-  async login(username, password) {
-    try {
-      const response = await axios.post(`${API_URL}/auth/login`, {
-        username,
-        password,
-      });
-
-      if (response.data.access_token) {
-        this.setTokenCookie(response.data.access_token);
-        const userData = {
-          ...response.data.user,
-          id: response.data.user.user_id // Thay đổi từ id sang user_id để phù hợp với BE
-        };
-        localStorage.setItem('user', JSON.stringify(userData));
-      }
-      return response.data;
-    } catch (error) {
-      throw this.handleError(error);
-    }
+  isLoggedIn() {
+    const user = this.getCurrentUser();
+    return !!user;
   }
 
-  setTokenCookie(token) {
-    document.cookie = `access_token=${token}; path=/; secure; samesite=strict; max-age=86400`;
+  getAuthHeader() {
+    const token = localStorage.getItem('token');
+    return token ? { Authorization: `Bearer ${token}` } : {};
   }
 
-  getTokenFromCookie() {
-    const cookies = document.cookie.split(';');
-    const tokenCookie = cookies.find(cookie => cookie.trim().startsWith('access_token='));
-    return tokenCookie ? tokenCookie.split('=')[1] : null;
+  login(username, password) {
+    return ApiService.login(username, password);
   }
 
   logout() {
-    document.cookie = 'access_token=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;';
-    localStorage.removeItem('user');
-    localStorage.removeItem('profile');
+    return ApiService.logout();
   }
 
-  getCurrentUser() {
-    const userStr = localStorage.getItem('user');
-    if (!userStr) return null;
-    try {
-      return JSON.parse(userStr);
-    } catch (error) {
-      console.error('Lỗi khi đọc dữ liệu người dùng:', error);
-      return null;
-    }
+  register(userData) {
+    return ApiService.register(userData);
   }
 
   async getProfile() {
@@ -78,15 +37,7 @@ class AuthService {
 
       const userId = currentUser.user_id || currentUser.id;
       
-      const response = await axios.get(`${API_URL}/users/${userId}`, {
-        headers: this.getAuthHeader()
-      });
-      
-      if (response.data) {
-        // Lưu đầy đủ thông tin vào localStorage
-        localStorage.setItem('profile', JSON.stringify(response.data));
-      }
-      return response.data;
+      return await ApiService.getUserById(userId);
     } catch (error) {
       // Nếu API lỗi, thử lấy từ localStorage
       const storedProfile = localStorage.getItem('profile');
@@ -99,75 +50,10 @@ class AuthService {
 
   async updateProfile(userId, updateData) {
     try {
-      // Nếu là upload ảnh
-      if (updateData instanceof FormData) {
-        const formData = new FormData();
-        formData.append('image', updateData.get('file')); // Key phải là 'image'
-
-        const response = await axios.patch(
-          `${API_URL}/users/profile/${userId}`,
-          formData,
-          { 
-            headers: {
-              ...this.getAuthHeader()
-            }
-          }
-        );
-
-        if (response.data) {
-          const currentProfile = JSON.parse(localStorage.getItem('profile') || '{}');
-          const updatedProfile = {
-            ...currentProfile,
-            ...response.data
-          };
-          localStorage.setItem('profile', JSON.stringify(updatedProfile));
-        }
-
-        return response.data;
-      } 
-      
-      // Nếu là update thông tin thường
-      // Đảm bảo các trường sử dụng đúng định dạng snake_case theo BE
-      const updatedData = { ...updateData };
-      if (updatedData.healthInformation !== undefined) {
-        updatedData.Health_information = updatedData.healthInformation;
-        delete updatedData.healthInformation;
-      }
-      
-      const response = await axios.patch(
-        `${API_URL}/users/profile/${userId}`,
-        updatedData,
-        {
-          headers: {
-            ...this.getAuthHeader(),
-            'Content-Type': 'application/json'
-          }
-        }
-      );
-
-      if (response.data) {
-        const currentProfile = JSON.parse(localStorage.getItem('profile') || '{}');
-        const updatedProfile = {
-          ...currentProfile,
-          ...response.data
-        };
-        localStorage.setItem('profile', JSON.stringify(updatedProfile));
-      }
-
-      return response.data;
+      return await ApiService.updateUserProfile(userId, updateData);
     } catch (error) {
       throw this.handleError(error);
     }
-  }
-
-  getAuthHeader() {
-    const token = this.getTokenFromCookie();
-    if (token) {
-      return { 
-        Authorization: `Bearer ${token}`
-      };
-    }
-    return {};
   }
 
   handleError(error) {
@@ -179,10 +65,6 @@ class AuthService {
       return new Error(message);
     }
     return error;
-  }
-
-  isLoggedIn() {
-    return !!this.getTokenFromCookie();
   }
 }
 

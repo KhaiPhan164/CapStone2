@@ -4,6 +4,8 @@ import UserInformation from './pages/UserProfile/UserInformation'
 import AdminLayout from './pages/Admin/AdminLayout'
 import { ExerciseHome } from './pages/Exercise'
 import { ExerciseDetail } from './pages/Exercise/ExerciseDetail'
+import Plan from './pages/UserProfile/User/Plan'
+
 export const ROUTES  = [
     {
         path: '/',
@@ -26,11 +28,23 @@ export const ROUTES  = [
         element: <UserInformation/>
     },
     {
+        path: '/user',
+        element: <UserInformation/>
+    },
+    {
         path: '/exercise',
         element: <ExerciseHome/>
     },
     {
-        path: '/exercise-post',
+        path: '/exercise-post/:id',
         element: <ExerciseDetail/>
     },
+    {
+        path: '/plan',
+        element: <Plan/>
+    },
+    {
+        path: '/plans',
+        element: <UserInformation/>
+    }
 ]

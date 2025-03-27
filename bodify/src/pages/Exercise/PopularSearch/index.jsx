@@ -18,7 +18,7 @@ const videos = [
    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
       {videos.map((video, index) => (
         <div key={index} className="bg-white shadow-md overflow-hidden">
-          <Link to="/exercise-post">
+          <Link to="/exercise-post/1">
           <img src={video.image} alt={video.title} className="w-full" height="400" width="600" />
           </Link>
           <div className="pb-4 pt-2 px-2">
