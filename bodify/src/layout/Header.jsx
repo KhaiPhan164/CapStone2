@@ -18,40 +18,160 @@ const Header = () => {
     checkLoginStatus();
   }, []);
   
+  // Thêm effect mới để luôn làm mới thông tin profile
+  useEffect(() => {
+    // Hàm làm mới profile định kỳ
+    const refreshInterval = setInterval(() => {
+      if (AuthService.isLoggedIn()) {
+        updateUserProfile();
+      }
+    }, 30000); // Làm mới mỗi 30 giây
+    
+    return () => clearInterval(refreshInterval);
+  }, []);
+  
+  // Hàm riêng để cập nhật thông tin profile
+  const updateUserProfile = async () => {
+    try {
+      // Kiểm tra nếu người dùng đã đăng nhập
+      if (!AuthService.isLoggedIn()) {
+        console.log('Không đăng nhập, không cập nhật profile');
+        setUserProfile(null);
+        setShowAccount(false);
+        return;
+      }
+      
+      // Lấy user hiện tại
+      const currentUser = AuthService.getCurrentUser();
+      
+      // Nếu không có user, không cần gọi API
+      if (!currentUser) {
+        console.log('Không tìm thấy thông tin người dùng, không cập nhật profile');
+        setUserProfile(null);
+        setShowAccount(false);
+        return;
+      }
+      
+      // Gọi API để lấy profile mới nhất
+      const profile = await AuthService.getProfile();
+      
+      // Kiểm tra kết quả trả về từ getProfile
+      if (profile) {
+        console.log('Cập nhật profile thành công:', profile);
+        setUserProfile(profile);
+        setShowAccount(true);
+      } else {
+        console.warn('getProfile không trả về dữ liệu');
+        
+        // Nếu không lấy được profile, thử một lần nữa với thông tin từ localStorage
+        const userData = localStorage.getItem('user');
+        if (userData) {
+          try {
+            const parsedUser = JSON.parse(userData);
+            console.log('Sử dụng thông tin user từ localStorage làm profile');
+            setUserProfile(parsedUser);
+            setShowAccount(true);
+          } catch (e) {
+            console.error('Lỗi khi parse user data:', e);
+            setUserProfile(null);
+          }
+        } else {
+          console.warn('Không có thông tin user trong localStorage');
+          setUserProfile(null);
+          // Không set showAccount = false để tránh đăng xuất người dùng tự động
+        }
+      }
+    } catch (error) {
+      console.error('Error updating user profile:', error);
+      
+      // Fallback: sử dụng thông tin từ localStorage nếu có lỗi
+      try {
+        const storedProfile = localStorage.getItem('profile');
+        const userData = localStorage.getItem('user');
+        
+        if (storedProfile) {
+          const parsedProfile = JSON.parse(storedProfile);
+          console.log('Sử dụng profile từ localStorage do lỗi:', parsedProfile);
+          setUserProfile(parsedProfile);
+          setShowAccount(true);
+        } else if (userData) {
+          const parsedUser = JSON.parse(userData);
+          console.log('Sử dụng user từ localStorage do lỗi:', parsedUser);
+          setUserProfile(parsedUser);
+          setShowAccount(true);
+        }
+      } catch (e) {
+        console.error('Lỗi khi đọc dữ liệu từ localStorage:', e);
+        // Không làm gì thêm, giữ nguyên trạng thái hiện tại
+      }
+    }
+  };
+  
   // Kiểm tra trạng thái đăng nhập
   const checkLoginStatus = () => {
+    console.log('Kiểm tra trạng thái đăng nhập');
+    
+    // Kiểm tra token trước
+    const token = localStorage.getItem('token');
+    if (!token) {
+      console.log('Không tìm thấy token, người dùng chưa đăng nhập');
+      setShowAccount(false);
+      setCurrentUser(null);
+      setUserProfile(null);
+      return;
+    }
+    
     const isLoggedIn = AuthService.isLoggedIn();
+    console.log('Trạng thái đăng nhập:', isLoggedIn);
+    
+    if (!isLoggedIn) {
+      console.log('Người dùng không đăng nhập');
+      setShowAccount(false);
+      setCurrentUser(null);
+      setUserProfile(null);
+      return;
+    }
+    
     const user = AuthService.getCurrentUser();
+    console.log('Thông tin người dùng hiện tại:', user);
     
     setShowAccount(isLoggedIn);
     setCurrentUser(user);
     
     if (isLoggedIn && user) {
-      // Lấy thông tin profile từ localStorage hoặc API
-      try {
-        const profileStr = localStorage.getItem('profile');
-        if (profileStr) {
-          setUserProfile(JSON.parse(profileStr));
-        } else {
-          // Nếu không có thông tin profile trong localStorage, có thể gọi API để lấy
-          AuthService.getProfile().then(profile => {
-            setUserProfile(profile);
-          });
-        }
-      } catch (error) {
-        console.error('Error getting user profile:', error);
-      }
+      console.log('Người dùng đã đăng nhập, cập nhật profile');
+      // Luôn ưu tiên gọi API để lấy thông tin profile mới nhất
+      updateUserProfile();
+    } else {
+      console.log('Không có thông tin người dùng hoặc không đăng nhập');
+      // Nếu không đăng nhập, đảm bảo xóa userProfile
+      setUserProfile(null);
     }
   };
   
   // Xử lý đăng xuất
   const handleLogout = () => {
+    // Xóa tất cả thông tin người dùng khỏi localStorage
+    localStorage.removeItem('user');
+    localStorage.removeItem('token');
+    localStorage.removeItem('profile');
+    localStorage.removeItem('plans');
+    localStorage.removeItem('exercisePosts');
+    
+    // Logout qua AuthService
     AuthService.logout();
+    
+    // Reset state
     setShowAccount(false);
     setCurrentUser(null);
     setUserProfile(null);
     setShowDropdown(false);
-    navigate("/");
+    
+    // Đặt một thông báo cho người dùng biết họ đã đăng xuất thành công
+    alert('Đăng xuất thành công!');
+    
+    // Chuyển hướng về trang chủ
+    window.location.href = "/";
   };
 
   useEffect(() => {

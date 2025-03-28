@@ -30,7 +30,8 @@ class PlanService {
         if (error.response && error.response.status === 401) {
           localStorage.removeItem('token');
           localStorage.removeItem('user');
-          window.location.href = '/login';
+          localStorage.removeItem('profile');
+          window.location.href = '/sign-in';
         }
         
         return Promise.reject(error);
@@ -43,11 +44,42 @@ class PlanService {
     try {
       const response = await axios.post(`${API_URL}/auth/login`, { username, password });
       if (response.data.access_token) {
+        // Xử lý thông tin user để đảm bảo có id hoặc user_id
+        let userData = response.data.user || {};
+        
+        // Nếu có _id hoặc userId nhưng không có user_id, tạo user_id
+        if (!userData.user_id) {
+          if (userData._id) {
+            userData.user_id = userData._id;
+          } else if (userData.userId) {
+            userData.user_id = userData.userId;
+          } else if (userData.id) {
+            userData.user_id = userData.id;
+          }
+        }
+        
+        // Nếu có user_id nhưng không có id, tạo id
+        if (!userData.id && userData.user_id) {
+          userData.id = userData.user_id;
+        }
+        
+        // Đảm bảo cả hai trường đều tồn tại
+        if (!userData.id && !userData.user_id) {
+          // Nếu không tìm thấy ID trong response, tìm trong response.data
+          if (response.data.id || response.data.user_id || response.data._id || response.data.userId) {
+            userData.user_id = response.data.user_id || response.data.id || response.data._id || response.data.userId;
+            userData.id = userData.user_id;
+          }
+        }
+        
         localStorage.setItem('token', response.data.access_token);
-        localStorage.setItem('user', JSON.stringify(response.data.user));
+        localStorage.setItem('user', JSON.stringify(userData));
+        
+        console.log('Đã lưu thông tin người dùng:', userData);
       }
       return response.data;
     } catch (error) {
+      console.error('Lỗi khi đăng nhập:', error);
       throw error;
     }
   }
@@ -63,19 +95,84 @@ class PlanService {
   // Lấy thông tin người dùng hiện tại từ localStorage
   async getCurrentUser() {
     try {
+      console.log('Đang lấy thông tin người dùng hiện tại từ localStorage');
       const userData = localStorage.getItem('user');
       if (!userData) {
+        console.log('Không tìm thấy thông tin user trong localStorage');
         return null;
       }
-      return JSON.parse(userData);
+      
+      let user;
+      try {
+        user = JSON.parse(userData);
+        console.log('Thông tin user từ localStorage:', user);
+      } catch (parseError) {
+        console.error('Lỗi khi parse user data từ localStorage:', parseError);
+        return null;
+      }
+      
+      // Kiểm tra nếu user là null hoặc không phải là object
+      if (!user || typeof user !== 'object') {
+        console.error('User data không hợp lệ:', user);
+        return null;
+      }
+      
+      // Đảm bảo user có id hoặc user_id
+      if (!user.id && !user.user_id && user.userId) {
+        console.log('Sử dụng userId làm user_id:', user.userId);
+        user.user_id = user.userId;
+      } else if (!user.id && !user.user_id && user._id) {
+        console.log('Sử dụng _id làm user_id:', user._id);
+        user.user_id = user._id;
+      } else if (!user.id && !user.user_id) {
+        // Tìm bất kỳ property nào có thể là ID
+        const possibleIdKeys = Object.keys(user).filter(key => 
+          (key.toLowerCase().includes('id') || key.toLowerCase().includes('_id')) && 
+          user[key] && 
+          (typeof user[key] === 'string' || typeof user[key] === 'number')
+        );
+        
+        if (possibleIdKeys.length > 0) {
+          console.log(`Sử dụng ${possibleIdKeys[0]} làm user_id:`, user[possibleIdKeys[0]]);
+          user.user_id = user[possibleIdKeys[0]];
+        } else {
+          console.warn('Không tìm thấy ID trong user object:', user);
+        }
+      }
+      
+      // Nếu có user_id nhưng không có id, copy user_id sang id
+      if (!user.id && user.user_id) {
+        console.log('Copy user_id sang id:', user.user_id);
+        user.id = user.user_id;
+      }
+      
+      // Nếu có id nhưng không có user_id, copy id sang user_id
+      if (user.id && !user.user_id) {
+        console.log('Copy id sang user_id:', user.id);
+        user.user_id = user.id;
+      }
+      
+      return user;
     } catch (error) {
+      console.error('Lỗi khi lấy thông tin người dùng từ localStorage:', error);
       return null;
     }
   }
 
   logout() {
-    localStorage.removeItem('token');
+    // Xóa tất cả thông tin người dùng khỏi localStorage
     localStorage.removeItem('user');
+    localStorage.removeItem('token');
+    localStorage.removeItem('profile');
+    localStorage.removeItem('plans');
+    localStorage.removeItem('exercisePosts');
+    
+    // Xóa các biến theo dõi
+    this.loggedPlans.clear();
+    this.loggedPlanSlots.clear();
+    
+    // Chuyển hướng về trang chủ sau khi đăng xuất
+    window.location.href = '/';
   }
 
   /* PLANS */
@@ -122,6 +219,40 @@ class PlanService {
     } catch (error) {
       console.error(`Lỗi khi lấy danh sách plan của user ${userId}:`, error);
       return [];
+    }
+  }
+
+  // Lấy thông tin người dùng theo ID
+  async getUserById(userId) {
+    try {
+      if (!userId) {
+        throw new Error('Không có user_id được cung cấp');
+      }
+      
+      // Đảm bảo userId là số
+      const numericUserId = Number(userId);
+      
+      const response = await axios.get(`${API_URL}/user/${numericUserId}`);
+      return response.data;
+    } catch (error) {
+      console.error(`Lỗi khi lấy thông tin user ${userId}:`, error);
+      
+      // Trường hợp API `/user/{id}` không tồn tại, thử dùng endpoint khác
+      try {
+        const response = await axios.get(`${API_URL}/users/${userId}`);
+        return response.data;
+      } catch (secondError) {
+        console.error(`Thử lại với endpoint khác nhưng vẫn lỗi:`, secondError);
+        
+        // Nếu không lấy được từ API, thử lấy từ localStorage
+        const userData = localStorage.getItem('user');
+        if (userData) {
+          const user = JSON.parse(userData);
+          return user;
+        }
+        
+        throw new Error(`Không thể lấy thông tin user ${userId}`);
+      }
     }
   }
 

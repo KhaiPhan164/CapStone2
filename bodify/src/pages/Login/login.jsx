@@ -30,19 +30,96 @@ const SignUpForm = () => {
           setError("Please fill in all fields");
           return;
         }
-        await AuthService.register(username, name, password);
+        const userData = {
+          username: username,
+          name: name,
+          password: password,
+          role_id: 2  // Mặc định roleID = 2 cho user thường
+        };
+        await AuthService.register(userData);
         navigate("/sign-in"); // Redirect to sign in after successful registration
       } else {
         if (!username || !password) {
           setError("Please fill in all fields");
           return;
         }
+        
+        // Xóa mọi dữ liệu cũ trước khi đăng nhập
+        localStorage.removeItem('profile');
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        localStorage.removeItem('plans');
+        localStorage.removeItem('exercisePosts');
+        
+        // Đảm bảo localStorage đã được xóa trước khi tiếp tục
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        console.log('Đang đăng nhập với:', { username });
         const response = await AuthService.login(username, password);
+        
         if (response.access_token) {
-          navigate("/"); // Redirect to home page after successful login
+          console.log('Đăng nhập thành công, access_token nhận được');
+          
+          // Đảm bảo user đã được lưu vào localStorage với đúng định dạng
+          if (response.user) {
+            // Thêm các trường ID cần thiết nếu chưa có
+            const userData = response.user;
+            
+            if (!userData.user_id) {
+              if (userData.id) {
+                userData.user_id = userData.id;
+              } else if (userData._id) {
+                userData.user_id = userData._id;
+              } else if (userData.userId) {
+                userData.user_id = userData.userId;
+              }
+            }
+            
+            if (!userData.id && userData.user_id) {
+              userData.id = userData.user_id;
+            }
+            
+            console.log('Lưu thông tin user:', userData);
+            localStorage.setItem('user', JSON.stringify(userData));
+          } else if (response.id || response.user_id || response._id || response.userId) {
+            // Nếu thông tin user nằm trực tiếp trong response
+            const userData = {
+              id: response.id || response.user_id || response._id || response.userId,
+              user_id: response.user_id || response.id || response._id || response.userId,
+              username: response.username || username,
+              name: response.name || username
+            };
+            
+            console.log('Tạo user từ response:', userData);
+            localStorage.setItem('user', JSON.stringify(userData));
+          }
+          
+          // Đợi một chút để đảm bảo token và user đã được lưu
+          await new Promise(resolve => setTimeout(resolve, 500));
+          
+          // Lấy profile ngay sau khi đăng nhập thành công
+          try {
+            console.log('Lấy thông tin profile...');
+            const profile = await AuthService.getProfile();
+            console.log('Profile nhận được:', profile);
+            
+            // Đợi thêm một chút để profile được xử lý
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
+            navigate("/"); // Redirect to home page after successful login
+          } catch (profileError) {
+            console.warn("Không thể lấy profile sau khi đăng nhập:", profileError);
+            
+            // Vẫn chuyển hướng về trang chủ nếu đăng nhập thành công
+            navigate("/");
+          }
+        } else {
+          console.error('Đăng nhập không thành công: Không nhận được access_token');
+          setError("Đăng nhập không thành công, vui lòng thử lại");
         }
       }
     } catch (err) {
+      console.error('Lỗi đăng nhập/đăng ký:', err);
       setError(err.message || "An error occurred during authentication");
     }
   };
