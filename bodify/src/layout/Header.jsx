@@ -133,6 +133,12 @@ const Header = () => {
                 >
                   User Profile
                 </Link>
+                <Link
+                  to="/register-pt"
+                  className="block px-4 py-2 text-black hover:rounded-md hover:bg-gray-200"
+                >
+                  Register PT
+                </Link>
                 <button
                   className="block w-full text-left px-4 py-2 text-black hover:rounded-md hover:bg-gray-200"
                   onClick={handleLogout}

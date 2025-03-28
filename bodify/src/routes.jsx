@@ -5,6 +5,10 @@ import AdminLayout from './pages/Admin/AdminLayout'
 import { ExerciseHome } from './pages/Exercise'
 import { ExerciseDetail } from './pages/Exercise/ExerciseDetail'
 import Plan from './pages/UserProfile/User/Plan'
+import ExerciseManagement from './pages/UserProfile/PT/ExerciseManagement'
+import PTManagement from './pages/UserProfile/GymOwner/PTManagement'
+import ProfileSidebar from './pages/UserProfile/ProfileSidebar'
+import FormPT from './pages/Register/FormPT'
 
 export const ROUTES  = [
     {
@@ -25,7 +29,7 @@ export const ROUTES  = [
     },
     {
         path: '/userprofile',
-        element: <UserInformation/>
+        element: <ProfileSidebar/>
     },
     {
         path: '/user',
@@ -45,6 +49,18 @@ export const ROUTES  = [
     },
     {
         path: '/plans',
-        element: <UserInformation/>
-    }
+        element: <ProfileSidebar initialTab="plans"/>
+    },
+    {
+        path: '/pt/exercise-management',
+        element: <ExerciseManagement/>
+    },
+    {
+        path: '/gymowner/pt-management',
+        element: <PTManagement/>
+    },
+    {
+        path: '/register-pt',
+        element: <FormPT/>
+    },
 ]
