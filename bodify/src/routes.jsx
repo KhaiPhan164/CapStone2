@@ -1,3 +1,4 @@
+import React from "react";
 import Main from './layout/Main'
 import SignUpForm from './pages/Login/login'
 import UserInformation from './pages/UserProfile/UserInformation'
@@ -28,7 +29,19 @@ export const ROUTES  = [
         element: <SignUpForm/>
     },
     {
+        path: '/login',
+        element: <SignUpForm/>
+    },
+    {
+        path: '/register',
+        element: <FormPT/>
+    },
+    {
         path: '/userprofile',
+        element: <ProfileSidebar/>
+    },
+    {
+        path: '/profile',
         element: <ProfileSidebar/>
     },
     {
@@ -41,6 +54,10 @@ export const ROUTES  = [
     },
     {
         path: '/exercise-post/:id',
+        element: <ExerciseDetail/>
+    },
+    {
+        path: '/exercise/:id',
         element: <ExerciseDetail/>
     },
     {
@@ -63,4 +80,8 @@ export const ROUTES  = [
         path: '/register-pt',
         element: <FormPT/>
     },
+    {
+        path: '/admin/*',
+        element: <AdminLayout/>
+    }
 ]

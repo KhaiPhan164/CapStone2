@@ -71,17 +71,17 @@ const ProfileSidebar = ({ initialTab }) => {
       <div className="flex h-full container-auto bg-gray-100 ">
         {/* Thanh module bên trái */}
         <div className="w-1/4 bg-white p-4 rounded-xl my-5 h-screen">
-          <ul className=" space-y-4">
+          <ul className="space-y-4">
             <li
               onClick={() => handleSelection("home")}
-              className={`cursor-pointer block p-2  rounded-xl  ${
+              className={`cursor-pointer block p-2 rounded-xl ${
                 selectedSection === "home"
-                  ? "bg-primary-500 text-gray-600  "
+                  ? "bg-primary-500 text-gray-600"
                   : "bg-gray-400"
               }`}
             >
               <div className="flex items-center font-bold text-white">
-              <img
+                <img
                   src="./images/user.png" 
                   alt="Ảnh đại diện"
                   className="mr-3 ml-2 w-6 h-6 filter invert" 
@@ -91,15 +91,15 @@ const ProfileSidebar = ({ initialTab }) => {
             </li>
             <li
               onClick={() => handleSelection("schedule")}
-              className={`cursor-pointer block p-2 rounded-xl  ${
+              className={`cursor-pointer block p-2 rounded-xl ${
                 selectedSection === "schedule"
-                  ? "bg-primary-500 text-gray-600  "
+                  ? "bg-primary-500 text-gray-600"
                   : "bg-gray-400"
               }`}
             >
               <div className="flex items-center font-bold text-white">
-              <FontAwesomeIcon icon={faCalendar} className="mr-3 ml-2 w-6 h-6" />
-              Schedule
+                <FontAwesomeIcon icon={faCalendar} className="mr-3 ml-2 w-6 h-6" />
+                Schedule
               </div>
             </li>
             <li
