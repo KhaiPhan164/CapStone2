@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { SectionTitle } from '../../components/Title/SectionTitle';
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faEdit } from "@fortawesome/free-solid-svg-icons";
@@ -22,88 +22,164 @@ const UserInformation = () => {
   const navigate = useNavigate();
   const fileInputRef = useRef(null);
 
-  useEffect(() => {
-    const loadInitialData = async () => {
-      try {
-        setIsLoading(true);
-        setError(null);
+  const loadInitialData = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
 
-        // Kiểm tra đăng nhập
-        const currentUser = AuthService.getCurrentUser();
-        if (!currentUser) {
+      // Kiểm tra đăng nhập
+      const currentUser = AuthService.getCurrentUser();
+      if (!currentUser) {
+        setError('Vui lòng đăng nhập để xem thông tin cá nhân');
+        setTimeout(() => {
           navigate('/sign-in');
-          return;
-        }
+        }, 2000);
+        return;
+      }
 
-        const profile = await AuthService.getProfile();
-        if (profile) {
-          // Cập nhật userData với toàn bộ dữ liệu
+      console.log('Đang tải thông tin cá nhân cho người dùng:', currentUser);
+      // Log thông tin ID của người dùng
+      if (currentUser.user_id) {
+        console.log('ID (user_id) từ currentUser:', currentUser.user_id);
+      } else if (currentUser.id) {
+        console.log('ID (id) từ currentUser:', currentUser.id);
+      } else {
+        console.log('Không tìm thấy ID trong currentUser:', Object.keys(currentUser));
+      }
+
+      // Gọi API để lấy profile từ AuthService
+      const profile = await AuthService.getProfile();
+      
+      if (profile) {
+        console.log('Thông tin cá nhân đã tải:', profile);
+        
+        // Log thông tin ID từ profile
+        if (profile.user_id) {
+          console.log('ID (user_id) từ profile:', profile.user_id);
+        } else if (profile.id) {
+          console.log('ID (id) từ profile:', profile.id);
+        } else {
+          console.log('Không tìm thấy ID trong profile:', Object.keys(profile));
+        }
+        
+        // Xác định ID người dùng từ nhiều nguồn
+        const userId = profile?.user_id || profile?.id || currentUser?.user_id || currentUser?.id;
+        
+        // Đảm bảo ID được Save vào profile
+        if (userId) {
+          const updatedProfile = {
+            ...profile,
+            user_id: userId,
+            id: userId
+          };
+          
+          // Cập nhật vào localStorage
+          localStorage.setItem('profile', JSON.stringify(updatedProfile));
+          
+          // Cập nhật userData với toàn bộ dữ liệu đã có ID
+          setUserData(updatedProfile);
+          
+          // Cập nhật editData với các trường cần thiết
+          setEditData({
+            username: updatedProfile.username || '',
+            email: updatedProfile.email || '',
+            phoneNum: updatedProfile.phoneNum || '',
+            name: updatedProfile.name || '',
+          });
+        } else {
+          // Nếu không tìm thấy ID, vẫn cập nhật dữ liệu
           setUserData(profile);
-          // Chỉ lấy các trường cần thiết cho form edit
           setEditData({
             username: profile.username || '',
             email: profile.email || '',
             phoneNum: profile.phoneNum || '',
-            name: profile.name || ''
+            name: profile.name || '',
           });
         }
-      } catch (error) {
-        console.error('Lỗi khi tải thông tin:', error);
-        setError('Không thể tải thông tin. Vui lòng thử lại.');
-      } finally {
-        setIsLoading(false);
+      } else {
+        setError('Không thể tải thông tin cá nhân. Vui lòng thử lại sau.');
       }
-    };
-
-    loadInitialData();
+    } catch (error) {
+      console.error('Lỗi khi tải thông tin cá nhân:', error);
+      setError('Không thể tải thông tin cá nhân: ' + (error.message || 'Lỗi không xác định'));
+    } finally {
+      setIsLoading(false);
+    }
   }, [navigate]);
+
+  useEffect(() => {
+    loadInitialData();
+  }, [loadInitialData]);
 
   const handleEditProfile = async () => {
     if (isEditingProfile) {
       try {
         setIsLoading(true);
         setError(null);
-        const currentUser = AuthService.getCurrentUser();
         
-        if (!currentUser?.user_id && !currentUser?.id) {
-          throw new Error('Vui lòng đăng nhập lại');
+        // Lấy thông tin người dùng hiện tại
+        const currentUser = AuthService.getCurrentUser();
+        console.log('CurrentUser trong handleEditProfile:', currentUser);
+        
+        // Lấy profile từ AuthService
+        const profile = await AuthService.getProfile();
+        console.log('Profile từ AuthService.getProfile():', profile);
+        
+        // Xác định ID người dùng từ nhiều nguồn
+        const userId = profile?.user_id || profile?.id || currentUser?.user_id || currentUser?.id;
+        console.log('UserID được xác định:', userId);
+        
+        // Kiểm tra userId
+        if (!userId) {
+          throw new Error('Không thể xác định ID người dùng. Vui lòng đăng nhập lại.');
         }
-
-        // Sử dụng user_id nếu có, nếu không thì dùng id (để tương thích với cả 2 cấu trúc)
-        const userId = currentUser.user_id || currentUser.id;
-
-        if (!editData.name?.trim()) {
+        
+        // Tạo dữ liệu cập nhật - chỉ cập nhật tên
+        const updateData = {
+          name: editData.name
+        };
+        
+        // Kiểm tra trường name
+        if (!updateData.name) {
           throw new Error('Tên không được để trống');
         }
-
-        const updateData = {
-          name: editData.name.trim()
-        };
-
-        const updatedUser = await AuthService.updateProfile(userId, updateData);
-        if (updatedUser) {
-          // Cập nhật cả userData và editData
-          const newData = {
-            ...userData,
-            ...updatedUser
+        
+        console.log(`Cập nhật hồ sơ người dùng với ID: ${userId}, dữ liệu:`, updateData);
+        
+        // Gọi phương thức updateProfile từ AuthService
+        const result = await AuthService.updateProfile(userId, updateData);
+        console.log('Kết quả cập nhật:', result);
+        
+        // Save thông tin mới vào localStorage để đảm bảo dữ liệu được cập nhật
+        if (result) {
+          // Cập nhật profile trong localStorage
+          const updatedProfile = {
+            ...profile,
+            ...updateData,
+            // Đảm bảo ID được Save trong profile
+            user_id: userId,
+            id: userId
           };
-          setUserData(newData);
-          setEditData({
-            username: newData.username || '',
-            email: newData.email || '',
-            phoneNum: newData.phoneNum || '',
-            name: newData.name || ''
-          });
-          setError('Cập nhật thành công');
+          
+          localStorage.setItem('profile', JSON.stringify(updatedProfile));
+          console.log('Đã cập nhật profile trong localStorage:', updatedProfile);
+          
+          // Hiển thị thông báo thành công
+          alert('Cập nhật hồ sơ thành công! Trang sẽ được tải lại để áp dụng các thay đổi.');
+          
+          // Tải lại trang để hiển thị thông tin mới nhất
+          window.location.reload();
         }
       } catch (error) {
         console.error('Lỗi cập nhật hồ sơ:', error);
-        setError(error.message || 'Không thể cập nhật thông tin');
+        setError(error.message || 'Có lỗi xảy ra khi cập nhật hồ sơ');
       } finally {
         setIsLoading(false);
       }
+    } else {
+      // Nếu chưa đang chỉnh Edit, bắt đầu chỉnh Edit
+      setIsEditingProfile(true);
     }
-    setIsEditingProfile(!isEditingProfile);
   };
 
   const handleEditPersonal = async () => {
@@ -111,39 +187,72 @@ const UserInformation = () => {
       try {
         setIsLoading(true);
         setError(null);
-        const currentUser = AuthService.getCurrentUser();
         
-        if (!currentUser?.user_id && !currentUser?.id) {
-          throw new Error('Vui lòng đăng nhập lại');
+        // Lấy thông tin người dùng hiện tại
+        const currentUser = AuthService.getCurrentUser();
+        console.log('CurrentUser trong handleEditPersonal:', currentUser);
+        
+        // Lấy profile từ AuthService
+        const profile = await AuthService.getProfile();
+        console.log('Profile từ AuthService.getProfile():', profile);
+        
+        // Xác định ID người dùng từ nhiều nguồn
+        const userId = profile?.user_id || profile?.id || currentUser?.user_id || currentUser?.id;
+        console.log('UserID được xác định:', userId);
+        
+        // Kiểm tra userId
+        if (!userId) {
+          throw new Error('Không thể xác định ID người dùng. Vui lòng đăng nhập lại.');
         }
 
-        // Sử dụng user_id nếu có, nếu không thì dùng id
-        const userId = currentUser.user_id || currentUser.id;
-
-        const updateData = {
-          email: editData.email?.trim() || null,
-          phoneNum: editData.phoneNum?.trim() || null
-        };
+        // Tạo dữ liệu cập nhật
+        const updateData = {};
         
-        if (editData.username && editData.username.trim() !== userData.username) {
+        // Thêm vào các trường thông tin cần cập nhật
+        if (editData.email !== undefined) {
+          updateData.email = editData.email?.trim() || null;
+        }
+        
+        if (editData.phoneNum !== undefined) {
+          updateData.phoneNum = editData.phoneNum?.trim() || null;
+        }
+        
+        if (editData.username) {
           updateData.username = editData.username.trim();
         }
+        
+        // Kiểm tra xem có dữ liệu để cập nhật không
+        if (Object.keys(updateData).length === 0) {
+          setIsEditingPersonal(false);
+          setError('Không có thông tin nào được thay đổi');
+          setIsLoading(false);
+          return;
+        }
 
+        console.log(`Cập nhật thông tin cá nhân với ID: ${userId}, dữ liệu:`, updateData);
+        
+        // Gọi phương thức updateProfile từ AuthService
         const updatedUser = await AuthService.updateProfile(userId, updateData);
+        console.log('Kết quả cập nhật:', updatedUser);
+        
         if (updatedUser) {
-          // Cập nhật cả userData và editData
-          const newData = {
-            ...userData,
-            ...updatedUser
+          // Cập nhật profile trong localStorage
+          const updatedProfile = {
+            ...profile,
+            ...updateData,
+            // Đảm bảo ID được Save trong profile
+            user_id: userId,
+            id: userId
           };
-          setUserData(newData);
-          setEditData({
-            username: newData.username || '',
-            email: newData.email || '',
-            phoneNum: newData.phoneNum || '',
-            name: newData.name || ''
-          });
-          setError('Cập nhật thành công');
+          
+          localStorage.setItem('profile', JSON.stringify(updatedProfile));
+          console.log('Đã cập nhật profile trong localStorage:', updatedProfile);
+          
+          // Hiển thị thông báo thành công
+          alert('Cập nhật thông tin cá nhân thành công! Trang sẽ được tải lại để áp dụng các thay đổi.');
+          
+          // Tải lại trang để hiển thị thông tin mới nhất
+          window.location.reload();
         }
       } catch (error) {
         console.error('Lỗi cập nhật thông tin:', error);
@@ -151,8 +260,9 @@ const UserInformation = () => {
       } finally {
         setIsLoading(false);
       }
+    } else {
+      setIsEditingPersonal(!isEditingPersonal);
     }
-    setIsEditingPersonal(!isEditingPersonal);
   };
 
   const handleInputChange = (field, value) => {
@@ -173,33 +283,63 @@ const UserInformation = () => {
       try {
         setIsLoading(true);
         setError(null);
-        const currentUser = AuthService.getCurrentUser();
         
-        if (!currentUser?.user_id && !currentUser?.id) {
-          throw new Error('Vui lòng đăng nhập lại');
+        // Lấy thông tin người dùng hiện tại
+        const currentUser = AuthService.getCurrentUser();
+        console.log('CurrentUser trong handleAvatarChange:', currentUser);
+        
+        // Lấy profile từ AuthService
+        const profile = await AuthService.getProfile();
+        console.log('Profile từ AuthService.getProfile():', profile);
+        
+        // Xác định ID người dùng từ nhiều nguồn
+        const userId = profile?.user_id || profile?.id || currentUser?.user_id || currentUser?.id;
+        console.log('UserID được xác định:', userId);
+        
+        // Kiểm tra userId
+        if (!userId) {
+          throw new Error('Không thể xác định ID người dùng. Vui lòng đăng nhập lại.');
         }
 
-        // Sử dụng user_id nếu có, nếu không thì dùng id
-        const userId = currentUser.user_id || currentUser.id;
-
         const formData = new FormData();
-        formData.append('file', file);  // Giữ nguyên key 'file', auth.service sẽ đổi thành 'image'
-
+        formData.append('image', file);  // Đổi key thành 'image' cho phù hợp với API
+        // Thêm content-type để đảm bảo API hiểu đây là multipart/form-data
+        
+        console.log(`Cập nhật ảnh đại diện với ID: ${userId}, file:`, file.name);
+        
+        // Gọi phương thức updateProfile từ AuthService để cập nhật ảnh đại diện
         const updatedUser = await AuthService.updateProfile(userId, formData);
+        console.log('Kết quả cập nhật ảnh đại diện:', updatedUser);
+        
         if (updatedUser) {
-          // Cập nhật cả userData và editData
-          const newData = {
-            ...userData,
-            ...updatedUser
+          // Cập nhật cả userData và editData với dữ liệu mới từ API
+          setUserData(updatedUser); // Cập nhật userData trực tiếp với dữ liệu mới
+          
+          // Cập nhật profile trong localStorage
+          // Đảm bảo giữ nguyên các trường có sẵn trong profile
+          const updatedProfile = {
+            ...profile,
+            imgUrl: updatedUser.imgUrl,
+            // Đảm bảo ID được Save trong profile
+            user_id: userId,
+            id: userId
           };
-          setUserData(newData);
+          
+          localStorage.setItem('profile', JSON.stringify(updatedProfile));
+          console.log('Đã cập nhật profile trong localStorage:', updatedProfile);
+          
           setEditData({
-            username: newData.username || '',
-            email: newData.email || '',
-            phoneNum: newData.phoneNum || '',
-            name: newData.name || ''
+            username: updatedUser.username || '',
+            email: updatedUser.email || '',
+            phoneNum: updatedUser.phoneNum || '',
+            name: updatedUser.name || '',
           });
-          setError('Cập nhật ảnh đại diện thành công');
+          
+          // Hiển thị thông báo thành công
+          alert('Cập nhật ảnh đại diện thành công! Trang sẽ được tải lại để hiển thị ảnh mới.');
+          
+          // Tải lại trang sau khi cập nhật thành công
+          window.location.reload();
         }
       } catch (error) {
         console.error('Lỗi cập nhật ảnh đại diện:', error);
@@ -229,8 +369,8 @@ const UserInformation = () => {
             </div>
           )}
           
-          <h1 className="text-2xl font-semibold mb-6 text-gray-700">
-            Thông tin cá nhân
+          <h1 className="text-2xl font-semibold mb-3 text-gray-700">
+          Personal Information
           </h1>
           
           <div className="bg-white p-6 rounded-lg shadow-md mb-6">
@@ -282,28 +422,28 @@ const UserInformation = () => {
                 disabled={isLoading}
               >
                 <FontAwesomeIcon icon={faEdit} className="w-3 h-3" />
-                {isEditingProfile ? 'Lưu' : 'Sửa'}
+                {isEditingProfile ? 'Save' : 'Edit'}
               </button>
             </div>
           </div>
           
           <div className="bg-white p-6 rounded-lg shadow-md">
             <div className="flex items-center justify-between mb-6">
-              <SectionTitle title="Thông tin chi tiết" />
+              <SectionTitle title="Detailed information" />
               <button 
                 className={`text-text py-1 px-3 rounded text-xs border-2 border-gray-200 flex items-center justify-center gap-1 hover:bg-slate-300 ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
                 onClick={handleEditPersonal}
                 disabled={isLoading}
               >
                 <FontAwesomeIcon icon={faEdit} className="w-3 h-3" />
-                {isEditingPersonal ? 'Lưu' : 'Sửa'}
+                {isEditingPersonal ? 'Save' : 'Edit'}
               </button>
             </div>
             
             <div className="grid grid-cols-2 gap-6">
               <div>
                 <label className="block text-gray-700 mb-2">
-                  Tên đăng nhập
+                  Username
                 </label>
                 <div className="font-semibold text-text">
                   {isEditingPersonal ? (
@@ -322,7 +462,7 @@ const UserInformation = () => {
               
               <div>
                 <label className="block text-gray-700 mb-2">
-                  Mật khẩu
+                  Password
                 </label>
                 <div className="font-semibold text-text">
                   ********
@@ -350,7 +490,7 @@ const UserInformation = () => {
               
               <div>
                 <label className="block text-gray-700 mb-2">
-                  Số điện thoại
+                  Phone
                 </label>
                 <div className="font-semibold text-text">
                   {isEditingPersonal ? (
@@ -366,6 +506,70 @@ const UserInformation = () => {
                   )}
                 </div>
               </div>
+
+              {/* Tạm thời ẩn các trường này vì chưa cần đến
+              <div>
+                <label className="block text-gray-700 mb-2">
+                  Chiều cao (cm)
+                </label>
+                <div className="font-semibold text-text">
+                  {isEditingProfile ? (
+                    <input
+                      type="number"
+                      value={editData.height === undefined ? userData.height || '' : editData.height}
+                      onChange={(e) => handleInputChange('height', e.target.value)}
+                      className="w-full border-b-2 border-gray-300 focus:border-orange-400 outline-none px-2 py-1"
+                      placeholder="Nhập chiều cao (cm)"
+                    />
+                  ) : (
+                    userData.height ? `${userData.height} cm` : 'Chưa có'
+                  )}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-gray-700 mb-2">
+                  Cân nặng (kg)
+                </label>
+                <div className="font-semibold text-text">
+                  {isEditingProfile ? (
+                    <input
+                      type="number"
+                      value={editData.weight === undefined ? userData.weight || '' : editData.weight}
+                      onChange={(e) => handleInputChange('weight', e.target.value)}
+                      className="w-full border-b-2 border-gray-300 focus:border-orange-400 outline-none px-2 py-1"
+                      placeholder="Nhập cân nặng (kg)"
+                    />
+                  ) : (
+                    userData.weight ? `${userData.weight} kg` : 'Chưa có'
+                  )}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-gray-700 mb-2">
+                  Giới tính
+                </label>
+                <div className="font-semibold text-text">
+                  {isEditingProfile ? (
+                    <select
+                      value={editData.gender === undefined ? userData.gender || '' : editData.gender}
+                      onChange={(e) => handleInputChange('gender', e.target.value)}
+                      className="w-full border-b-2 border-gray-300 focus:border-orange-400 outline-none px-2 py-1"
+                    >
+                      <option value="">Chọn giới tính</option>
+                      <option value="male">Nam</option>
+                      <option value="female">Nữ</option>
+                      <option value="other">Khác</option>
+                    </select>
+                  ) : (
+                    userData.gender === 'male' ? 'Nam' : 
+                    userData.gender === 'female' ? 'Nữ' : 
+                    userData.gender === 'other' ? 'Khác' : 'Chưa có'
+                  )}
+                </div>
+              </div>
+              */}
             </div>
           </div>
         </div>

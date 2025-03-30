@@ -18,7 +18,7 @@ export const ExerciseDetail = () => {
     const [steps, setSteps] = useState([]);
     const [relatedExercises, setRelatedExercises] = useState([]);
     
-    const youtubeUrl = exercise?.videoUrl || "https://www.youtube.com/watch?v=FeR-4_Opt-g";
+    const youtubeUrl = exercise?.video_rul || "https://www.youtube.com/watch?v=FeR-4_Opt-g";
     const embedUrl = useMemo(() => youtubeUrl.replace("watch?v=", "embed/"), [youtubeUrl]);
     
     const [currentStep, setCurrentStep] = useState(1);
@@ -33,23 +33,29 @@ export const ExerciseDetail = () => {
             setError(null);
             
             // Lấy thông tin chi tiết bài tập
-            const exerciseResponse = await ExerciseService.getExerciseById(id);
+            const exerciseResponse = await ExerciseService.getById(id);
             const exerciseData = exerciseResponse.data.data || exerciseResponse.data;
+            
+            // Chỉ log này để kiểm tra dữ liệu
+            console.log('EXERCISE DETAIL DATA:', exerciseData);
+            
             setExercise(exerciseData);
             
-            // Lấy các bước thực hiện
-            const stepsResponse = await ExerciseService.getExerciseSteps(id);
-            const stepsData = stepsResponse.data.data || stepsResponse.data;
-            setSteps(stepsData || []);
+            // Kiểm tra và sử dụng step từ response (không phải steps)
+            if (exerciseData.step && Array.isArray(exerciseData.step)) {
+                setSteps(exerciseData.step);
+            } else {
+                setSteps([]);
+            }
             
             // Lấy các bài tập liên quan (chỉ lấy 3 bài tập)
-            const allExercisesResponse = await ExerciseService.getAllExercises();
+            const allExercisesResponse = await ExerciseService.getAll();
             const allExercises = allExercisesResponse.data.data || allExercisesResponse.data;
             
             if (Array.isArray(allExercises)) {
                 // Lọc ra các bài tập khác với bài tập hiện tại và lấy tối đa 3 bài
                 const related = allExercises
-                    .filter(ex => ex.id !== parseInt(id))
+                    .filter(ex => ex.exercisepost_id !== parseInt(id))
                     .slice(0, 3);
                 setRelatedExercises(related);
             }
@@ -98,7 +104,7 @@ export const ExerciseDetail = () => {
                         <img 
                             alt={exercise.name} 
                             className="w-full h-[400px] object-cover" 
-                            src={exercise.imgUrl || "https://placehold.co/600x400"}
+                            src={exercise.img_url || "https://placehold.co/600x400"}
                             onError={(e) => {
                                 e.target.src = "https://placehold.co/600x400";
                             }}
@@ -111,7 +117,7 @@ export const ExerciseDetail = () => {
                         </div>
 
                         {/* Video */}
-                        {exercise.videoUrl && (
+                        {exercise.video_rul && (
                             <div className="mt-4 flex flex-col items-center justify-center min-h-[200px] md:h-[407px] bg-gray-200">
                                 <div className="w-full h-full cursor-pointer" onClick={() => setIsOpen(true)}>
                                     <iframe
@@ -142,16 +148,6 @@ export const ExerciseDetail = () => {
                                     >
                                         <h3 className="font-semibold text-lg">Bước {step.step_number || index + 1}</h3>
                                         <p className="text-gray-700">{step.instruction}</p>
-                                        {step.imgUrl && (
-                                            <img 
-                                                src={step.imgUrl} 
-                                                alt={`Step ${step.step_number || index + 1}`} 
-                                                className="mt-2 w-full h-[200px] object-cover rounded-md"
-                                                onError={(e) => {
-                                                    e.target.src = "https://placehold.co/600x400";
-                                                }}
-                                            />
-                                        )}
                                     </div>
                                 ))}
                             </div>
@@ -169,14 +165,14 @@ export const ExerciseDetail = () => {
                             {relatedExercises.length > 0 ? (
                                 relatedExercises.map(relatedExercise => (
                                     <Link 
-                                        to={`/exercise-posts/${relatedExercise.id}`} 
-                                        key={relatedExercise.id}
+                                        to={`/exercise-post/${relatedExercise.exercisepost_id}`} 
+                                        key={relatedExercise.exercisepost_id}
                                         className="bg-white shadow-md overflow-hidden flex items-center gap-4 hover:shadow-lg transition-shadow"
                                     >
                                         <img 
                                             alt={relatedExercise.name} 
                                             className="w-24 h-24 object-cover" 
-                                            src={relatedExercise.imgUrl || "https://placehold.co/600x400"}
+                                            src={relatedExercise.img_url || "https://placehold.co/600x400"}
                                             onError={(e) => {
                                                 e.target.src = "https://placehold.co/600x400";
                                             }}
@@ -190,7 +186,7 @@ export const ExerciseDetail = () => {
                                 <div className="text-center text-gray-500">Không có bài tập liên quan</div>
                             )}
                             <div className='w-full flex justify-end'>
-                                <Link to="/exercise-posts">
+                                <Link to="/exercise">
                                     <Button>
                                         Xem thêm
                                     </Button>

@@ -1,188 +1,200 @@
-import axios from 'axios';
-const API_URL = 'http://localhost:3000';
+import ApiService from './plan.service';
+import UserService from './user.service';
 
 class AuthService {
-  async register(username, name, password) {
-    try {
-      const response = await axios.post(`${API_URL}/users`, {
-        username,
-        name,
-        password,
-        role_id: Number(1) // Đảm bảo role_id là number type
-      }, {
-        headers: {
-          'Content-Type': 'application/json'
-        }
-      });
-      return response.data;
-    } catch (error) {
-      throw this.handleError(error);
-    }
-  }
-
-  async login(username, password) {
-    try {
-      const response = await axios.post(`${API_URL}/auth/login`, {
-        username,
-        password,
-      });
-
-      if (response.data.access_token) {
-        this.setTokenCookie(response.data.access_token);
-        const userData = {
-          ...response.data.user,
-          id: response.data.user.user_id // Thay đổi từ id sang user_id để phù hợp với BE
-        };
-        localStorage.setItem('user', JSON.stringify(userData));
-      }
-      return response.data;
-    } catch (error) {
-      throw this.handleError(error);
-    }
-  }
-
-  setTokenCookie(token) {
-    document.cookie = `access_token=${token}; path=/; secure; samesite=strict; max-age=86400`;
-  }
-
-  getTokenFromCookie() {
-    const cookies = document.cookie.split(';');
-    const tokenCookie = cookies.find(cookie => cookie.trim().startsWith('access_token='));
-    return tokenCookie ? tokenCookie.split('=')[1] : null;
-  }
-
-  logout() {
-    document.cookie = 'access_token=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;';
-    localStorage.removeItem('user');
-    localStorage.removeItem('profile');
-  }
-
   getCurrentUser() {
-    const userStr = localStorage.getItem('user');
-    if (!userStr) return null;
     try {
-      return JSON.parse(userStr);
-    } catch (error) {
-      console.error('Lỗi khi đọc dữ liệu người dùng:', error);
+      const userStr = localStorage.getItem('user');
+      return userStr ? JSON.parse(userStr) : null;
+    } catch (e) {
+      console.error('Lỗi khi đọc thông tin người dùng từ localStorage:', e);
       return null;
     }
   }
 
+  isLoggedIn() {
+    const user = this.getCurrentUser();
+    const token = localStorage.getItem('token');
+    return !!user && !!token;
+  }
+
+  getAuthHeader() {
+    const token = localStorage.getItem('token');
+    return token ? { Authorization: `Bearer ${token}` } : {};
+  }
+
+  login(username, password) {
+    // Xóa dữ liệu người dùng cũ trước khi đăng nhập mới
+    localStorage.removeItem('profile');
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    return ApiService.login(username, password);
+  }
+
+  logout() {
+    // Xóa dữ liệu người dùng khi đăng xuất
+    localStorage.removeItem('profile');
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    return ApiService.logout ? ApiService.logout() : Promise.resolve();
+  }
+
+  register(userData) {
+    return ApiService.register(userData);
+  }
+
   async getProfile() {
     try {
+      // Trước tiên, kiểm tra nếu đã có profile trong localStorage
+      const storedProfileStr = localStorage.getItem('profile');
+      let storedProfile = null;
+      
+      // Nếu có profile trong localStorage, lưu lại để sử dụng trong trường hợp API lỗi
+      if (storedProfileStr) {
+        try {
+          storedProfile = JSON.parse(storedProfileStr);
+        } catch (e) {
+          console.error('Lỗi khi parse profile từ localStorage:', e);
+        }
+      }
+      
       const currentUser = this.getCurrentUser();
-      // Sửa để sử dụng user_id thay vì id
-      if (!currentUser?.user_id && !currentUser?.id) {
-        throw new Error('Không tìm thấy thông tin người dùng');
+      
+      // Kiểm tra nếu không có thông tin người dùng
+      if (!currentUser) {
+        console.warn('Không có thông tin người dùng trong localStorage');
+        
+        // Sử dụng profile từ localStorage nếu có
+        if (storedProfile) {
+          console.warn('Sử dụng profile từ localStorage');
+          return storedProfile;
+        }
+        
+        // Nếu không có thông tin, thử lấy từ token
+        const token = localStorage.getItem('token');
+        if (token) {
+          // Token tồn tại nhưng không có user, cần đăng nhập lại
+          console.warn('Có token nhưng không có thông tin user, cần đăng nhập lại');
+        }
+        
+        console.error('Không tìm thấy thông tin người dùng');
+        return null;
       }
 
-      const userId = currentUser.user_id || currentUser.id;
+      // Tìm bất kỳ ID nào có thể sử dụng được
+      const userId = currentUser.user_id || currentUser.id || currentUser.userId || currentUser._id;
       
-      const response = await axios.get(`${API_URL}/users/${userId}`, {
-        headers: this.getAuthHeader()
-      });
-      
-      if (response.data) {
-        // Lưu đầy đủ thông tin vào localStorage
-        localStorage.setItem('profile', JSON.stringify(response.data));
+      // Kiểm tra ID sâu hơn nếu không tìm thấy ID thông thường
+      if (!userId) {
+        console.warn('Không tìm thấy ID người dùng trong các trường thông thường');
+        
+        // Nếu có profile cũ, sử dụng nó
+        if (storedProfile) {
+          console.warn('Sử dụng profile từ localStorage do không tìm thấy ID');
+          return storedProfile;
+        }
+        
+        // Sử dụng currentUser làm profile nếu không còn cách nào khác
+        console.warn('Sử dụng currentUser làm profile do không tìm thấy ID');
+        return currentUser;
       }
-      return response.data;
+      
+      // Thử lấy profile cá nhân (cần token)
+      try {
+        const response = await UserService.getMyProfile();
+        const profileData = response?.data;
+        
+        // Lưu thông tin mới vào localStorage
+        if (profileData) {
+          localStorage.setItem('profile', JSON.stringify(profileData));
+          return profileData;
+        }
+      } catch (myProfileError) {
+        console.error('Lỗi khi gọi API getMyProfile:', myProfileError);
+        
+        // Thử gọi API getUserProfile với userId
+        try {
+          const response = await UserService.getUserProfile(userId);
+          const profileData = response?.data;
+          
+          if (profileData) {
+            localStorage.setItem('profile', JSON.stringify(profileData));
+            return profileData;
+          }
+        } catch (profileError) {
+          console.error('Lỗi khi gọi API getUserProfile:', profileError);
+          
+          // Nếu có lỗi khi gọi API, sử dụng thông tin từ localStorage
+          if (storedProfile) {
+            console.warn('Sử dụng profile từ localStorage do API lỗi');
+            return storedProfile;
+          }
+          
+          // Nếu không có trong localStorage, sử dụng thông tin từ currentUser
+          console.warn('Sử dụng thông tin từ currentUser làm profile');
+          return currentUser;
+        }
+      }
     } catch (error) {
-      // Nếu API lỗi, thử lấy từ localStorage
+      console.error('Lỗi khi lấy profile:', error);
+      
+      // Cố gắng lấy thông tin profile từ localStorage nếu có
       const storedProfile = localStorage.getItem('profile');
       if (storedProfile) {
-        return JSON.parse(storedProfile);
+        try {
+          console.warn('Sử dụng profile từ localStorage do có lỗi');
+          return JSON.parse(storedProfile);
+        } catch (e) {
+          console.error('Lỗi khi parse profile từ localStorage:', e);
+        }
       }
-      throw this.handleError(error);
+      
+      // Cố gắng lấy thông tin user từ localStorage
+      const userData = localStorage.getItem('user');
+      if (userData) {
+        try {
+          console.warn('Sử dụng user data từ localStorage do không có profile');
+          return JSON.parse(userData);
+        } catch (e) {
+          console.error('Lỗi khi parse user data từ localStorage:', e);
+        }
+      }
+      
+      return null;
     }
   }
 
   async updateProfile(userId, updateData) {
     try {
-      // Nếu là upload ảnh
-      if (updateData instanceof FormData) {
-        const formData = new FormData();
-        formData.append('image', updateData.get('file')); // Key phải là 'image'
-
-        const response = await axios.patch(
-          `${API_URL}/users/profile/${userId}`,
-          formData,
-          { 
-            headers: {
-              ...this.getAuthHeader()
-            }
-          }
-        );
-
-        if (response.data) {
-          const currentProfile = JSON.parse(localStorage.getItem('profile') || '{}');
-          const updatedProfile = {
-            ...currentProfile,
-            ...response.data
-          };
-          localStorage.setItem('profile', JSON.stringify(updatedProfile));
-        }
-
+      const response = await UserService.updateUserProfile(userId, updateData);
+      
+      // Cập nhật thông tin trong localStorage nếu cập nhật thành công
+      if (response && response.data) {
+        // Lưu thông tin mới vào localStorage
+        localStorage.setItem('profile', JSON.stringify(response.data));
         return response.data;
-      } 
-      
-      // Nếu là update thông tin thường
-      // Đảm bảo các trường sử dụng đúng định dạng snake_case theo BE
-      const updatedData = { ...updateData };
-      if (updatedData.healthInformation !== undefined) {
-        updatedData.Health_information = updatedData.healthInformation;
-        delete updatedData.healthInformation;
       }
-      
-      const response = await axios.patch(
-        `${API_URL}/users/profile/${userId}`,
-        updatedData,
-        {
-          headers: {
-            ...this.getAuthHeader(),
-            'Content-Type': 'application/json'
-          }
-        }
-      );
-
-      if (response.data) {
-        const currentProfile = JSON.parse(localStorage.getItem('profile') || '{}');
-        const updatedProfile = {
-          ...currentProfile,
-          ...response.data
-        };
-        localStorage.setItem('profile', JSON.stringify(updatedProfile));
-      }
-
-      return response.data;
+      return null;
     } catch (error) {
       throw this.handleError(error);
     }
   }
 
-  getAuthHeader() {
-    const token = this.getTokenFromCookie();
-    if (token) {
-      return { 
-        Authorization: `Bearer ${token}`
-      };
-    }
-    return {};
-  }
-
   handleError(error) {
     if (error.response) {
-      const message = error.response.data.message || 'Có lỗi xảy ra';
+      const message = error.response.data?.message || 'Có lỗi xảy ra';
       if (error.response.status === 500) {
         return new Error('Lỗi hệ thống, vui lòng thử lại sau');
+      }
+      if (error.response.status === 401) {
+        // Xóa token và user nếu không có quyền truy cập
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        return new Error('Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại');
       }
       return new Error(message);
     }
     return error;
-  }
-
-  isLoggedIn() {
-    return !!this.getTokenFromCookie();
   }
 }
 

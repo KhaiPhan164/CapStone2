@@ -1,28 +1,42 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useLocation } from "react-router-dom";
 import UserInformation from "./UserInformation";
 import Header from "../../layout/Header";
 import FullCalendars from "./FullCalendar";
+import PlanListTab from "./User/PlanListTab";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faCalendar } from "@fortawesome/free-solid-svg-icons";
-import { useNavigate } from "react-router-dom";
-import { UserOutlined, AppstoreOutlined } from "@ant-design/icons";
+import { faCalendar, faClipboardList } from "@fortawesome/free-solid-svg-icons";
 
-const ProfileSidebar = () => {
+const ProfileSidebar = ({ initialTab }) => {
+  const location = useLocation();
+  
+  // Xác định tab mặc định từ prop hoặc URL
+  const getDefaultTab = () => {
+    // Kiểm tra xem có tham số activeTab trên URL không
+    const queryParams = new URLSearchParams(location.search);
+    const tabParam = queryParams.get('activeTab');
+    
+    if (tabParam === 'plans') return 'plans';
+    if (initialTab) return initialTab;
+    return "home"; // Tab mặc định
+  };
+  
   // Dùng state để theo dõi lựa chọn của người dùng
-  const [selectedSection, setSelectedSection] = useState("home"); // 'home' là mặc định
-  const navigate = useNavigate();
-
-  const user = JSON.parse(localStorage.getItem('user')) || {};
-  const isGymOwner = user.role_id === 4;
-  const isPT = user.role_id === 3;
+  const [selectedSection, setSelectedSection] = useState(getDefaultTab());
+  
+  // Cập nhật tab khi URL thay đổi
+  useEffect(() => {
+    const queryParams = new URLSearchParams(location.search);
+    const tabParam = queryParams.get('activeTab');
+    
+    if (tabParam === 'plans') {
+      setSelectedSection('plans');
+    }
+  }, [location.search]);
 
   // Hàm để xử lý sự thay đổi khi người dùng chọn một mục
   const handleSelection = (section) => {
     setSelectedSection(section);
-  };
-
-  const handleNavigate = (path) => {
-    navigate(path);
   };
 
   // Hàm hiển thị nội dung tùy theo mục đã chọn
@@ -38,6 +52,12 @@ const ProfileSidebar = () => {
         return (
           <div className="">
             <FullCalendars/>
+          </div>
+        );
+      case "plans":
+        return (
+          <div className="">
+            <PlanListTab />
           </div>
         );
       default:
@@ -66,7 +86,7 @@ const ProfileSidebar = () => {
                   alt="Ảnh đại diện"
                   className="mr-3 ml-2 w-6 h-6 filter invert" 
                 />
-                Thông tin cá nhân
+                  Personal Information
               </div>
             </li>
             <li
@@ -82,33 +102,24 @@ const ProfileSidebar = () => {
                 Schedule
               </div>
             </li>
-            {isGymOwner && (
-              <li
-                onClick={() => handleNavigate('/gymowner/pt-management')}
-                className="cursor-pointer block p-2 rounded-xl bg-gray-400 hover:bg-primary-500"
-              >
-                <div className="flex items-center font-bold text-white">
-                  <UserOutlined className="mr-3 ml-2 w-6 h-6" />
-                  PT Management
-                </div>
-              </li>
-            )}
-            {isPT && (
-              <li
-                onClick={() => handleNavigate('/pt/exercise-management')}
-                className="cursor-pointer block p-2 rounded-xl bg-gray-400 hover:bg-primary-500"
-              >
-                <div className="flex items-center font-bold text-white">
-                  <AppstoreOutlined className="mr-3 ml-2 w-6 h-6" />
-                  Exercise Management
-                </div>
-              </li>
-            )}
+            <li
+              onClick={() => handleSelection("plans")}
+              className={`cursor-pointer block p-2 rounded-xl  ${
+                selectedSection === "plans"
+                  ? "bg-primary-500 text-gray-600  "
+                  : "bg-gray-400"
+              }`}
+            >
+              <div className="flex items-center font-bold text-white">
+              <FontAwesomeIcon icon={faClipboardList} className="mr-3 ml-2 w-6 h-6" />
+                Workout Plan  
+              </div>
+            </li>
           </ul>
         </div>
 
         {/* Thông tin người dùng bên phải */}
-        <div className="flex-1 p-6">
+        <div className="flex-1 pt-6 pl-6 pb-6">
           {/* Render nội dung tương ứng với mục đã chọn */}
           {renderContent()}
         </div>

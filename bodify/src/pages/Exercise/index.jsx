@@ -34,7 +34,7 @@ export const ExerciseHome = () => {
       const searchLower = searchTerm.toLowerCase();
       return exercise.name?.toLowerCase().includes(searchLower) ||
              exercise.description?.toLowerCase().includes(searchLower) ||
-             exercise.tags?.some(tag => tag.tag?.tagName?.toLowerCase().includes(searchLower));
+             exercise.exerciseposttag?.some(tag => tag.tag?.tag_name?.toLowerCase().includes(searchLower));
     });
     setFilteredExercises(filtered);
     setTotalPages(Math.ceil(filtered.length / ITEMS_PER_PAGE));
@@ -48,13 +48,13 @@ export const ExerciseHome = () => {
       const authHeader = AuthService.getAuthHeader();
       if (authHeader.Authorization) {
         // Thiết lập headers cho ExerciseService nếu cần
-        // Hiện tại ExerciseService.getAllExercises() không cần token nhưng để đề phòng API thay đổi
+        // Hiện tại ExerciseService.getAll() không cần token nhưng để đề phòng API thay đổi
       }
       
-      const response = await ExerciseService.getAllExercises();
+      const response = await ExerciseService.getAll();
       console.log('API response:', response.data);
       
-      // Kiểm tra cấu trúc response và lấy mảng exercises từ response.data.data
+      // Kiểm tra cấu trúc response và lấy mảng exercises từ response.data
       if (response.data && Array.isArray(response.data.data)) {
         // Trường hợp response có dạng {message: '...', data: Array(...)}
         const exercisesData = response.data.data;
@@ -125,10 +125,10 @@ export const ExerciseHome = () => {
           ) : filteredExercises.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {getCurrentPageExercises().map((exercise) => (
-                <div key={exercise.id} className="bg-white shadow-md overflow-hidden">
-                  <Link to={`/exercise-posts/${exercise.id}`}>
+                <div key={exercise.exercisepost_id} className="bg-white shadow-md overflow-hidden">
+                  <Link to={`/exercise-post/${exercise.exercisepost_id}`}>
                     <img 
-                      src={exercise.imgUrl || "https://storage.googleapis.com/a1aa/image/cD-sKP-sj6D5N0EfMvBgXVgHCnSaBHEl4rdOuhfaNkQ.jpg"} 
+                      src={exercise.img_url || "https://storage.googleapis.com/a1aa/image/cD-sKP-sj6D5N0EfMvBgXVgHCnSaBHEl4rdOuhfaNkQ.jpg"} 
                       alt={exercise.name || 'Exercise image'} 
                       className="w-full h-[200px] object-cover" 
                       onError={(e) => {
@@ -137,7 +137,7 @@ export const ExerciseHome = () => {
                     />
                   </Link>
                   <div className="p-4">
-                    <Link to={`/exercise-posts/${exercise.id}`}>
+                    <Link to={`/exercise-post/${exercise.exercisepost_id}`}>
                       <h2 className="text-lg font-bold mb-2 text-gray-800 leading-tight">
                         {exercise.name}
                       </h2>
@@ -146,12 +146,12 @@ export const ExerciseHome = () => {
                       {exercise.description}
                     </p>
                     <div className="flex gap-2 flex-wrap">
-                      {Array.isArray(exercise.tags) && exercise.tags.map((tagObj, index) => (
+                      {Array.isArray(exercise.exerciseposttag) && exercise.exerciseposttag.map((tagObj, index) => (
                         <span 
-                          key={tagObj.tagId || index} 
+                          key={tagObj.tag_id || index} 
                           className="text-xs bg-gray-100 text-gray-600 rounded-full px-2 py-1"
                         >
-                          {tagObj.tag?.tagName || 'Unknown Tag'}
+                          {tagObj.tag?.tag_name || 'Unknown Tag'}
                         </span>
                       ))}
                     </div>
@@ -160,7 +160,7 @@ export const ExerciseHome = () => {
               ))}
             </div>
           ) : (
-            <div className="text-center py-4">Không tìm thấy bài tập nào</div>
+            <div className="text-center py-4 italic">No exercises found</div>
           )}
           {filteredExercises.length > 0 && (
             <Pagination totalPages={totalPages} onPageChange={handlePageChange} />
