@@ -10,6 +10,8 @@ import ExerciseManagement from './pages/UserProfile/PT/ExerciseManagement'
 import PTManagement from './pages/UserProfile/GymOwner/PTManagement'
 import ProfileSidebar from './pages/UserProfile/ProfileSidebar'
 import FormPT from './pages/Register/FormPT'
+import GymList from './GymList'
+import GymDetail from './GymDetail'
 
 export const ROUTES  = [
     {
@@ -79,6 +81,14 @@ export const ROUTES  = [
     {
         path: '/register-pt',
         element: <FormPT/>
+    },
+    {
+        path: '/gyms',
+        element: <GymList/>
+    },
+    {
+        path: '/users/public/:id',
+        element: <GymDetail/>
     },
     {
         path: '/admin/*',

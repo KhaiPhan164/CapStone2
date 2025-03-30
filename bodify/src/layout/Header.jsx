@@ -205,6 +205,9 @@ const Header = () => {
           <Link to="/exercise">
             <a className="cursor-pointer hover:text-gray-400">Exercise</a>
           </Link>
+          <Link to="/gyms">
+            <a className="cursor-pointer hover:text-gray-400">Gyms</a>
+          </Link>
           <a href="#Programs" className="cursor-pointer hover:text-gray-400">
             Programs
           </a>
