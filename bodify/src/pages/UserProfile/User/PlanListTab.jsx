@@ -168,13 +168,13 @@ const PlanListTab = () => {
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
-        <SectionTitle title="Danh sách kế hoạch tập luyện" />
+        <SectionTitle title="Workout Plan List" />
         <Link 
           to="/plan" 
-          className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 transition flex items-center"
+          className="bg-gray-400 text-white px-4 py-2 rounded-md hover:bg-primary-500 transition flex items-center"
         >
           <FontAwesomeIcon icon={faPlus} className="mr-2" />
-          Tạo kế hoạch mới
+          Create a new plan
         </Link>
       </div>
       
@@ -206,10 +206,10 @@ const PlanListTab = () => {
         </div>
       ) : (
         <div className="bg-gray-50 rounded-lg p-6 text-center">
-          <p className="text-gray-500 mb-4">Bạn chưa có kế hoạch tập luyện nào.</p>
+          <p className="text-gray-500 mb-4 italic">You don't have any workout plan yet.</p>
           <Link 
             to="/plan" 
-            className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 transition inline-flex items-center"
+            className="bg-gray-400 text-white px-4 py-2 rounded-md hover:bg-primary-500 transition inline-flex items-center"
             onClick={(e) => {
               // Sử dụng window.location.href để đảm bảo trang được tải lại hoàn toàn
               e.preventDefault();
@@ -217,7 +217,7 @@ const PlanListTab = () => {
             }}
           >
             <FontAwesomeIcon icon={faPlus} className="mr-2" />
-            Tạo kế hoạch đầu tiên
+            Create first plan
           </Link>
         </div>
       )}

@@ -16,7 +16,7 @@ export const SearchBox = ({ onSearch }) => {
       <div className="flex items-center max-w-[300px] sm:max-w-xl mx-auto rounded-full border border-gray-400 overflow-hidden shadow-sm">
         <input
           type="text"
-          placeholder="Bạn tìm bài tập như thế nào?"
+          placeholder="How do you find exercises?"
           className="flex-1 text-xs w-[300px] sm:text-base py-0 sm:py-2 pl-6 md:pl-8 text-gray-600 italic outline-none"
           value={searchValue}
           onChange={handleChange}

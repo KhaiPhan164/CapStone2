@@ -160,7 +160,7 @@ export const ExerciseHome = () => {
               ))}
             </div>
           ) : (
-            <div className="text-center py-4">Không tìm thấy bài tập nào</div>
+            <div className="text-center py-4 italic">No exercises found</div>
           )}
           {filteredExercises.length > 0 && (
             <Pagination totalPages={totalPages} onPageChange={handlePageChange} />

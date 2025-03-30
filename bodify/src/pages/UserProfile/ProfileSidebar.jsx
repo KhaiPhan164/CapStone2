@@ -86,7 +86,7 @@ const ProfileSidebar = ({ initialTab }) => {
                   alt="Ảnh đại diện"
                   className="mr-3 ml-2 w-6 h-6 filter invert" 
                 />
-                Thông tin cá nhân
+                  Personal Information
               </div>
             </li>
             <li
@@ -112,14 +112,14 @@ const ProfileSidebar = ({ initialTab }) => {
             >
               <div className="flex items-center font-bold text-white">
               <FontAwesomeIcon icon={faClipboardList} className="mr-3 ml-2 w-6 h-6" />
-              Kế hoạch tập luyện
+                Workout Plan  
               </div>
             </li>
           </ul>
         </div>
 
         {/* Thông tin người dùng bên phải */}
-        <div className="flex-1 p-6">
+        <div className="flex-1 pt-6 pl-6 pb-6">
           {/* Render nội dung tương ứng với mục đã chọn */}
           {renderContent()}
         </div>

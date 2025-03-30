@@ -1,0 +1,72 @@
+/* Thiết lập nền cho toàn bộ lịch */
+.fc {
+    font-family: "Arial", sans-serif;
+    background-color: #ffffff;
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+  }
+  
+  /* Header của lịch */
+  .fc-toolbar {
+    background-color: #ff9942;
+    color: white;
+    padding: 10px;
+  }
+  
+  /* Nút bấm trong toolbar */
+  .fc-button {
+    background-color: #4a90e2 !important;
+    outline: none !important;
+    border: none !important;
+    box-shadow: none !important;
+    color: white !important;
+    font-weight: bold;
+    padding: 8px 12px !important;
+    border-radius: 6px !important;
+  }
+  .fc-prev-button, .fc-next-button {
+    background-color: #ff9942 !important;
+}
+.fc-today-button,.fc-dayGridMonth-button,.fc-timeGridWeek-button{
+    background-color: #ffbd83 !important;
+    margin-right: 5px !important;
+}
+.fc-timeGridDay-button{
+    background-color: #ffbd83 !important;
+}
+.fc-col-header-cell-cushion{
+    color: gray;
+}
+  /* Ngày hiện tại */
+  .fc-day-today {
+    background: rgba(74, 144, 226, 0.2) !important;
+  }
+  
+  /* Sự kiện */
+  .fc-event {
+    background-color: #c9c9c9 !important;
+    border: none !important;
+    color: white !important;
+    padding: 5px;
+    border-radius: 6px;
+  }
+  
+  /* Khi di chuột vào sự kiện */
+  .fc-event:hover {
+    background-color: #a4a4a4 !important;
+    cursor: pointer;
+  }
+  
+  /* Lưới thời gian */
+  .fc-timegrid-slot {
+    border-color: #ddd !important;
+  }
+  
+  /* Khi chọn khoảng thời gian */
+  .fc-highlight {
+    background-color: rgba(74, 144, 226, 0.3) !important;
+  }
+  
+  /* Tooltip cho sự kiện */
+  .fc-event-title {
+    font-weight: bold;
+  }

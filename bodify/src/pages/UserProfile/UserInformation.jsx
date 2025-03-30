@@ -65,7 +65,7 @@ const UserInformation = () => {
         // Xác định ID người dùng từ nhiều nguồn
         const userId = profile?.user_id || profile?.id || currentUser?.user_id || currentUser?.id;
         
-        // Đảm bảo ID được lưu vào profile
+        // Đảm bảo ID được Save vào profile
         if (userId) {
           const updatedProfile = {
             ...profile,
@@ -150,13 +150,13 @@ const UserInformation = () => {
         const result = await AuthService.updateProfile(userId, updateData);
         console.log('Kết quả cập nhật:', result);
         
-        // Lưu thông tin mới vào localStorage để đảm bảo dữ liệu được cập nhật
+        // Save thông tin mới vào localStorage để đảm bảo dữ liệu được cập nhật
         if (result) {
           // Cập nhật profile trong localStorage
           const updatedProfile = {
             ...profile,
             ...updateData,
-            // Đảm bảo ID được lưu trong profile
+            // Đảm bảo ID được Save trong profile
             user_id: userId,
             id: userId
           };
@@ -177,7 +177,7 @@ const UserInformation = () => {
         setIsLoading(false);
       }
     } else {
-      // Nếu chưa đang chỉnh sửa, bắt đầu chỉnh sửa
+      // Nếu chưa đang chỉnh Edit, bắt đầu chỉnh Edit
       setIsEditingProfile(true);
     }
   };
@@ -240,7 +240,7 @@ const UserInformation = () => {
           const updatedProfile = {
             ...profile,
             ...updateData,
-            // Đảm bảo ID được lưu trong profile
+            // Đảm bảo ID được Save trong profile
             user_id: userId,
             id: userId
           };
@@ -320,7 +320,7 @@ const UserInformation = () => {
           const updatedProfile = {
             ...profile,
             imgUrl: updatedUser.imgUrl,
-            // Đảm bảo ID được lưu trong profile
+            // Đảm bảo ID được Save trong profile
             user_id: userId,
             id: userId
           };
@@ -369,8 +369,8 @@ const UserInformation = () => {
             </div>
           )}
           
-          <h1 className="text-2xl font-semibold mb-6 text-gray-700">
-            Thông tin cá nhân
+          <h1 className="text-2xl font-semibold mb-3 text-gray-700">
+          Personal Information
           </h1>
           
           <div className="bg-white p-6 rounded-lg shadow-md mb-6">
@@ -422,28 +422,28 @@ const UserInformation = () => {
                 disabled={isLoading}
               >
                 <FontAwesomeIcon icon={faEdit} className="w-3 h-3" />
-                {isEditingProfile ? 'Lưu' : 'Sửa'}
+                {isEditingProfile ? 'Save' : 'Edit'}
               </button>
             </div>
           </div>
           
           <div className="bg-white p-6 rounded-lg shadow-md">
             <div className="flex items-center justify-between mb-6">
-              <SectionTitle title="Thông tin chi tiết" />
+              <SectionTitle title="Detailed information" />
               <button 
                 className={`text-text py-1 px-3 rounded text-xs border-2 border-gray-200 flex items-center justify-center gap-1 hover:bg-slate-300 ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
                 onClick={handleEditPersonal}
                 disabled={isLoading}
               >
                 <FontAwesomeIcon icon={faEdit} className="w-3 h-3" />
-                {isEditingPersonal ? 'Lưu' : 'Sửa'}
+                {isEditingPersonal ? 'Save' : 'Edit'}
               </button>
             </div>
             
             <div className="grid grid-cols-2 gap-6">
               <div>
                 <label className="block text-gray-700 mb-2">
-                  Tên đăng nhập
+                  Username
                 </label>
                 <div className="font-semibold text-text">
                   {isEditingPersonal ? (
@@ -462,7 +462,7 @@ const UserInformation = () => {
               
               <div>
                 <label className="block text-gray-700 mb-2">
-                  Mật khẩu
+                  Password
                 </label>
                 <div className="font-semibold text-text">
                   ********
@@ -490,7 +490,7 @@ const UserInformation = () => {
               
               <div>
                 <label className="block text-gray-700 mb-2">
-                  Số điện thoại
+                  Phone
                 </label>
                 <div className="font-semibold text-text">
                   {isEditingPersonal ? (
