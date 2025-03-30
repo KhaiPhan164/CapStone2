@@ -23,28 +23,13 @@ const PaymentCallback = () => {
                 if (result.success) {
                     setSuccess(true);
                     
-                    // Nếu thanh toán thành công và có membershipData, tạo membership mới
-                    if (result.membershipData) {
-                        try {
-                            await PaymentService.createMembership({
-                                membership_type: result.membershipData.type,
-                                payment_id: result.paymentId,
-                                start_date: new Date().toISOString()
-                            });
-                        } catch (membershipError) {
-                            console.error('Error creating membership:', membershipError);
-                            setError('Payment successful but failed to create membership. Please contact support.');
-                            return;
-                        }
-                    }
-
-                    // Chuyển hướng đến trang status
-                    if (result.orderId) {
-                        navigate(`/payment/status/${result.orderId}`);
+                    // Chuyển hướng đến trang status với orderId
+                    if (callbackData.orderId) {
+                        navigate(`/payment-status?orderId=${callbackData.orderId}`);
                         return;
                     }
                 } else {
-                    setError(result.message || 'Payment processing failed');
+                    setError(result.message || 'Thanh toán thất bại');
                 }
             } catch (err) {
                 setError(err.message);
@@ -66,7 +51,7 @@ const PaymentCallback = () => {
                 <Header />
                 <div className="flex items-center justify-center min-h-screen">
                     <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary-500"></div>
-                    <span className="ml-3 text-gray-600">Processing payment and creating membership...</span>
+                    <span className="ml-3 text-gray-600">Đang xử lý thanh toán...</span>
                 </div>
             </div>
         );
@@ -78,14 +63,14 @@ const PaymentCallback = () => {
                 <Header />
                 <div className="flex flex-col items-center justify-center min-h-screen p-4">
                     <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4">
-                        <strong className="font-bold">Error!</strong>
+                        <strong className="font-bold">Lỗi!</strong>
                         <span className="block sm:inline"> {error}</span>
                     </div>
                     <button
                         onClick={handleBackToHome}
                         className="bg-primary-500 text-white px-4 py-2 rounded hover:bg-primary-600"
                     >
-                        Back to Home
+                        Về trang chủ
                     </button>
                 </div>
             </div>
@@ -103,9 +88,9 @@ const PaymentCallback = () => {
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
                             </svg>
                         </div>
-                        <h2 className="text-2xl font-bold mb-4">Processing Your Membership</h2>
+                        <h2 className="text-2xl font-bold mb-4">Đang xử lý thanh toán của bạn</h2>
                         <p className="text-gray-600 mb-6">
-                            Your payment has been received. We are now setting up your membership.
+                            Chúng tôi đang xác nhận thanh toán của bạn. Vui lòng đợi trong giây lát.
                         </p>
                         <div className="animate-pulse flex justify-center">
                             <div className="h-2 w-24 bg-primary-200 rounded"></div>

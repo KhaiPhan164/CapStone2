@@ -12,12 +12,15 @@ import ProfileSidebar from './pages/UserProfile/ProfileSidebar'
 import FormPT from './pages/Register/FormPT'
 import GymList from './GymList'
 import GymDetail from './GymDetail'
+import PaymentStatus from './pages/Payment/PaymentStatus'
+import PaymentCallback from './pages/Payment/PaymentCallback'
+import { createBrowserRouter } from 'react-router-dom';
 
-export const ROUTES  = [
+const routes = createBrowserRouter([
     {
         path: '/',
         element: <Main/>
-    }, 
+    },
     {
         path: '/admin',
         element: <AdminLayout/>
@@ -29,14 +32,6 @@ export const ROUTES  = [
     {
         path: '/sign-in',
         element: <SignUpForm/>
-    },
-    {
-        path: '/login',
-        element: <SignUpForm/>
-    },
-    {
-        path: '/register',
-        element: <FormPT/>
     },
     {
         path: '/userprofile',
@@ -91,7 +86,17 @@ export const ROUTES  = [
         element: <GymDetail/>
     },
     {
+        path: '/payment-status',
+        element: <PaymentStatus/>
+    },
+    {
+        path: '/payment-callback',
+        element: <PaymentCallback/>
+    },
+    {
         path: '/admin/*',
         element: <AdminLayout/>
     }
-]
+]);
+
+export default routes;

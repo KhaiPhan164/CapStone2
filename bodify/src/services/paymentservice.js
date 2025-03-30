@@ -21,6 +21,11 @@ class PaymentService {
                 }
             );
 
+            // Kiểm tra và mở link thanh toán ZaloPay
+            if (response.data && response.data.payment_url) {
+                window.location.href = response.data.payment_url;
+            }
+
             return response.data;
         } catch (error) {
             console.error('Payment creation error:', error);
@@ -55,7 +60,7 @@ class PaymentService {
             }
 
             const response = await axios.get(
-                `${API_URL}/payment/status/${orderId}`,
+                `${API_URL}/payment/check-status/${orderId}`,
                 {
                     headers: {
                         'Authorization': `Bearer ${token}`
