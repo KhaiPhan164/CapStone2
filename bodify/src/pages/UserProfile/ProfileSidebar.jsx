@@ -4,11 +4,15 @@ import UserInformation from "./UserInformation";
 import Header from "../../layout/Header";
 import FullCalendars from "./FullCalendar";
 import PlanListTab from "./User/PlanListTab";
+import PTManagement from "./GymOwner/PTManagement";
+import MembershipManagement from "./GymOwner/MembershipManagement";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faCalendar, faClipboardList } from "@fortawesome/free-solid-svg-icons";
+import { faCalendar, faClipboardList, faUsers, faDumbbell } from "@fortawesome/free-solid-svg-icons";
 
 const ProfileSidebar = ({ initialTab }) => {
   const location = useLocation();
+  const user = JSON.parse(localStorage.getItem('user'));
+  const isGymOwner = user?.role_id === 4;
   
   // Xác định tab mặc định từ prop hoặc URL
   const getDefaultTab = () => {
@@ -17,6 +21,8 @@ const ProfileSidebar = ({ initialTab }) => {
     const tabParam = queryParams.get('activeTab');
     
     if (tabParam === 'plans') return 'plans';
+    if (tabParam === 'pt-management') return 'pt-management';
+    if (tabParam === 'membership-management') return 'membership-management';
     if (initialTab) return initialTab;
     return "home"; // Tab mặc định
   };
@@ -31,6 +37,10 @@ const ProfileSidebar = ({ initialTab }) => {
     
     if (tabParam === 'plans') {
       setSelectedSection('plans');
+    } else if (tabParam === 'pt-management') {
+      setSelectedSection('pt-management');
+    } else if (tabParam === 'membership-management') {
+      setSelectedSection('membership-management');
     }
   }, [location.search]);
 
@@ -58,6 +68,18 @@ const ProfileSidebar = ({ initialTab }) => {
         return (
           <div className="">
             <PlanListTab />
+          </div>
+        );
+      case "pt-management":
+        return (
+          <div className="">
+            <PTManagement />
+          </div>
+        );
+      case "membership-management":
+        return (
+          <div className="">
+            <MembershipManagement />
           </div>
         );
       default:
@@ -111,10 +133,40 @@ const ProfileSidebar = ({ initialTab }) => {
               }`}
             >
               <div className="flex items-center font-bold text-white">
-              <FontAwesomeIcon icon={faClipboardList} className="mr-3 ml-2 w-6 h-6" />
+                <FontAwesomeIcon icon={faClipboardList} className="mr-3 ml-2 w-6 h-6" />
                 Workout Plan  
               </div>
             </li>
+            {isGymOwner && (
+              <>
+                <li
+                  onClick={() => handleSelection("pt-management")}
+                  className={`cursor-pointer block p-2 rounded-xl ${
+                    selectedSection === "pt-management"
+                      ? "bg-primary-500 text-gray-600"
+                      : "bg-gray-400"
+                  }`}
+                >
+                  <div className="flex items-center font-bold text-white">
+                    <FontAwesomeIcon icon={faUsers} className="mr-3 ml-2 w-6 h-6" />
+                    PT Management
+                  </div>
+                </li>
+                <li
+                  onClick={() => handleSelection("membership-management")}
+                  className={`cursor-pointer block p-2 rounded-xl ${
+                    selectedSection === "membership-management"
+                      ? "bg-primary-500 text-gray-600"
+                      : "bg-gray-400"
+                  }`}
+                >
+                  <div className="flex items-center font-bold text-white">
+                    <FontAwesomeIcon icon={faDumbbell} className="mr-3 ml-2 w-6 h-6" />
+                    Membership Management
+                  </div>
+                </li>
+              </>
+            )}
           </ul>
         </div>
 
