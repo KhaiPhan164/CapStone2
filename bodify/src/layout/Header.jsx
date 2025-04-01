@@ -22,10 +22,18 @@ const Header = () => {
   useEffect(() => {
     // Hàm làm mới profile định kỳ
     const refreshInterval = setInterval(() => {
+      // Chỉ làm mới nếu đã đăng nhập và đã hơn 5 phút kể từ lần làm mới cuối cùng
       if (AuthService.isLoggedIn()) {
-        updateUserProfile();
+        const lastRefreshTime = localStorage.getItem('last_profile_refresh');
+        const now = Date.now();
+        
+        // Nếu chưa làm mới hoặc đã qua 5 phút, làm mới profile
+        if (!lastRefreshTime || (now - Number(lastRefreshTime)) > 300000) { // 5 phút = 300000 ms
+          updateUserProfile();
+          localStorage.setItem('last_profile_refresh', now.toString());
+        }
       }
-    }, 30000); // Làm mới mỗi 30 giây
+    }, 60000); // Kiểm tra mỗi 1 phút thay vì làm mới mỗi 30 giây
 
     return () => clearInterval(refreshInterval);
   }, []);
@@ -141,9 +149,36 @@ const Header = () => {
     setCurrentUser(user);
 
     if (isLoggedIn && user) {
-      console.log("Người dùng đã đăng nhập, cập nhật profile");
-      // Luôn ưu tiên gọi API để lấy thông tin profile mới nhất
+      console.log("Người dùng đã đăng nhập, kiểm tra cập nhật profile");
+      
+      // Thử lấy profile từ localStorage trước
+      try {
+        const storedProfile = localStorage.getItem("profile");
+        if (storedProfile) {
+          const parsedProfile = JSON.parse(storedProfile);
+          console.log("Sử dụng profile từ localStorage:", parsedProfile);
+          setUserProfile(parsedProfile);
+          setShowAccount(true);
+          
+          // Kiểm tra thời gian làm mới cuối cùng
+          const lastRefreshTime = localStorage.getItem('last_profile_refresh');
+          const now = Date.now();
+          
+          // Nếu chưa từng làm mới hoặc đã quá lâu (5 phút), làm mới profile
+          if (!lastRefreshTime || (now - Number(lastRefreshTime)) > 300000) {
+            console.log("Làm mới profile do đã quá thời gian hoặc chưa từng làm mới");
+            updateUserProfile();
+            localStorage.setItem('last_profile_refresh', now.toString());
+          }
+          return;
+        }
+      } catch (e) {
+        console.error("Lỗi khi đọc profile từ localStorage:", e);
+      }
+      
+      // Nếu không có profile trong localStorage, gọi API
       updateUserProfile();
+      localStorage.setItem('last_profile_refresh', Date.now().toString());
     } else {
       console.log("Không có thông tin người dùng hoặc không đăng nhập");
       // Nếu không đăng nhập, đảm bảo xóa userProfile

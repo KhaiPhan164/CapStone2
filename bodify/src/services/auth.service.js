@@ -45,36 +45,24 @@ class AuthService {
 
   async getProfile() {
     try {
-      // Trước tiên, kiểm tra nếu đã có profile trong localStorage
-      const storedProfileStr = localStorage.getItem('profile');
-      let storedProfile = null;
-      
-      // Nếu có profile trong localStorage, lưu lại để sử dụng trong trường hợp API lỗi
-      if (storedProfileStr) {
-        try {
-          storedProfile = JSON.parse(storedProfileStr);
-        } catch (e) {
-          console.error('Lỗi khi parse profile từ localStorage:', e);
-        }
-      }
-      
+      // Lấy thông tin người dùng từ localStorage
       const currentUser = this.getCurrentUser();
+      const token = localStorage.getItem('token');
       
-      // Kiểm tra nếu không có thông tin người dùng
+      // Kiểm tra xem có thông tin người dùng không
       if (!currentUser) {
         console.warn('Không có thông tin người dùng trong localStorage');
         
-        // Sử dụng profile từ localStorage nếu có
-        if (storedProfile) {
-          console.warn('Sử dụng profile từ localStorage');
-          return storedProfile;
-        }
-        
-        // Nếu không có thông tin, thử lấy từ token
-        const token = localStorage.getItem('token');
-        if (token) {
-          // Token tồn tại nhưng không có user, cần đăng nhập lại
-          console.warn('Có token nhưng không có thông tin user, cần đăng nhập lại');
+        // Nếu có profile trong localStorage, sử dụng tạm thời
+        const storedProfileStr = localStorage.getItem('profile');
+        if (storedProfileStr) {
+          try {
+            const storedProfile = JSON.parse(storedProfileStr);
+            console.warn('Sử dụng profile từ localStorage');
+            return storedProfile;
+          } catch (e) {
+            console.error('Lỗi khi parse profile từ localStorage:', e);
+          }
         }
         
         console.error('Không tìm thấy thông tin người dùng');
@@ -84,57 +72,67 @@ class AuthService {
       // Tìm bất kỳ ID nào có thể sử dụng được
       const userId = currentUser.user_id || currentUser.id || currentUser.userId || currentUser._id;
       
-      // Kiểm tra ID sâu hơn nếu không tìm thấy ID thông thường
+      // Nếu không có ID, không thể gọi API theo userID
       if (!userId) {
         console.warn('Không tìm thấy ID người dùng trong các trường thông thường');
-        
-        // Nếu có profile cũ, sử dụng nó
-        if (storedProfile) {
-          console.warn('Sử dụng profile từ localStorage do không tìm thấy ID');
-          return storedProfile;
-        }
         
         // Sử dụng currentUser làm profile nếu không còn cách nào khác
         console.warn('Sử dụng currentUser làm profile do không tìm thấy ID');
         return currentUser;
       }
       
-      // Thử lấy profile cá nhân (cần token)
+      console.log('Đang gọi API để lấy profile với ID:', userId);
+      
+      // Bỏ qua việc gọi getMyProfile vì nó gây ra lỗi 500
+      
+      // Sử dụng trực tiếp getUserProfile với userId
       try {
-        const response = await UserService.getMyProfile();
+        console.log('Thử gọi API getUserProfile với ID:', userId);
+        const response = await UserService.getUserProfile(userId);
         const profileData = response?.data;
         
-        // Lưu thông tin mới vào localStorage
         if (profileData) {
-          localStorage.setItem('profile', JSON.stringify(profileData));
-          return profileData;
+          console.log('Lấy profile thành công từ getUserProfile:', profileData);
+          
+          // Đảm bảo profile có cả user_id và id
+          const updatedProfile = {
+            ...profileData,
+            user_id: profileData.user_id || userId,
+            id: profileData.id || userId
+          };
+          
+          // Lưu thông tin mới vào localStorage
+          localStorage.setItem('profile', JSON.stringify(updatedProfile));
+          return updatedProfile;
         }
-      } catch (myProfileError) {
-        console.error('Lỗi khi gọi API getMyProfile:', myProfileError);
-        
-        // Thử gọi API getUserProfile với userId
+      } catch (profileError) {
+        console.error('Lỗi khi gọi API getUserProfile:', profileError);
+      }
+      
+      // Nếu API thất bại, sử dụng dữ liệu từ localStorage
+      console.warn('Không thể lấy profile từ API, thử dùng localStorage');
+      
+      // Kiểm tra profile trong localStorage
+      const storedProfileStr = localStorage.getItem('profile');
+      if (storedProfileStr) {
         try {
-          const response = await UserService.getUserProfile(userId);
-          const profileData = response?.data;
+          const storedProfile = JSON.parse(storedProfileStr);
+          console.warn('Sử dụng profile từ localStorage do API lỗi');
           
-          if (profileData) {
-            localStorage.setItem('profile', JSON.stringify(profileData));
-            return profileData;
-          }
-        } catch (profileError) {
-          console.error('Lỗi khi gọi API getUserProfile:', profileError);
-          
-          // Nếu có lỗi khi gọi API, sử dụng thông tin từ localStorage
-          if (storedProfile) {
-            console.warn('Sử dụng profile từ localStorage do API lỗi');
-            return storedProfile;
-          }
-          
-          // Nếu không có trong localStorage, sử dụng thông tin từ currentUser
-          console.warn('Sử dụng thông tin từ currentUser làm profile');
-          return currentUser;
+          // Đảm bảo profile có cả user_id và id
+          return {
+            ...storedProfile,
+            user_id: storedProfile.user_id || userId,
+            id: storedProfile.id || userId
+          };
+        } catch (e) {
+          console.error('Lỗi khi parse profile từ localStorage:', e);
         }
       }
+      
+      // Cuối cùng, trả về thông tin user từ localStorage
+      console.warn('Sử dụng thông tin từ currentUser làm profile');
+      return currentUser;
     } catch (error) {
       console.error('Lỗi khi lấy profile:', error);
       

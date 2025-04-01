@@ -37,8 +37,33 @@ class UserService {
 
   async getMyProfile() {
     try {
-      // Endpoint để lấy profile của người dùng đăng nhập
-      return axios.get(`${API_URL}/profile/me`);
+      // Thay vì gọi API trực tiếp, trả về dữ liệu từ localStorage
+      console.log('Sử dụng dữ liệu từ localStorage thay vì gọi API getMyProfile');
+      const storedProfileStr = localStorage.getItem('profile');
+      const storedUser = localStorage.getItem('user');
+      
+      if (storedProfileStr) {
+        try {
+          const profile = JSON.parse(storedProfileStr);
+          return { data: profile };
+        } catch (e) {
+          console.error('Lỗi khi parse profile từ localStorage:', e);
+        }
+      }
+      
+      if (storedUser) {
+        try {
+          const user = JSON.parse(storedUser);
+          return { data: user };
+        } catch (e) {
+          console.error('Lỗi khi parse user từ localStorage:', e);
+        }
+      }
+      
+      throw new Error('Không tìm thấy dữ liệu người dùng trong localStorage');
+      
+      // Bỏ comment dòng dưới nếu API hoạt động trở lại
+      // return axios.get(`${API_URL}/profile/me`);
     } catch (error) {
       console.error('Lỗi khi lấy thông tin profile cá nhân:', error);
       throw error;
