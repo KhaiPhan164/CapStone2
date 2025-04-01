@@ -15,6 +15,7 @@ import GymDetail from './GymDetail'
 import PaymentStatus from './pages/Payment/PaymentStatus'
 import PaymentCallback from './pages/Payment/PaymentCallback'
 import { createBrowserRouter } from 'react-router-dom';
+import TrainerList from "./pages/PTList/TrainerList";
 
 const routes = createBrowserRouter([
     {
@@ -96,6 +97,10 @@ const routes = createBrowserRouter([
     {
         path: '/admin/*',
         element: <AdminLayout/>
+    },
+    {
+        path: '/pt-list',
+        element: <TrainerList/>
     }
 ]);
 
