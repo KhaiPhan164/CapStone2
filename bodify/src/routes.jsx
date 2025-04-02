@@ -9,11 +9,12 @@ import Plan from './pages/UserProfile/User/Plan'
 import ExerciseManagement from './pages/UserProfile/PT/ExerciseManagement'
 import PTManagement from './pages/UserProfile/GymOwner/PTManagement'
 import ProfileSidebar from './pages/UserProfile/ProfileSidebar'
-import FormPT from './pages/Register/FormPT'
+import RegisterPT from './pages/Auth/RegisterPT'
 import GymList from './GymList'
 import GymDetail from './GymDetail'
 import PaymentStatus from './pages/Payment/PaymentStatus'
 import PaymentCallback from './pages/Payment/PaymentCallback'
+import ApprovalPage from './pages/Approval/ApprovalPage'
 import { createBrowserRouter } from 'react-router-dom';
 
 const routes = createBrowserRouter([
@@ -75,7 +76,7 @@ const routes = createBrowserRouter([
     },
     {
         path: '/register-pt',
-        element: <FormPT/>
+        element: <RegisterPT/>
     },
     {
         path: '/gyms',
@@ -96,6 +97,14 @@ const routes = createBrowserRouter([
     {
         path: '/admin/*',
         element: <AdminLayout/>
+    },
+    {
+        path: '/admin/approvals',
+        element: <ApprovalPage role_id={1}/>
+    },
+    {
+        path: '/gymowner/approvals',
+        element: <ApprovalPage role_id={4}/>
     }
 ]);
 

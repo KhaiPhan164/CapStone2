@@ -1,5 +1,8 @@
 import ApiService from './plan.service';
 import UserService from './user.service';
+import axios from 'axios';
+
+const API_URL = 'http://localhost:3000/auth';
 
 class AuthService {
   getCurrentUser() {
@@ -193,6 +196,34 @@ class AuthService {
       return new Error(message);
     }
     return error;
+  }
+
+  async getGyms() {
+    try {
+      const response = await axios.get(`${API_URL}/gyms`);
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
+  async registerPT(formData) {
+    try {
+      // Log formData content for debugging
+      for (let pair of formData.entries()) {
+        console.log(pair[0], pair[1]);
+      }
+
+      const response = await axios.post(`${API_URL}/register-pt`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        }
+      });
+      return response.data;
+    } catch (error) {
+      console.error('RegisterPT error:', error.response || error);
+      throw this.handleError(error);
+    }
   }
 }
 
