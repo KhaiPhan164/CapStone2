@@ -1,77 +1,211 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import timeGridPlugin from "@fullcalendar/timegrid";
 import interactionPlugin from "@fullcalendar/interaction";
+import CreateScheduleModal from "../../components/CreateScheduleModal";
+import ScheduleService from "../../services/scheduleService";
+import PlanService from "../../services/plan.service";
+import { toast } from 'react-hot-toast';
 import "./FullCalendar.css";
-const FullCalendars = () => {
-  const [events, setEvents] = useState([
-    { id: "1", title: "Sự kiện 1", start: "2025-03-28T10:00:00", end: "2025-03-28T12:00:00" }, 
-    { id: "2", title: "Sự kiện 2", start: "2025-03-30T14:00:00", end: "2025-03-30T16:00:00" },
-  ]);
+
+const Calendar = () => {
+  const [events, setEvents] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [selectedTime, setSelectedTime] = useState(null);
+  const [plans, setPlans] = useState([]);
+
+  useEffect(() => {
+    fetchSchedules();
+    fetchPlans();
+  }, []);
+
+  const fetchPlans = async () => {
+    try {
+      const response = await PlanService.getUserPlans();
+      setPlans(response);
+    } catch (err) {
+      console.error('Error fetching plans:', err);
+      toast.error('Không thể tải danh sách kế hoạch');
+    }
+  };
+
+  const fetchSchedules = async () => {
+    try {
+      setLoading(true);
+      const schedules = await ScheduleService.getSchedules();
+      console.log('Fetched schedules:', schedules);
+      
+      // Lọc bỏ các event null
+      const formattedEvents = schedules.filter(event => event !== null);
+      
+      console.log('Formatted events:', formattedEvents);
+      setEvents(formattedEvents);
+    } catch (error) {
+      console.error('Error fetching schedules:', error);
+      toast.error('Không thể tải lịch tập');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleSelect = (selectInfo) => {
-    const title = prompt("Nhập tiêu đề sự kiện:");
-    if (title) {
-      setEvents([
-        ...events,
-        {
-          id: String(new Date().getTime()), // Tạo ID duy nhất
-          title,
-          start: selectInfo.startStr,
-          end: selectInfo.endStr,
-        },
-      ]);
-    }
+    setSelectedTime({
+      start: selectInfo.start,
+      end: selectInfo.end
+    });
+    setIsCreateModalOpen(true);
   };
 
   const handleEventClick = (clickInfo) => {
-    const newTitle = prompt("Chỉnh sửa tiêu đề sự kiện:", clickInfo.event.title);
-    
-    if (newTitle === null) return; // Nếu bấm hủy, không làm gì cả
-    
-    if (newTitle === "") {
-      if (window.confirm("Bạn có chắc chắn muốn xóa sự kiện này?")) {
-        setEvents(events.filter(event => event.id !== clickInfo.event.id));
-      }
-    } else {
-      setEvents(events.map(event => 
-        event.id === clickInfo.event.id ? { ...event, title: newTitle } : event
-      ));
+    const event = clickInfo.event;
+    const confirmDelete = window.confirm(
+      `Bạn có muốn xóa lịch tập này?\n\n` +
+      `Kế hoạch: ${event.extendedProps.planName}\n` +
+      `Ghi chú: ${event.extendedProps.note || 'Không có ghi chú'}\n` +
+      `Ngày: ${event.extendedProps.startDate}\n` +
+      `Thời gian: ${event.extendedProps.startTime} - ${event.extendedProps.endTime}`
+    );
+
+    if (confirmDelete) {
+      handleDeleteSchedule(event.id);
     }
   };
 
+  const handleDeleteSchedule = async (id) => {
+    try {
+      await ScheduleService.deleteSchedule(id);
+      setEvents(prevEvents => prevEvents.filter(event => event.id !== id));
+      toast.success('Xóa lịch tập thành công');
+    } catch (err) {
+      console.error('Error deleting schedule:', err);
+      toast.error('Không thể xóa lịch tập. Vui lòng thử lại.');
+    }
+  };
+
+  const handleScheduleCreated = async () => {
+    await fetchSchedules();
+    setIsCreateModalOpen(false);
+    setSelectedTime(null);
+    toast.success('Tạo lịch thành công');
+  };
+
+  const handleModalClose = () => {
+    setIsCreateModalOpen(false);
+    setSelectedTime(null);
+  };
+
+  const renderEventContent = (eventInfo) => {
+    return (
+      <div className="p-1">
+        <div className="font-semibold">{eventInfo.event.title}</div>
+        <div className="text-sm">{eventInfo.event.extendedProps.note || 'Không có ghi chú'}</div>
+        <div className="text-xs mt-1">
+          {new Date(eventInfo.event.start).toLocaleTimeString('vi-VN', {
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: false
+          })} - {new Date(eventInfo.event.end).toLocaleTimeString('vi-VN', {
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: false
+          })}
+        </div>
+      </div>
+    );
+  };
+
   return (
-    <div className="bg-white rounded-lg shadow-md">
-      <FullCalendar
-        plugins={[dayGridPlugin, interactionPlugin, timeGridPlugin]}
-        initialView="timeGridWeek"
-        headerToolbar={{
-          left: "prev,next today",
-          center: "title",
-          right: "dayGridMonth,timeGridWeek,timeGridDay",
-        }}
-        buttonText={{
-          today: "Today",
-          month: "Month",
-          week: "Week",
-          day: "Day",
-        }}
-        events={events}
-        editable={true}
-        selectable={true} 
-        selectMirror={true} 
-        select={handleSelect} 
-        eventClick={handleEventClick} // Xử lý khi click vào sự kiện
-        slotDuration="01:00:00"
-        slotLabelFormat={{
-          hour: "2-digit",
-          minute: "2-digit",
-          hour12: false,
-        }}
-      />
+    <div className="p-4">
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-2xl font-bold text-gray-800">Lịch Tập</h2>
+        <button
+          onClick={() => {
+            setSelectedTime(null);
+            setIsCreateModalOpen(true);
+          }}
+          className="px-4 py-2 bg-primary-500 text-white rounded-md hover:bg-primary-600 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
+        >
+          Tạo Lịch Mới
+        </button>
+      </div>
+
+      {loading && (
+        <div className="flex justify-center items-center h-64">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500"></div>
+        </div>
+      )}
+
+      {error && (
+        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
+          <span className="block sm:inline">{error}</span>
+        </div>
+      )}
+
+      {!loading && !error && (
+        <div className="bg-white rounded-lg shadow">
+          <FullCalendar
+            plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
+            initialView="timeGridWeek"
+            headerToolbar={{
+              left: 'prev,next today',
+              center: 'title',
+              right: 'dayGridMonth,timeGridWeek,timeGridDay'
+            }}
+            timeZone="local"
+            displayEventTime={true}
+            displayEventEnd={true}
+            events={events}
+            selectable={true}
+            selectMirror={true}
+            dayMaxEvents={true}
+            weekends={true}
+            select={handleSelect}
+            eventClick={handleEventClick}
+            eventContent={renderEventContent}
+            height="auto"
+            locale="vi"
+            slotMinTime="05:00:00"
+            slotMaxTime="22:00:00"
+            allDaySlot={false}
+            slotDuration="00:30:00"
+            expandRows={true}
+            stickyHeaderDates={true}
+            nowIndicator={true}
+            businessHours={{
+              daysOfWeek: [1, 2, 3, 4, 5, 6, 0],
+              startTime: '05:00',
+              endTime: '22:00',
+            }}
+            eventTimeFormat={{
+              hour: '2-digit',
+              minute: '2-digit',
+              hour12: false,
+              meridiem: false
+            }}
+            slotLabelFormat={{
+              hour: '2-digit',
+              minute: '2-digit',
+              hour12: false,
+              meridiem: false
+            }}
+          />
+        </div>
+      )}
+
+      {isCreateModalOpen && (
+        <CreateScheduleModal
+          isOpen={isCreateModalOpen}
+          onClose={handleModalClose}
+          onScheduleCreated={handleScheduleCreated}
+          selectedTime={selectedTime}
+          plans={plans}
+        />
+      )}
     </div>
   );
 };
 
-export default FullCalendars;
+export default Calendar;

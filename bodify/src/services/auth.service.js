@@ -1,5 +1,6 @@
 import ApiService from './plan.service';
 import UserService from './user.service';
+import axios from 'axios';
 
 class AuthService {
   getCurrentUser() {
@@ -43,11 +44,31 @@ class AuthService {
     return ApiService.register(userData);
   }
 
+  registerPT(userData, certificates) {
+    const formData = new FormData();
+    
+    // Thêm thông tin user vào formData
+    formData.append('username', userData.username);
+    formData.append('password', userData.password);
+    formData.append('role_id', 3); // Đảm bảo role_id là 3 cho PT
+    formData.append('gym', userData.gym);
+    
+    // Thêm các file certificates vào formData
+    certificates.forEach(certificate => {
+      formData.append('certificates', certificate);
+    });
+
+    return axios.post('http://localhost:3000/auth/register-pt', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+  }
+
   async getProfile() {
     try {
       // Lấy thông tin người dùng từ localStorage
       const currentUser = this.getCurrentUser();
-      const token = localStorage.getItem('token');
       
       // Kiểm tra xem có thông tin người dùng không
       if (!currentUser) {
@@ -135,29 +156,6 @@ class AuthService {
       return currentUser;
     } catch (error) {
       console.error('Lỗi khi lấy profile:', error);
-      
-      // Cố gắng lấy thông tin profile từ localStorage nếu có
-      const storedProfile = localStorage.getItem('profile');
-      if (storedProfile) {
-        try {
-          console.warn('Sử dụng profile từ localStorage do có lỗi');
-          return JSON.parse(storedProfile);
-        } catch (e) {
-          console.error('Lỗi khi parse profile từ localStorage:', e);
-        }
-      }
-      
-      // Cố gắng lấy thông tin user từ localStorage
-      const userData = localStorage.getItem('user');
-      if (userData) {
-        try {
-          console.warn('Sử dụng user data từ localStorage do không có profile');
-          return JSON.parse(userData);
-        } catch (e) {
-          console.error('Lỗi khi parse user data từ localStorage:', e);
-        }
-      }
-      
       return null;
     }
   }
