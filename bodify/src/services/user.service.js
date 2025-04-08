@@ -19,6 +19,14 @@ class UserService {
     );
   }
 
+  getAuthHeader() {
+    const token = localStorage.getItem('token');
+    if (token) {
+      return { Authorization: `Bearer ${token}` };
+    }
+    return {};
+  }
+
   async getUserProfile(userId) {
     try {
       // Kiểm tra và chuyển đổi userId thành số
@@ -133,6 +141,59 @@ class UserService {
       });
     } catch (error) {
       console.error('Lỗi khi cập nhật avatar:', error);
+      throw error;
+    }
+  }
+
+  async getPTsByGym(gymName) {
+    try {
+      const response = await axios.get(`${API_URL}/gym/pts`, {
+        params: {
+          role_id: 3,
+          status_id: 1
+        }
+      });
+      
+      // Transform data to match the expected format
+      return response.data.map(pt => ({
+        id: pt.user_id,
+        username: pt.username,
+        name: pt.name,
+        email: pt.email,
+        phoneNum: pt.phoneNum,
+        gym: pt.gym,
+        role_id: pt.role_id,
+        Status_id: pt.Status_id,
+        certificate: pt.certificate || []
+      }));
+    } catch (error) {
+      console.error('Error fetching PTs by gym:', error);
+      throw error;
+    }
+  }
+
+  async approvePT(ptId) {
+    try {
+      const response = await axios.patch(`${API_URL}/approve/${ptId}`, {
+        Status_id: 2 // Set status to active
+      }, {
+        headers: this.getAuthHeader()
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error approving PT:', error);
+      throw error;
+    }
+  }
+
+  async rejectPT(ptId) {
+    try {
+      const response = await axios.delete(`${API_URL}/${ptId}`, {
+        headers: this.getAuthHeader()
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error rejecting PT:', error);
       throw error;
     }
   }
