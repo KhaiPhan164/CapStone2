@@ -15,7 +15,7 @@ import GymDetail from './GymDetail'
 import PaymentStatus from './pages/Payment/PaymentStatus'
 import PaymentCallback from './pages/Payment/PaymentCallback'
 import { createBrowserRouter } from 'react-router-dom';
-import TrainerList from "./pages/PTList/TrainerList";
+import TrainerList from './pages/PTList/TrainerList';
 
 const routes = createBrowserRouter([
     {
