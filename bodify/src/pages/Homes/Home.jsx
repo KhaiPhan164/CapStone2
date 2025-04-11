@@ -1,4 +1,5 @@
 import React from 'react'
+import Chatbox from '../../components/Chatbox/Chatbox'
 
 const Home = () => {
   return (
@@ -28,6 +29,8 @@ const Home = () => {
 
       </div>
 
+      {/* Add Chatbox */}
+      <Chatbox />
     </div>
   )
 }
