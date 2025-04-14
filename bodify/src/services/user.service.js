@@ -19,6 +19,14 @@ class UserService {
     );
   }
 
+  getAuthHeader() {
+    const token = localStorage.getItem('token');
+    if (token) {
+      return { Authorization: `Bearer ${token}` };
+    }
+    return {};
+  }
+
   async getUserProfile(userId) {
     try {
       // Kiểm tra và chuyển đổi userId thành số
@@ -133,6 +141,109 @@ class UserService {
       });
     } catch (error) {
       console.error('Lỗi khi cập nhật avatar:', error);
+      throw error;
+    }
+  }
+
+  async getPTsByGym(gymName) {
+    try {
+      const response = await axios.get(`${API_URL}/gym/pts`, {
+        params: {
+          role_id: 3,
+          status_id: 1
+        }
+      });
+      
+      // Transform data to match the expected format
+      return response.data.map(pt => ({
+        id: pt.user_id,
+        username: pt.username,
+        name: pt.name,
+        email: pt.email,
+        phoneNum: pt.phoneNum,
+        gym: pt.gym,
+        role_id: pt.role_id,
+        Status_id: pt.Status_id,
+        certificate: pt.certificate || []
+      }));
+    } catch (error) {
+      console.error('Error fetching PTs by gym:', error);
+      throw error;
+    }
+  }
+
+  async approvePT(ptId) {
+    try {
+      const response = await axios.patch(`${API_URL}/approve/${ptId}`, {
+        Status_id: 2 // Set status to active
+      }, {
+        headers: this.getAuthHeader()
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error approving PT:', error);
+      throw error;
+    }
+  }
+
+  async rejectPT(ptId) {
+    try {
+      const response = await axios.delete(`${API_URL}/${ptId}`, {
+        headers: this.getAuthHeader()
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error rejecting PT:', error);
+      throw error;
+    }
+  }
+
+  async updateHealthInfo(userId, healthData) {
+    try {
+      // Kiểm tra userId
+      const numericUserId = Number(userId);
+      if (isNaN(numericUserId)) {
+        throw new Error('User ID phải là một số');
+      }
+
+      // Kiểm tra kiểu dữ liệu của Health_information và illness
+      if (typeof healthData.Health_information !== 'string') {
+        throw new Error('Health_information phải là chuỗi');
+      }
+      if (typeof healthData.illness !== 'string') {
+        throw new Error('illness phải là chuỗi');
+      }
+
+      // Tạo object chỉ với 2 trường cần thiết
+      const healthUpdateData = {
+        Health_information: healthData.Health_information.trim(),
+        illness: healthData.illness.trim()
+      };
+
+      console.log('Cập nhật thông tin sức khỏe:', {
+        userId: numericUserId,
+        healthInfo: healthUpdateData.Health_information,
+        illness: healthUpdateData.illness
+      });
+      
+      // Đầu tiên lấy thông tin hiện tại
+      const currentData = await this.getUserProfile(numericUserId);
+      
+      // Nếu dữ liệu mới bắt đầu bằng "BMI:", đây là cập nhật BMI mới
+      if (healthUpdateData.Health_information.startsWith('BMI:')) {
+        // Chỉ lưu thông tin BMI mới, giữ nguyên illness
+        healthUpdateData.illness = currentData.data.illness || '';
+      } else {
+        // Nếu không phải cập nhật BMI, giữ nguyên thông tin BMI cũ (nếu có)
+        const oldBMILine = currentData.data.Health_information?.split('\n').find(line => line.startsWith('BMI:'));
+        if (oldBMILine) {
+          healthUpdateData.Health_information = oldBMILine + '\n' + healthUpdateData.Health_information;
+        }
+      }
+      
+      return axios.patch(`${API_URL}/profile/${numericUserId}`, healthUpdateData);
+    } catch (error) {
+      console.error('Lỗi khi cập nhật thông tin sức khỏe:', error);
       throw error;
     }
   }

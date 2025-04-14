@@ -8,7 +8,9 @@ import PTManagement from "./GymOwner/PTManagement";
 import MembershipManagement from "./GymOwner/MembershipManagement";
 import UserMemberships from "./User/UserMemberships";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faCalendar, faClipboardList, faUsers, faDumbbell, faCreditCard } from "@fortawesome/free-solid-svg-icons";
+import { faCalendar, faClipboardList, faUsers, faDumbbell, faWeightScale, faCreditCard, faHeartPulse } from "@fortawesome/free-solid-svg-icons";
+import BMICalculator from "./BMICalculator";
+import HealthInformation from "./User/HealthInformation";
 
 const ProfileSidebar = ({ initialTab }) => {
   const location = useLocation();
@@ -92,6 +94,18 @@ const ProfileSidebar = ({ initialTab }) => {
             <MembershipManagement />
           </div>
         );
+        case "bmi":
+          return (
+            <div className="">
+              <BMICalculator />
+            </div>
+          );
+      case "health":
+        return (
+          <div className="">
+            <HealthInformation />
+          </div>
+        );
       default:
         return <div className="p-6">Chưa chọn mục nào.</div>;
     }
@@ -158,6 +172,32 @@ const ProfileSidebar = ({ initialTab }) => {
               <div className="flex items-center font-bold text-white">
                 <FontAwesomeIcon icon={faCreditCard} className="mr-3 ml-2 w-6 h-6" />
                 Membership  
+              </div>
+            </li>
+            <li
+              onClick={() => handleSelection("bmi")}
+              className={`cursor-pointer block p-2 rounded-xl  ${
+                selectedSection === "bmi"
+                  ? "bg-primary-500 text-gray-600  "
+                  : "bg-gray-400"
+              }`}
+            >
+              <div className="flex items-center font-bold text-white">
+                <FontAwesomeIcon icon={faWeightScale} className="mr-3 ml-2 w-6 h-6" />
+                BMI
+              </div>
+            </li>
+            <li
+              onClick={() => handleSelection("health")}
+              className={`cursor-pointer block p-2 rounded-xl  ${
+                selectedSection === "health"
+                  ? "bg-primary-500 text-gray-600  "
+                  : "bg-gray-400"
+              }`}
+            >
+              <div className="flex items-center font-bold text-white">
+                <FontAwesomeIcon icon={faHeartPulse} className="mr-3 ml-2 w-6 h-6" />
+                Thông tin sức khỏe
               </div>
             </li>
             {isGymOwner && (

@@ -12,6 +12,49 @@ class ExerciseService {
     return axios.get(EXERCISE_POST_URL);
   }
 
+  // Tìm bài tập theo tên tag (AND condition)
+  async searchByTagNames(tagNames) {
+    try {
+      const response = await axios.get(`${EXERCISE_POST_URL}/search/bytags`, {
+        params: { tagNames: tagNames.join(',') }
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error searching exercises by tag names:', error);
+      throw error;
+    }
+  }
+
+  // Tìm bài tập theo tag IDs (AND condition)
+  async findByTags(tagIds) {
+    try {
+      const response = await axios.get(`${EXERCISE_POST_URL}/bytags`, {
+        params: { tags: tagIds.join(',') }
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error finding exercises by tag IDs:', error);
+      throw error;
+    }
+  }
+
+  // Tìm kiếm nâng cao với nhiều tiêu chí
+  async search({ tags = [], name, description }) {
+    try {
+      const response = await axios.get(`${EXERCISE_POST_URL}/search`, {
+        params: {
+          tags: tags.join(','),
+          name,
+          description
+        }
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error searching exercises:', error);
+      throw error;
+    }
+  }
+
   // Lấy chi tiết một bài tập theo ID
   async getById(id) {
     return axios.get(`${EXERCISE_POST_URL}/${id}`);
@@ -104,7 +147,13 @@ class ExerciseService {
   
   // Lấy tất cả tags
   async getAllTags() {
-    return axios.get(TAG_URL);
+    try {
+      const response = await axios.get(`${EXERCISE_POST_URL}/tags`);
+      return response.data;
+    } catch (error) {
+      console.error('Error getting all tags:', error);
+      throw error;
+    }
   }
   
   // Tạo tag mới
@@ -113,4 +162,4 @@ class ExerciseService {
   }
 }
 
-export default new ExerciseService();
+export default new ExerciseService(); 

@@ -7,6 +7,11 @@ import { Link } from "react-router-dom";
 import { SectionTitle } from "../../components/Title/SectionTitle";
 import { Pagination } from "../../components/Table/Pagination";
 import AuthService from '../../services/auth.service';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faStar } from '@fortawesome/free-solid-svg-icons';
+import RecommendService from '../../services/recommend';
+
+const BASE_URL = 'http://localhost:3000';
 
 export const ExerciseHome = () => {
   const [exercises, setExercises] = useState([]);
@@ -17,10 +22,22 @@ export const ExerciseHome = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filteredExercises, setFilteredExercises] = useState([]);
   const ITEMS_PER_PAGE = 6;
+  const [selectedFilter, setSelectedFilter] = useState('all');
+  const [recommendedExercises, setRecommendedExercises] = useState([]);
+  const [recommendError, setRecommendError] = useState(null);
+
+  const filters = [
+    { id: 'all', label: 'All' },
+    { id: 'recommended', label: 'Recommend', icon: faStar }
+  ];
 
   useEffect(() => {
-    fetchExercises();
-  }, []);
+    if (selectedFilter === 'recommended') {
+      fetchRecommendedExercises();
+    } else {
+      fetchExercises();
+    }
+  }, [selectedFilter]);
 
   useEffect(() => {
     if (!Array.isArray(exercises)) {
@@ -85,6 +102,90 @@ export const ExerciseHome = () => {
     }
   };
 
+  const fetchRecommendedExercises = async () => {
+    const user = AuthService.getCurrentUser();
+    if (!user) {
+      setRecommendError('Please login to see personalized recommendations');
+      setFilteredExercises([]);
+      return;
+    }
+
+    try {
+      setLoading(true);
+      // 1. Get health analysis to get tags
+      const healthAnalysis = await RecommendService.getHealthAnalysis(user.user_id);
+      console.log('Raw health analysis response:', healthAnalysis);
+      
+      if (healthAnalysis.status === 'success' && healthAnalysis.data.analysis) {
+        const { 
+          workout_tags = [], 
+          health_info_tags = [], 
+          illness_tags = [], 
+          exclude_tags = [] 
+        } = healthAnalysis.data.analysis;
+        
+        console.log('Health Analysis Response:', {
+          workout_tags,
+          health_info_tags,
+          illness_tags,
+          exclude_tags
+        });
+        
+        if (!workout_tags.length && !health_info_tags.length && !illness_tags.length) {
+          setRecommendError('Please update your health information to get personalized recommendations');
+          setFilteredExercises([]);
+          return;
+        }
+
+        // 2. Get exercises based on tags
+        const allTags = [...workout_tags];
+        console.log('Combined tags for search:', allTags);
+        console.log('Exclude tags:', exclude_tags);
+        console.log('Will call URL:', `${BASE_URL}/exercise-post/search/bytags?includeTags=${allTags.join(',')}&excludeTags=${exclude_tags.join(',')}`);
+        
+        if (allTags.length === 0) {
+          setRecommendError('No matching exercise tags found');
+          setFilteredExercises([]);
+          return;
+        }
+
+        // Use searchByTagNames directly with tag names and exclude tags
+        const exercisesResponse = await ExerciseService.searchByTagNames(allTags, exclude_tags);
+        console.log('Exercise search response:', exercisesResponse);
+        
+        if (exercisesResponse && exercisesResponse.length > 0) {
+          // Add matching tags to each exercise for display
+          const exercisesWithTags = exercisesResponse.map(exercise => ({
+            ...exercise,
+            matching_tags: exercise.exerciseposttag
+              .filter(tagObj => allTags.includes(tagObj.tag.tag_name))
+              .map(tagObj => tagObj.tag.tag_name)
+          }));
+          
+          setFilteredExercises(exercisesWithTags);
+          setRecommendError(null);
+        } else {
+          setRecommendError('No exercises found matching your health profile');
+          setFilteredExercises([]);
+        }
+      } else {
+        setRecommendError('Could not analyze your health profile');
+        setFilteredExercises([]);
+      }
+    } catch (error) {
+      console.error('Recommend error:', error);
+      console.log('Error details:', {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status
+      });
+      setRecommendError('Error getting recommendations');
+      setFilteredExercises([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handlePageChange = (page) => {
     setCurrentPage(page);
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -106,12 +207,51 @@ export const ExerciseHome = () => {
       <div className="flex flex-col">
         <HomeBanner onSearch={handleSearch} />
         
+        {/* Filter Buttons */}
+        <div className="container mx-auto px-4 xl:max-w-[1067px] mt-5">
+          <div className="flex flex-wrap justify-center gap-3 mb-8">
+            {filters.map((filter) => (
+              <button
+                key={filter.id}
+                onClick={() => setSelectedFilter(filter.id)}
+                className={`px-6 py-2 rounded-full flex items-center gap-2 ${
+                  selectedFilter === filter.id
+                    ? 'bg-primary-500 text-white'
+                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                }`}
+              >
+                {filter.icon && <FontAwesomeIcon icon={filter.icon} />}
+                {filter.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Error Message for Recommendations */}
+        {recommendError && selectedFilter === 'recommended' && (
+          <div className="container mx-auto px-4 xl:max-w-[1067px]">
+            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-6">
+              <span className="block sm:inline">{recommendError}</span>
+              {(!AuthService.getCurrentUser() && recommendError.includes('login')) && (
+                <Link to="/login" className="ml-4 underline hover:text-red-800">
+                  Login now
+                </Link>
+              )}
+              {(AuthService.getCurrentUser() && recommendError.includes('health information')) && (
+                <Link to="/profile" className="ml-4 underline hover:text-red-800">
+                  Update profile
+                </Link>
+              )}
+            </div>
+          </div>
+        )}
+        
         {/* Danh sách bài tập */}
-        <div className="container mx-auto px-4 xl:max-w-[1067px] flex flex-col gap-5 pb-5 mt-5">
+        <div className="container mx-auto px-4 xl:max-w-[1067px] flex flex-col gap-5 pb-5">
           <div className="flex items-center justify-between">
             <div className="flex flex-1 w-full items-center overflow-hidden">
               <div className="min-w-fit">
-                <SectionTitle title="Exercise" />
+                <SectionTitle title={selectedFilter === 'recommended' ? 'Recommended Exercises' : 'All Exercises'} />
               </div>
             </div>
           </div>
@@ -145,6 +285,18 @@ export const ExerciseHome = () => {
                     <p className="text-sm text-gray-600 mb-3 line-clamp-2">
                       {exercise.description}
                     </p>
+                    {selectedFilter === 'recommended' && exercise.matching_score && (
+                      <div className="mb-3">
+                        <div className="text-sm font-semibold text-primary-600">
+                          Matching Score: {exercise.matching_score}%
+                        </div>
+                        {exercise.matching_tags && exercise.matching_tags.length > 0 && (
+                          <div className="text-xs text-gray-500 mt-1">
+                            Matches your: {exercise.matching_tags.join(', ')}
+                          </div>
+                        )}
+                      </div>
+                    )}
                     <div className="flex gap-2 flex-wrap">
                       {Array.isArray(exercise.exerciseposttag) && exercise.exerciseposttag.map((tagObj, index) => (
                         <span 
