@@ -150,22 +150,12 @@ class UserService {
       const response = await axios.get(`${API_URL}/gym/pts`, {
         params: {
           role_id: 3,
-          status_id: 1
+          status_id: 1,
+          gym: gymName
         }
       });
       
-      // Transform data to match the expected format
-      return response.data.map(pt => ({
-        id: pt.user_id,
-        username: pt.username,
-        name: pt.name,
-        email: pt.email,
-        phoneNum: pt.phoneNum,
-        gym: pt.gym,
-        role_id: pt.role_id,
-        Status_id: pt.Status_id,
-        certificate: pt.certificate || []
-      }));
+      return response.data;
     } catch (error) {
       console.error('Error fetching PTs by gym:', error);
       throw error;
@@ -174,12 +164,17 @@ class UserService {
 
   async approvePT(ptId) {
     try {
-      const response = await axios.patch(`${API_URL}/approve/${ptId}`, {
-        Status_id: 2 // Set status to active
+      const response = await axios.patch(`${API_URL}/pt/approve/${ptId}`, {
+        status_id: 2
       }, {
         headers: this.getAuthHeader()
       });
-      return response.data;
+      
+      if (response.data && response.data.status === 'success') {
+        return response.data;
+      } else {
+        throw new Error(response.data?.message || 'Không thể duyệt PT');
+      }
     } catch (error) {
       console.error('Error approving PT:', error);
       throw error;
@@ -188,10 +183,15 @@ class UserService {
 
   async rejectPT(ptId) {
     try {
-      const response = await axios.delete(`${API_URL}/${ptId}`, {
+      const response = await axios.delete(`${API_URL}/pt/reject/${ptId}`, {
         headers: this.getAuthHeader()
       });
-      return response.data;
+      
+      if (response.data && response.data.status === 'success') {
+        return response.data;
+      } else {
+        throw new Error(response.data?.message || 'Không thể từ chối PT');
+      }
     } catch (error) {
       console.error('Error rejecting PT:', error);
       throw error;

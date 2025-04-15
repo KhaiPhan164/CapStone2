@@ -42,12 +42,24 @@ const GymOwnerApprovalPage = () => {
   const handleApprove = async (ptId) => {
     try {
       setLoading(true);
-      await UserService.approvePT(ptId);
-      message.success('Duyệt PT thành công');
-      fetchPendingPTs();
+      const response = await UserService.approvePT(ptId);
+      
+      if (response.status === 'success') {
+        message.success(response.message);
+        // Cập nhật trạng thái local
+        setRequests(prevRequests => 
+          prevRequests.map(request => 
+            request.id === ptId 
+              ? { ...request, Status_id: 2 } 
+              : request
+          )
+        );
+      } else {
+        throw new Error(response.message);
+      }
     } catch (error) {
       console.error('Error approving PT:', error);
-      message.error('Không thể duyệt PT');
+      message.error(error.message || 'Không thể duyệt PT');
     } finally {
       setLoading(false);
     }
@@ -56,12 +68,20 @@ const GymOwnerApprovalPage = () => {
   const handleReject = async (ptId) => {
     try {
       setLoading(true);
-      await UserService.rejectPT(ptId);
-      message.success('Từ chối PT thành công');
-      fetchPendingPTs();
+      const response = await UserService.rejectPT(ptId);
+      
+      if (response.status === 'success') {
+        message.success(response.message);
+        // Xóa PT khỏi danh sách
+        setRequests(prevRequests => 
+          prevRequests.filter(request => request.id !== ptId)
+        );
+      } else {
+        throw new Error(response.message);
+      }
     } catch (error) {
       console.error('Error rejecting PT:', error);
-      message.error('Không thể từ chối PT');
+      message.error(error.message || 'Không thể từ chối PT');
     } finally {
       setLoading(false);
     }
