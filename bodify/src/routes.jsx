@@ -6,7 +6,8 @@ import AdminLayout from './pages/Admin/AdminLayout'
 import { ExerciseHome } from './pages/Exercise'
 import { ExerciseDetail } from './pages/Exercise/ExerciseDetail'
 import Plan from './pages/UserProfile/User/Plan'
-import ExerciseManagement from './pages/UserProfile/PT/ExerciseManagement'
+import ExerciseManagement from './pages/Exercise/ExerciseManagement'
+import ExerciseApproval from './pages/Exercise/ExerciseApproval'
 import PTManagement from './pages/UserProfile/GymOwner/PTManagement'
 import ProfileSidebar from './pages/UserProfile/ProfileSidebar'
 import FormPT from './pages/Register/FormPT'
@@ -68,8 +69,12 @@ const routes = createBrowserRouter([
         element: <ProfileSidebar initialTab="plans"/>
     },
     {
-        path: '/pt/exercise-management',
+        path: '/pt/exercises',
         element: <ExerciseManagement/>
+    },
+    {
+        path: '/gymowner/approve-exercises',
+        element: <ExerciseApproval/>
     },
     {
         path: '/gymowner/pt-management',
