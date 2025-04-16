@@ -44,71 +44,93 @@ const ExerciseManagement = () => {
     }
   };
 
-  const handleCreate = async (values) => {
-    try {
-      setLoading(true);
-      
-      // Validate required fields
-      if (!values.name || !values.description) {
-        message.error('Vui lòng điền đầy đủ thông tin bài tập');
-        return;
-      }
-
-      // Format steps with correct field names
-      const preparedSteps = steps.map((step, index) => {
-        if (!step.instruction) {
-          message.error(`Vui lòng nhập hướng dẫn cho bước ${index + 1}`);
-          throw new Error('Missing step instruction');
-        }
-        return {
-          instruction: step.instruction,
-          img_url: stepImages[index]?.originFileObj || null
-        };
-      });
-
-      const formData = {
-        name: values.name,
-        description: values.description,
-        steps: preparedSteps,
-        tagIds: values.tagIds || [],
-        video_rul: values.video_rul
-      };
-
-      console.log('Submitting exercise:', formData);
-
-      const response = await ExerciseService.createExercisePost(formData, fileList[0]?.originFileObj);
-      
-      if (response.data) {
-        message.success('Tạo bài tập thành công');
-        setModalVisible(false);
-        form.resetFields();
-        setFileList([]);
-        setSteps([]);
-        setStepImages([]);
-        fetchExercises();
-      }
-    } catch (error) {
-      console.error('Error creating exercise:', error);
-      const errorMessage = error.response?.data?.message || error.message || 'Tạo bài tập thất bại';
-      message.error(errorMessage);
-    } finally {
-      setLoading(false);
+ const handleCreate = async (values) => {
+  try {
+    setLoading(true);
+    const user = AuthService.getCurrentUser();
+    if (!user) {
+      message.error('Vui lòng đăng nhập để tạo bài tập');
+      return;
     }
-  };
+
+    // Validate required fields
+    if (!values.name || !values.description) {
+      message.error('Vui lòng điền đầy đủ thông tin bài tập');
+      return;
+    }
+
+    // Chuẩn bị dữ liệu cho bài tập
+    const data = {
+      name: values.name,
+      description: values.description,
+      video_rul: values.video_rul || '',
+      imgUrl: fileList[0]?.originFileObj,
+      steps: steps.map((step, index) => ({
+        instruction: step.instruction,
+        img_url: stepImages[index]?.originFileObj || null
+      })),
+      tagIds: values.tagIds || []
+    };
+
+    const response = await ExerciseService.createExercisePost(data);
+    
+    if (response.data) {
+      message.success('Tạo bài tập thành công, đang chờ duyệt');
+      setModalVisible(false);
+      form.resetFields();
+      setFileList([]);
+      setSteps([]);
+      setStepImages([]);
+      fetchExercises();
+    }
+  } catch (error) {
+    console.error('Error creating exercise:', error);
+    const errorMessage = error.response?.data?.message || error.message || 'Tạo bài tập thất bại';
+    message.error(errorMessage);
+  } finally {
+    setLoading(false);
+  }
+};
 
   const handleUpdate = async (values) => {
     try {
       setLoading(true);
-      const formData = {
-        ...values,
-        steps: steps.map((step, index) => ({
-          stepNumber: index + 1,
-          instruction: step.instruction,
-          imgUrl: stepImages[index]?.url
-        }))
-      };
+      const user = AuthService.getCurrentUser();
+      if (!user) {
+        message.error('Vui lòng đăng nhập để cập nhật bài tập');
+        return;
+      }
 
-      await ExerciseService.updateExercisePost(editingId, formData, fileList[0]?.originFileObj);
+      const formData = new FormData();
+      formData.append('name', values.name);
+      formData.append('description', values.description);
+      formData.append('user_id', user.user_id);
+      formData.append('video_rul', values.video_rul || '');
+
+      if (fileList[0]?.originFileObj) {
+        formData.append('imgUrl', fileList[0].originFileObj);
+      }
+
+      if (steps.length > 0) {
+        const formattedSteps = steps.map((step, index) => ({
+          step_number: index + 1,
+          instruction: step.instruction,
+          img_url: null
+        }));
+        formData.append('steps', JSON.stringify(formattedSteps));
+
+        steps.forEach((_, index) => {
+          if (stepImages[index]?.originFileObj) {
+            formData.append(`step_images`, stepImages[index].originFileObj);
+          }
+        });
+      }
+
+      if (values.tagIds && values.tagIds.length > 0) {
+        formData.append('tagIds', JSON.stringify(values.tagIds));
+      }
+
+      await ExerciseService.updateExercisePost(editingId, formData);
       message.success('Cập nhật bài tập thành công');
       setModalVisible(false);
       form.resetFields();
@@ -118,20 +140,70 @@ const ExerciseManagement = () => {
       setEditingId(null);
       fetchExercises();
     } catch (error) {
-      message.error('Cập nhật bài tập thất bại');
+      console.error('Error updating exercise:', error);
+      const errorMessage = error.response?.data?.message || error.message || 'Cập nhật bài tập thất bại';
+      message.error(errorMessage);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleApprove = async (id) => {
+    try {
+      const user = AuthService.getCurrentUser();
+      if (!user) {
+        message.error('Vui lòng đăng nhập để duyệt bài tập');
+        return;
+      }
+
+      await ExerciseService.updateExercisePost(id, {
+        status_id: 2,
+        user_id: user.user_id
+      });
+      message.success('Đã duyệt bài tập');
+      fetchExercises();
+    } catch (error) {
+      console.error('Error approving exercise:', error);
+      message.error('Không thể duyệt bài tập');
+    }
+  };
+
+  const handleReject = async (id) => {
+    try {
+      const user = AuthService.getCurrentUser();
+      if (!user) {
+        message.error('Vui lòng đăng nhập để từ chối bài tập');
+        return;
+      }
+
+      await ExerciseService.updateExercisePost(id, {
+        status_id: 3,
+        user_id: user.user_id
+      });
+      message.success('Đã từ chối bài tập');
+      fetchExercises();
+    } catch (error) {
+      console.error('Error rejecting exercise:', error);
+      message.error('Không thể từ chối bài tập');
     }
   };
 
   const handleDelete = async (id) => {
     try {
       setLoading(true);
+      const user = AuthService.getCurrentUser();
+      if (!user) {
+        message.error('Vui lòng đăng nhập để xóa bài tập');
+        return;
+      }
+
       await ExerciseService.deleteExercisePost(id);
       message.success('Xóa bài tập thành công');
       fetchExercises();
     } catch (error) {
-      message.error('Xóa bài tập thất bại');
+      console.error('Error deleting exercise:', error);
+      const errorMessage = error.response?.data?.message || error.message || 'Xóa bài tập thất bại';
+      message.error(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -214,8 +286,14 @@ const ExerciseManagement = () => {
       dataIndex: 'status_id',
       key: 'status',
       render: (status) => (
-        <Tag color={status === 1 ? 'orange' : 'green'}>
-          {status === 1 ? 'Chờ duyệt' : 'Đã duyệt'}
+        <Tag color={
+          status === 1 ? 'gold' : 
+          status === 2 ? 'green' : 
+          status === 3 ? 'red' : 'default'
+        }>
+          {status === 1 ? 'Chờ duyệt' : 
+           status === 2 ? 'Đã duyệt' : 
+           status === 3 ? 'Đã từ chối' : 'Không xác định'}
         </Tag>
       ),
     },
