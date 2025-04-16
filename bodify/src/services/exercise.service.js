@@ -12,45 +12,38 @@ class ExerciseService {
     return axios.get(EXERCISE_POST_URL);
   }
 
-  // Tìm bài tập theo tên tag (AND condition)
-  async searchByTagNames(tagNames) {
+  // Tìm bài tập theo tên tag (OR condition) và loại trừ tags
+  async searchByTagNames(includeTags = [], excludeTags = []) {
     try {
-      const response = await axios.get(`${EXERCISE_POST_URL}/search/bytags`, {
-        params: { tagNames: tagNames.join(',') }
-      });
+      // Nếu không có tag nào được chọn, trả về tất cả bài tập
+      if (!includeTags?.length && !excludeTags?.length) {
+        return this.getAll();
+      }
+
+      let url = `${EXERCISE_POST_URL}/search/bytags`;
+      const params = new URLSearchParams();
+
+      // Thêm include tags nếu có
+      if (includeTags?.length > 0) {
+        params.append('includeTags', includeTags.join(','));
+      }
+
+      // Thêm exclude tags nếu có
+      if (excludeTags?.length > 0) {
+        params.append('excludeTags', excludeTags.join(','));
+      }
+
+      // Thêm params vào URL nếu có
+      if (params.toString()) {
+        url += `?${params.toString()}`;
+      }
+
+      console.log('Sending request to:', url);
+      const response = await axios.get(url);
+      
       return response.data;
     } catch (error) {
       console.error('Error searching exercises by tag names:', error);
-      throw error;
-    }
-  }
-
-  // Tìm bài tập theo tag IDs (AND condition)
-  async findByTags(tagIds) {
-    try {
-      const response = await axios.get(`${EXERCISE_POST_URL}/bytags`, {
-        params: { tags: tagIds.join(',') }
-      });
-      return response.data;
-    } catch (error) {
-      console.error('Error finding exercises by tag IDs:', error);
-      throw error;
-    }
-  }
-
-  // Tìm kiếm nâng cao với nhiều tiêu chí
-  async search({ tags = [], name, description }) {
-    try {
-      const response = await axios.get(`${EXERCISE_POST_URL}/search`, {
-        params: {
-          tags: tags.join(','),
-          name,
-          description
-        }
-      });
-      return response.data;
-    } catch (error) {
-      console.error('Error searching exercises:', error);
       throw error;
     }
   }
@@ -162,4 +155,4 @@ class ExerciseService {
   }
 }
 
-export default new ExerciseService(); 
+export default new ExerciseService();

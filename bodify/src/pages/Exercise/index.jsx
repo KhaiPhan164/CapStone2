@@ -138,27 +138,32 @@ export const ExerciseHome = () => {
         }
 
         // 2. Get exercises based on tags
-        const allTags = [...workout_tags];
-        console.log('Combined tags for search:', allTags);
+        const includeTags = [...workout_tags];
+        console.log('Include tags for search:', includeTags);
         console.log('Exclude tags:', exclude_tags);
-        console.log('Will call URL:', `${BASE_URL}/exercise-post/search/bytags?includeTags=${allTags.join(',')}&excludeTags=${exclude_tags.join(',')}`);
         
-        if (allTags.length === 0) {
+        if (includeTags.length === 0) {
           setRecommendError('No matching exercise tags found');
           setFilteredExercises([]);
           return;
         }
 
-        // Use searchByTagNames directly with tag names and exclude tags
-        const exercisesResponse = await ExerciseService.searchByTagNames(allTags, exclude_tags);
+        // Use searchByTagNames with includeTags and exclude_tags
+        const exercisesResponse = await ExerciseService.searchByTagNames(includeTags, exclude_tags);
         console.log('Exercise search response:', exercisesResponse);
         
-        if (exercisesResponse && exercisesResponse.length > 0) {
+        if (exercisesResponse.status === 'error') {
+          setRecommendError(exercisesResponse.message || 'Error finding matching exercises');
+          setFilteredExercises([]);
+          return;
+        }
+
+        if (Array.isArray(exercisesResponse.data)) {
           // Add matching tags to each exercise for display
-          const exercisesWithTags = exercisesResponse.map(exercise => ({
+          const exercisesWithTags = exercisesResponse.data.map(exercise => ({
             ...exercise,
             matching_tags: exercise.exerciseposttag
-              .filter(tagObj => allTags.includes(tagObj.tag.tag_name))
+              .filter(tagObj => includeTags.includes(tagObj.tag.tag_name))
               .map(tagObj => tagObj.tag.tag_name)
           }));
           
@@ -179,7 +184,7 @@ export const ExerciseHome = () => {
         response: error.response?.data,
         status: error.response?.status
       });
-      setRecommendError('Error getting recommendations');
+      setRecommendError(error.message || 'Error getting recommendations');
       setFilteredExercises([]);
     } finally {
       setLoading(false);
