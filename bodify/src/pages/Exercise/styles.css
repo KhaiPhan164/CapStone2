@@ -1,0 +1,13 @@
+.ant-table-thead > tr > th {
+    background-color: #ffaf53 !important;
+    color: white !important;
+    text-transform: uppercase; 
+  }
+  
+  .ant-pagination-item {
+    border-color: #ffaf53 !important;
+  }
+  .ant-pagination-item-active a {
+    color: #ffaf53!important;
+  }
+

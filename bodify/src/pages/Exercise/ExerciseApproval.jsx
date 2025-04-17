@@ -1,8 +1,12 @@
-import React, { useState, useEffect } from 'react';
-import { Table, Button, Space, Tag, message } from 'antd';
-import { CheckOutlined, CloseOutlined } from '@ant-design/icons';
-import ExerciseService from '../../services/exercise.service';
-import AuthService from '../../services/auth.service';
+import React, { useState, useEffect } from "react";
+import { Table, Button, Space, Tag } from "antd";
+import { CheckOutlined, CloseOutlined } from "@ant-design/icons";
+import ExerciseService from "../../services/exercise.service";
+import AuthService from "../../services/auth.service";
+import Header from "../../layout/Header";
+import { SectionTitle } from "../../components/Title/SectionTitle";
+import "./styles.css";
+import { toast, ToastContainer } from "react-toastify";
 
 const ExerciseApproval = () => {
   const [exercises, setExercises] = useState([]);
@@ -17,10 +21,12 @@ const ExerciseApproval = () => {
       setLoading(true);
       const response = await ExerciseService.getAllExercisePosts();
       // Lọc chỉ lấy các bài tập đang chờ duyệt (status_id = 1)
-      setExercises(response.data.filter(exercise => exercise.status_id === 1));
+      setExercises(
+        response.data.filter((exercise) => exercise.status_id === 1)
+      );
     } catch (error) {
-      console.error('Error fetching exercises:', error);
-      message.error('Không thể tải danh sách bài tập');
+      console.error("Error fetching exercises:", error);
+      toast.error("Failed to load exercise list");
     } finally {
       setLoading(false);
     }
@@ -29,101 +35,130 @@ const ExerciseApproval = () => {
   const handleApprove = async (id) => {
     try {
       await ExerciseService.updateExercisePostStatus(id, 2); // 2 for approve
-      message.success('Đã duyệt bài tập');
+      toast.success("Exercise approved successfully");
       fetchExercises();
     } catch (error) {
-      console.error('Error approving exercise:', error);
-      message.error('Không thể duyệt bài tập');
+      console.error("Error approving exercise:", error);
+      toast.error("Failed to approve exercise");
     }
   };
 
   const handleReject = async (id) => {
     try {
       await ExerciseService.updateExercisePostStatus(id, 3); // 3 for reject
-      message.success('Đã từ chối bài tập');
+      toast.success("Exercise rejected successfully");
       fetchExercises();
     } catch (error) {
-      console.error('Error rejecting exercise:', error);
-      message.error('Không thể từ chối bài tập');
+      console.error("Error rejecting exercise:", error);
+      toast.error("Failed to reject exercise");
     }
   };
 
   const columns = [
     {
-      title: 'Tên bài tập',
-      dataIndex: 'name',
-      key: 'name',
+      title: "Exercise Name",
+      dataIndex: "name",
+      key: "name",
     },
     {
-      title: 'Mô tả',
-      dataIndex: 'description',
-      key: 'description',
+      title: "Description",
+      dataIndex: "description",
+      key: "description",
       ellipsis: true,
     },
     {
-      title: 'Tags',
-      dataIndex: 'exerciseposttag',
-      key: 'tags',
+      title: "Tags",
+      dataIndex: "exerciseposttag",
+      key: "tags",
       render: (tags) => (
         <Space>
-          {tags?.map(tag => (
+          {tags?.map((tag) => (
             <Tag key={tag.tag_id}>{tag.tag.tag_name}</Tag>
           ))}
         </Space>
       ),
     },
     {
-      title: 'Người tạo',
-      dataIndex: ['user', 'fullname'],
-      key: 'creator',
+      title: "Creator",
+      dataIndex: ["user", "fullname"],
+      key: "creator",
     },
     {
-      title: 'Trạng thái',
-      dataIndex: 'status_id',
-      key: 'status',
+      title: "Status",
+      dataIndex: "status_id",
+      key: "status",
+      width: 150,
       render: (status_id) => (
-        <Tag color={status_id === 1 ? 'gold' : status_id === 2 ? 'green' : 'red'}>
-          {status_id === 1 ? 'Chờ duyệt' : status_id === 2 ? 'Đã duyệt' : 'Đã từ chối'}
+        <Tag
+          color={status_id === 1 ? "gold" : status_id === 2 ? "green" : "red"}
+          className="text-sm py-1"
+        >
+          {status_id === 1
+            ? "Pending Approval"
+            : status_id === 2
+            ? "Approved"
+            : "Rejected"}
         </Tag>
       ),
     },
     {
-      title: 'Thao tác',
-      key: 'action',
-      render: (_, record) => (
+      title: "Actions",
+      key: "action",
+      width: 230,
+      render: (_, record) =>
         record.status_id === 1 ? (
           <Space>
             <Button
-              type="primary"
+              type="default"
               icon={<CheckOutlined />}
               onClick={() => handleApprove(record.exercisepost_id)}
+              className="border border-blue-400 bg-blue-100 text-blue-400"
             >
-              Duyệt
+              Approve
             </Button>
             <Button
+              type="default"
               danger
               icon={<CloseOutlined />}
               onClick={() => handleReject(record.exercisepost_id)}
+              className="hover:!bg-red-100"
             >
-              Từ chối
+              Reject
             </Button>
           </Space>
-        ) : null
-      ),
+        ) : null,
     },
   ];
-
+  
   return (
-    <div className="p-6">
-      <h1 className="text-2xl font-bold mb-6">Duyệt bài tập</h1>
-      <Table
-        columns={columns}
-        dataSource={exercises}
-        loading={loading}
-        rowKey="exercisepost_id"
+    <div>
+      <Header />
+      <div className="px-6 pb-6 h-screen bg-gray-50 pt-4">
+        <div className="mb-5 mx-5">
+          <SectionTitle title="Exercise Approval" />
+        </div>
+        <Table
+          columns={columns}
+          dataSource={exercises}
+          loading={loading}
+          rowKey="exercisepost_id"
+          rowClassName={(_, index) =>
+            index % 2 === 0 ? "bg-gray-100" : "bg-white"
+          }
+        />
+      </div>
+      <ToastContainer
+        position="top-right"
+        autoClose={3000}
+        hideProgressBar={false}
+        newestOnTop={true}
+        closeOnClick
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
       />
     </div>
   );
 };
-
-export default ExerciseApproval; 
+export default ExerciseApproval;
+  

@@ -291,12 +291,24 @@ const Header = () => {
             )}
 
             {showDropdown && (
-              <div className="absolute right-0 mt-2 w-32 bg-white border rounded-lg shadow-lg z-50">
+              <div className="absolute right-0 mt-2 w-36 bg-white border rounded-lg shadow-lg z-50">
                 <Link
                   to="/userprofile"
                   className="block px-4 py-2 text-black hover:rounded-md hover:bg-gray-200"
                 >
                   User Profile
+                </Link>
+                <Link
+                  to="/pt/exercises"
+                  className="block px-4 py-2 text-black hover:rounded-md hover:bg-gray-200"
+                >
+                  Create Exercies
+                </Link>
+                <Link
+                  to="/gymowner/approve-exercises"
+                  className="block px-4 py-2 text-black hover:rounded-md hover:bg-gray-200"
+                >
+                  Approve
                 </Link>
                 <button
                   className="block w-full text-left px-4 py-2 text-black hover:rounded-md hover:bg-gray-200"
