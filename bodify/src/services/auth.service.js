@@ -1,6 +1,5 @@
 import ApiService from './plan.service';
 import UserService from './user.service';
-import axios from 'axios';
 
 class AuthService {
   getCurrentUser() {
@@ -44,31 +43,11 @@ class AuthService {
     return ApiService.register(userData);
   }
 
-  registerPT(userData, certificates) {
-    const formData = new FormData();
-    
-    // Thêm thông tin user vào formData
-    formData.append('username', userData.username);
-    formData.append('password', userData.password);
-    formData.append('role_id', 3); // Đảm bảo role_id là 3 cho PT
-    formData.append('gym', userData.gym);
-    
-    // Thêm các file certificates vào formData
-    certificates.forEach(certificate => {
-      formData.append('certificates', certificate);
-    });
-
-    return axios.post('http://localhost:3000/auth/register-pt', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    });
-  }
-
   async getProfile() {
     try {
       // Lấy thông tin người dùng từ localStorage
       const currentUser = this.getCurrentUser();
+      const token = localStorage.getItem('token');
       
       // Kiểm tra xem có thông tin người dùng không
       if (!currentUser) {
@@ -104,14 +83,31 @@ class AuthService {
       
       console.log('Đang gọi API để lấy profile với ID:', userId);
       
-      // Bỏ qua việc gọi getMyProfile vì nó gây ra lỗi 500
-      
       // Sử dụng trực tiếp getUserProfile với userId
       try {
         console.log('Thử gọi API getUserProfile với ID:', userId);
         const response = await UserService.getUserProfile(userId);
         const profileData = response?.data;
-        
+
+        // Kiểm tra nếu profileData là array thì lấy phần tử đầu tiên
+        if (Array.isArray(profileData)) {
+          console.warn('API trả về mảng, lấy thông tin user hiện tại');
+          // Tìm user có id trùng với userId trong mảng
+          const userProfile = profileData.find(user => user.user_id === userId);
+          if (userProfile) {
+            // Nếu tìm thấy user trong mảng, sử dụng thông tin đó
+            const updatedProfile = {
+              ...userProfile,
+              user_id: userId,
+              id: userId
+            };
+            localStorage.setItem('profile', JSON.stringify(updatedProfile));
+            return updatedProfile;
+          }
+          // Nếu không tìm thấy, sử dụng currentUser
+          return currentUser;
+        }
+
         if (profileData) {
           console.log('Lấy profile thành công từ getUserProfile:', profileData);
           
@@ -156,7 +152,7 @@ class AuthService {
       return currentUser;
     } catch (error) {
       console.error('Lỗi khi lấy profile:', error);
-      return null;
+      return currentUser;
     }
   }
 

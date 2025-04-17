@@ -386,6 +386,17 @@ class PaymentService {
                 throw new Error('Vui lòng đăng nhập để tiếp tục');
             }
 
+            // Đảm bảo có user_id
+            if (!membershipData.user_id) {
+                const profile = JSON.parse(localStorage.getItem('profile'));
+                const user = JSON.parse(localStorage.getItem('user'));
+                membershipData.user_id = profile?.user_id || profile?.id || user?.user_id || user?.id;
+                
+                if (!membershipData.user_id) {
+                    throw new Error('Không tìm thấy thông tin người dùng');
+                }
+            }
+
             const response = await axios.post(
                 `${API_URL}/membership`,
                 membershipData,
@@ -415,7 +426,7 @@ class PaymentService {
             }
 
             const response = await axios.get(
-                `${API_URL}/membership`,
+                `${API_URL}/membership/types`,
                 {
                     headers: {
                         'Authorization': `Bearer ${token}`
@@ -440,8 +451,22 @@ class PaymentService {
                 throw new Error('Vui lòng đăng nhập để tiếp tục');
             }
 
+            // Lấy user_id từ localStorage
+            let userId = null;
+            try {
+                const profile = JSON.parse(localStorage.getItem('profile'));
+                const user = JSON.parse(localStorage.getItem('user'));
+                userId = profile?.user_id || profile?.id || user?.user_id || user?.id;
+            } catch (e) {
+                console.error('Lỗi khi đọc thông tin user từ localStorage:', e);
+            }
+
+            if (!userId) {
+                throw new Error('Không tìm thấy thông tin người dùng');
+            }
+
             const response = await axios.get(
-                `${API_URL}/membership/my-memberships`,
+                `${API_URL}/membership/user/${userId}`,
                 {
                     headers: {
                         'Authorization': `Bearer ${token}`
@@ -449,7 +474,22 @@ class PaymentService {
                 }
             );
 
-            return response.data;
+            // Thêm thông tin trạng thái cho mỗi membership
+            const memberships = response.data.map(membership => {
+                const statusInfo = this.getPaymentStatusInfo(membership.status_id);
+                return {
+                    ...membership,
+                    status: statusInfo.text,
+                    status_description: statusInfo.description,
+                    isSuccess: this.isPaymentSuccessful(membership.status_id),
+                    isFailed: this.isPaymentFailed(membership.status_id),
+                    color: statusInfo.color,
+                    className: statusInfo.className,
+                    icon: statusInfo.icon
+                };
+            });
+
+            return memberships;
         } catch (error) {
             console.error('Lỗi lấy danh sách membership của tôi:', error);
             if (error.response) {
@@ -475,7 +515,19 @@ class PaymentService {
                 }
             );
 
-            return response.data;
+            // Thêm thông tin trạng thái
+            const membership = response.data;
+            const statusInfo = this.getPaymentStatusInfo(membership.status_id);
+            return {
+                ...membership,
+                status: statusInfo.text,
+                status_description: statusInfo.description,
+                isSuccess: this.isPaymentSuccessful(membership.status_id),
+                isFailed: this.isPaymentFailed(membership.status_id),
+                color: statusInfo.color,
+                className: statusInfo.className,
+                icon: statusInfo.icon
+            };
         } catch (error) {
             console.error('Lỗi lấy chi tiết membership:', error);
             if (error.response) {
@@ -503,7 +555,19 @@ class PaymentService {
                 }
             );
 
-            return response.data;
+            // Thêm thông tin trạng thái
+            const membership = response.data;
+            const statusInfo = this.getPaymentStatusInfo(membership.status_id);
+            return {
+                ...membership,
+                status: statusInfo.text,
+                status_description: statusInfo.description,
+                isSuccess: this.isPaymentSuccessful(membership.status_id),
+                isFailed: this.isPaymentFailed(membership.status_id),
+                color: statusInfo.color,
+                className: statusInfo.className,
+                icon: statusInfo.icon
+            };
         } catch (error) {
             console.error('Lỗi cập nhật membership:', error);
             if (error.response) {
@@ -536,6 +600,94 @@ class PaymentService {
                 throw new Error(error.response.data.message || 'Không thể xóa membership');
             }
             throw new Error('Đã xảy ra lỗi khi xóa membership');
+        }
+    }
+
+    /**
+     * Lấy danh sách thanh toán theo ID người dùng
+     * @param {number} userId - ID của người dùng cần lấy lịch sử thanh toán
+     * @returns {Promise<Array>} - Danh sách các thanh toán của người dùng
+     */
+    static async getPaymentsByUserId(userId) {
+        try {
+            console.log(`Đang lấy lịch sử thanh toán cho user ${userId}`);
+            const response = await axios.get(
+                `${API_URL}/payment/my-payments/${userId}`
+            );
+
+            // Thêm các thuộc tính bổ sung cho mỗi payment
+            const payments = response.data.map(payment => {
+                const statusInfo = this.getPaymentStatusInfo(payment.status_id);
+                return {
+                    ...payment,
+                    status: statusInfo.text,
+                    status_description: statusInfo.description,
+                    isSuccess: this.isPaymentSuccessful(payment.status_id),
+                    isFailed: this.isPaymentFailed(payment.status_id),
+                    color: statusInfo.color,
+                    className: statusInfo.className,
+                    icon: statusInfo.icon
+                };
+            });
+
+            console.log(`Đã lấy được ${payments.length} thanh toán cho user ${userId}`);
+            return payments;
+        } catch (error) {
+            console.error('Lỗi lấy lịch sử thanh toán:', error);
+            if (error.response) {
+                throw new Error(error.response.data.message || 'Không thể lấy lịch sử thanh toán');
+            }
+            throw new Error('Không thể kết nối đến máy chủ');
+        }
+    }
+
+    /**
+     * Lấy lịch sử thanh toán của người dùng hiện tại
+     * @returns {Promise<Array>} - Danh sách các thanh toán của người dùng, được nhóm theo membership_id
+     */
+    static async getMyPaymentHistory() {
+        try {
+            const token = localStorage.getItem('token') || localStorage.getItem('accessToken');
+            if (!token) {
+                throw new Error('Vui lòng đăng nhập để tiếp tục');
+            }
+
+            // Lấy user_id từ localStorage
+            let userId = null;
+            try {
+                const profile = JSON.parse(localStorage.getItem('profile'));
+                const user = JSON.parse(localStorage.getItem('user'));
+                userId = profile?.user_id || profile?.id || user?.user_id || user?.id;
+            } catch (e) {
+                console.error('Lỗi khi đọc thông tin user từ localStorage:', e);
+            }
+
+            if (!userId) {
+                throw new Error('Không tìm thấy thông tin người dùng');
+            }
+
+            // Chỉ đơn giản lấy payments theo user ID
+            const response = await axios.get(
+                `${API_URL}/payment/my-payments/${userId}`,
+                {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                }
+            );
+
+            // Log để debug
+            console.log('Raw payments data:', response.data);
+
+            // Trả về nguyên bản data từ API
+            return response.data;
+
+        } catch (error) {
+            console.error('Lỗi lấy lịch sử thanh toán:', error);
+            if (error.response) {
+                throw new Error(error.response.data.message || 'Không thể lấy lịch sử thanh toán');
+            }
+            throw new Error('Không thể kết nối đến máy chủ');
         }
     }
 }
