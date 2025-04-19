@@ -7,9 +7,6 @@ import { Link } from "react-router-dom";
 import { SectionTitle } from "../../components/Title/SectionTitle";
 import { Pagination } from "../../components/Table/Pagination";
 import AuthService from '../../services/auth.service';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faStar } from '@fortawesome/free-solid-svg-icons';
-import RecommendService from '../../services/recommend';
 
 const BASE_URL = 'http://localhost:3000';
 
@@ -22,22 +19,10 @@ export const ExerciseHome = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filteredExercises, setFilteredExercises] = useState([]);
   const ITEMS_PER_PAGE = 6;
-  const [selectedFilter, setSelectedFilter] = useState('all');
-  const [recommendedExercises, setRecommendedExercises] = useState([]);
-  const [recommendError, setRecommendError] = useState(null);
-
-  const filters = [
-    { id: 'all', label: 'All' },
-    { id: 'recommended', label: 'Recommend', icon: faStar }
-  ];
 
   useEffect(() => {
-    if (selectedFilter === 'recommended') {
-      fetchRecommendedExercises();
-    } else {
-      fetchExercises();
-    }
-  }, [selectedFilter]);
+    fetchExercises();
+  }, []);
 
   useEffect(() => {
     if (!Array.isArray(exercises)) {
@@ -102,95 +87,6 @@ export const ExerciseHome = () => {
     }
   };
 
-  const fetchRecommendedExercises = async () => {
-    const user = AuthService.getCurrentUser();
-    if (!user) {
-      setRecommendError('Please login to see personalized recommendations');
-      setFilteredExercises([]);
-      return;
-    }
-
-    try {
-      setLoading(true);
-      // 1. Get health analysis to get tags
-      const healthAnalysis = await RecommendService.getHealthAnalysis(user.user_id);
-      console.log('Raw health analysis response:', healthAnalysis);
-      
-      if (healthAnalysis.status === 'success' && healthAnalysis.data.analysis) {
-        const { 
-          workout_tags = [], 
-          health_info_tags = [], 
-          illness_tags = [], 
-          exclude_tags = [] 
-        } = healthAnalysis.data.analysis;
-        
-        console.log('Health Analysis Response:', {
-          workout_tags,
-          health_info_tags,
-          illness_tags,
-          exclude_tags
-        });
-        
-        if (!workout_tags.length && !health_info_tags.length && !illness_tags.length) {
-          setRecommendError('Please update your health information to get personalized recommendations');
-          setFilteredExercises([]);
-          return;
-        }
-
-        // 2. Get exercises based on tags
-        const includeTags = [...workout_tags];
-        console.log('Include tags for search:', includeTags);
-        console.log('Exclude tags:', exclude_tags);
-        
-        if (includeTags.length === 0) {
-          setRecommendError('No matching exercise tags found');
-          setFilteredExercises([]);
-          return;
-        }
-
-        // Use searchByTagNames with includeTags and exclude_tags
-        const exercisesResponse = await ExerciseService.searchByTagNames(includeTags, exclude_tags);
-        console.log('Exercise search response:', exercisesResponse);
-        
-        if (exercisesResponse.status === 'error') {
-          setRecommendError(exercisesResponse.message || 'Error finding matching exercises');
-          setFilteredExercises([]);
-          return;
-        }
-
-        if (Array.isArray(exercisesResponse.data)) {
-          // Add matching tags to each exercise for display
-          const exercisesWithTags = exercisesResponse.data.map(exercise => ({
-            ...exercise,
-            matching_tags: exercise.exerciseposttag
-              .filter(tagObj => includeTags.includes(tagObj.tag.tag_name))
-              .map(tagObj => tagObj.tag.tag_name)
-          }));
-          
-          setFilteredExercises(exercisesWithTags);
-          setRecommendError(null);
-        } else {
-          setRecommendError('No exercises found matching your health profile');
-          setFilteredExercises([]);
-        }
-      } else {
-        setRecommendError('Could not analyze your health profile');
-        setFilteredExercises([]);
-      }
-    } catch (error) {
-      console.error('Recommend error:', error);
-      console.log('Error details:', {
-        message: error.message,
-        response: error.response?.data,
-        status: error.response?.status
-      });
-      setRecommendError(error.message || 'Error getting recommendations');
-      setFilteredExercises([]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handlePageChange = (page) => {
     setCurrentPage(page);
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -202,129 +98,74 @@ export const ExerciseHome = () => {
 
   const getCurrentPageExercises = () => {
     const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
-    const endIndex = startIndex + ITEMS_PER_PAGE;
-    return filteredExercises.slice(startIndex, endIndex);
+    return filteredExercises.slice(startIndex, startIndex + ITEMS_PER_PAGE);
   };
 
   return (
     <div>
-      <Header/>
-      <div className="flex flex-col">
-        <HomeBanner onSearch={handleSearch} />
-        
-        {/* Filter Buttons */}
-        <div className="container mx-auto px-4 xl:max-w-[1067px] mt-5">
-          <div className="flex flex-wrap justify-center gap-3 mb-8">
-            {filters.map((filter) => (
-              <button
-                key={filter.id}
-                onClick={() => setSelectedFilter(filter.id)}
-                className={`px-6 py-2 rounded-full flex items-center gap-2 ${
-                  selectedFilter === filter.id
-                    ? 'bg-primary-500 text-white'
-                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                }`}
-              >
-                {filter.icon && <FontAwesomeIcon icon={filter.icon} />}
-                {filter.label}
-              </button>
-            ))}
+      <Header />
+      <HomeBanner />
+      <div className="container mx-auto px-4 py-8">
+        <div className="mb-8">
+          <SectionTitle title="All Exercises" />
+          <div className="flex justify-end mb-4">
+            <input
+              type="text"
+              placeholder="Search exercises..."
+              className="px-4 py-2 border rounded-lg"
+              onChange={(e) => handleSearch(e.target.value)}
+            />
           </div>
         </div>
 
-        {/* Error Message for Recommendations */}
-        {recommendError && selectedFilter === 'recommended' && (
-          <div className="container mx-auto px-4 xl:max-w-[1067px]">
-            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-6">
-              <span className="block sm:inline">{recommendError}</span>
-              {(!AuthService.getCurrentUser() && recommendError.includes('login')) && (
-                <Link to="/login" className="ml-4 underline hover:text-red-800">
-                  Login now
-                </Link>
-              )}
-              {(AuthService.getCurrentUser() && recommendError.includes('health information')) && (
-                <Link to="/profile" className="ml-4 underline hover:text-red-800">
-                  Update profile
-                </Link>
-              )}
-            </div>
-          </div>
-        )}
-        
-        {/* Danh sách bài tập */}
-        <div className="container mx-auto px-4 xl:max-w-[1067px] flex flex-col gap-5 pb-5">
-          <div className="flex items-center justify-between">
-            <div className="flex flex-1 w-full items-center overflow-hidden">
-              <div className="min-w-fit">
-                <SectionTitle title={selectedFilter === 'recommended' ? 'Recommended Exercises' : 'All Exercises'} />
-              </div>
-            </div>
-          </div>
-
-          {loading ? (
-            <div className="flex justify-center items-center h-40">
-              <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary-500"></div>
-            </div>
-          ) : error ? (
-            <div className="text-red-500 text-center py-4">{error}</div>
-          ) : filteredExercises.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        {loading ? (
+          <div className="text-center">Loading...</div>
+        ) : error ? (
+          <div className="text-center text-red-500">{error}</div>
+        ) : (
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {getCurrentPageExercises().map((exercise) => (
-                <div key={exercise.exercisepost_id} className="bg-white shadow-md overflow-hidden">
-                  <Link to={`/exercise-post/${exercise.exercisepost_id}`}>
-                    <img 
-                      src={exercise.img_url || "https://storage.googleapis.com/a1aa/image/cD-sKP-sj6D5N0EfMvBgXVgHCnSaBHEl4rdOuhfaNkQ.jpg"} 
-                      alt={exercise.name || 'Exercise image'} 
-                      className="w-full h-[200px] object-cover" 
-                      onError={(e) => {
-                        e.target.src = "https://storage.googleapis.com/a1aa/image/cD-sKP-sj6D5N0EfMvBgXVgHCnSaBHEl4rdOuhfaNkQ.jpg";
-                      }}
+                <Link
+                  key={exercise.exercise_post_id}
+                  to={`/exercise/${exercise.exercise_post_id}`}
+                  className="block"
+                >
+                  <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300">
+                    <img
+                      src={exercise.imgUrl ? `${BASE_URL}/${exercise.imgUrl}` : '/placeholder-image.jpg'}
+                      alt={exercise.name}
+                      className="w-full h-48 object-cover"
                     />
-                  </Link>
-                  <div className="p-4">
-                    <Link to={`/exercise-post/${exercise.exercisepost_id}`}>
-                      <h2 className="text-lg font-bold mb-2 text-gray-800 leading-tight">
-                        {exercise.name}
-                      </h2>
-                    </Link>
-                    <p className="text-sm text-gray-600 mb-3 line-clamp-2">
-                      {exercise.description}
-                    </p>
-                    {selectedFilter === 'recommended' && exercise.matching_score && (
-                      <div className="mb-3">
-                        <div className="text-sm font-semibold text-primary-600">
-                          Matching Score: {exercise.matching_score}%
-                        </div>
-                        {exercise.matching_tags && exercise.matching_tags.length > 0 && (
-                          <div className="text-xs text-gray-500 mt-1">
-                            Matches your: {exercise.matching_tags.join(', ')}
-                          </div>
-                        )}
+                    <div className="p-4">
+                      <h3 className="text-xl font-semibold mb-2">{exercise.name}</h3>
+                      <p className="text-gray-600 mb-4 line-clamp-2">{exercise.description}</p>
+                      <div className="flex flex-wrap gap-2">
+                        {exercise.exerciseposttag?.map((tagObj) => (
+                          <span
+                            key={tagObj.tag.tag_id}
+                            className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-sm"
+                          >
+                            {tagObj.tag.tag_name}
+                          </span>
+                        ))}
                       </div>
-                    )}
-                    <div className="flex gap-2 flex-wrap">
-                      {Array.isArray(exercise.exerciseposttag) && exercise.exerciseposttag.map((tagObj, index) => (
-                        <span 
-                          key={tagObj.tag_id || index} 
-                          className="text-xs bg-gray-100 text-gray-600 rounded-full px-2 py-1"
-                        >
-                          {tagObj.tag?.tag_name || 'Unknown Tag'}
-                        </span>
-                      ))}
                     </div>
                   </div>
-                </div>
+                </Link>
               ))}
             </div>
-          ) : (
-            <div className="text-center py-4 italic">No exercises found</div>
-          )}
-          {filteredExercises.length > 0 && (
-            <Pagination totalPages={totalPages} onPageChange={handlePageChange} />
-          )}
-        </div>
+            <div className="mt-8">
+              <Pagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                onPageChange={handlePageChange}
+              />
+            </div>
+          </>
+        )}
       </div>
-      <Footer/>
+      <Footer />
     </div>
   );
 };
