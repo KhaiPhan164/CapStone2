@@ -18,6 +18,7 @@ import PaymentCallback from './pages/Payment/PaymentCallback'
 import { createBrowserRouter } from 'react-router-dom';
 import TrainerList from "./pages/PTList/TrainerList";
 import GymOwnerApprovalPage from './pages/Approval/GymOwnerApprovalPage';
+import PlanList from "./pages/PlanDetail/PlanList";
 
 const routes = createBrowserRouter([
     {
@@ -111,6 +112,10 @@ const routes = createBrowserRouter([
     {
         path: '/gymowner/approve-pt',
         element: <GymOwnerApprovalPage/>
+    },
+    {
+        path: '/plan-detail',
+        element: <PlanList/>
     }
 ]);
 
