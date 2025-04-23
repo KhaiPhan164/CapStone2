@@ -26,12 +26,23 @@ class ExerciseService {
     return {};
   }
 
+  // Lấy tất cả bài tập
+  async getAll() {
+    return axios.get(API_URL);
+  }
+
+  // Alias for getAll() to maintain compatibility
+  async getAllExercisePosts() {
+    return this.getAll();
+  }
+
   async createExercisePost(data) {
     return axios.post(API_URL, data);
   }
 
-  async getAllExercisePosts() {
-    return axios.get(API_URL);
+  // Alias for getExercisePostById to maintain compatibility
+  async getById(id) {
+    return this.getExercisePostById(id);
   }
 
   async getExercisePostById(id) {

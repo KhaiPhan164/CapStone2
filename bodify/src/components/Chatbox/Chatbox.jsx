@@ -1,30 +1,208 @@
 import React, { useState, useRef, useEffect } from 'react';
 import AuthService from '../../services/auth.service';
+import ChatService from '../../services/chat.service';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faComments, faTimes, faChevronDown } from '@fortawesome/free-solid-svg-icons';
+import { faComments, faTimes, faChevronDown, faPaperPlane } from '@fortawesome/free-solid-svg-icons';
 
 // Add Roboto font
 const style = document.createElement('style');
 style.textContent = `
 @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap');
 
-@keyframes fade-in {
-  from {
-    opacity: 0;
-    transform: translateX(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
-}
-
-.animate-fade-in {
-  animation: fade-in 0.3s ease-out;
-}
-
 .chatbox-container {
   font-family: 'Roboto', sans-serif;
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  z-index: 1000;
+}
+
+.chat-toggle {
+  background: #0084ff;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 50px;
+  height: 50px;
+  cursor: pointer;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}
+
+.chat-window {
+  position: absolute;
+  bottom: 70px;
+  right: 0;
+  width: 350px;
+  height: 500px;
+  background: white;
+  border-radius: 10px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+  display: flex;
+  flex-direction: column;
+}
+
+.chat-header {
+  padding: 15px;
+  background: #0084ff;
+  color: white;
+  border-radius: 10px 10px 0 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.chat-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 15px;
+  background: #fff;
+  display: flex;
+  flex-direction: column;
+}
+
+.message {
+  display: flex;
+  flex-direction: column;
+  max-width: 70%;
+  margin: 2px 0;
+  width: fit-content;
+}
+
+.message-content {
+  padding: 8px 12px;
+  border-radius: 18px;
+  word-wrap: break-word;
+  position: relative;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.message.sent {
+  align-self: flex-end;
+  margin-left: auto;
+}
+
+.message.received {
+  align-self: flex-start;
+  margin-right: auto;
+}
+
+.message.sent .message-content {
+  background: #0084ff;
+  color: white;
+  border-bottom-right-radius: 4px;
+}
+
+.message.received .message-content {
+  background: #e4e6eb;
+  color: black;
+  border-bottom-left-radius: 4px;
+}
+
+.message .time {
+  font-size: 11px;
+  margin-top: 2px;
+  opacity: 0.7;
+}
+
+.message.sent .time {
+  text-align: right;
+  color: #8e8e8e;
+}
+
+.message.received .time {
+  text-align: left;
+  color: #8e8e8e;
+}
+
+.message-group {
+  margin: 12px 0;
+}
+
+.date-separator {
+  text-align: center;
+  margin: 16px 0;
+  position: relative;
+}
+
+.date-separator::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  width: 100%;
+  height: 1px;
+  background: #e4e6eb;
+  z-index: 1;
+}
+
+.date-separator span {
+  background: white;
+  padding: 0 10px;
+  color: #65676b;
+  font-size: 12px;
+  position: relative;
+  z-index: 2;
+}
+
+.chat-input {
+  padding: 15px;
+  border-top: 1px solid #e9ecef;
+  display: flex;
+  gap: 10px;
+}
+
+.chat-input input {
+  flex: 1;
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 20px;
+  outline: none;
+}
+
+.chat-input button {
+  background: #0084ff;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 35px;
+  height: 35px;
+  cursor: pointer;
+}
+
+.contacts-list {
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.contact-item {
+  padding: 10px 15px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.contact-item:hover {
+  background: #f8f9fa;
+}
+
+.online-indicator {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #28a745;
+  display: inline-block;
+  margin-right: 5px;
+}
+
+.offline-indicator {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #dc3545;
+  display: inline-block;
+  margin-right: 5px;
 }
 `;
 document.head.appendChild(style);
@@ -32,199 +210,289 @@ document.head.appendChild(style);
 const Chatbox = () => {
   const [messages, setMessages] = useState([]);
   const [inputMessage, setInputMessage] = useState('');
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isChatOpen, setIsChatOpen] = useState(false);
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
+  const [contacts, setContacts] = useState([]);
+  const [onlineUsers, setOnlineUsers] = useState([]);
   const messagesEndRef = useRef(null);
+  const currentUser = AuthService.getCurrentUser();
 
-  // List of users to chat with
-  const chatUsers = [
-    { id: 1, name: "Quốc Thái", avatar: "QT" },
-    { id: 2, name: "Khải Phan", avatar: "KP" }
-  ];
-
+  // Kết nối WebSocket và thiết lập test data
   useEffect(() => {
-    // Check login status when component mounts and when it changes
-    const checkLoginStatus = () => {
-      const loggedIn = AuthService.isLoggedIn();
-      setIsLoggedIn(loggedIn);
+    if (!currentUser?.user_id) return;
+
+    // Kết nối chat
+    console.log('Kết nối chat với user ID:', currentUser.user_id);
+    ChatService.connect(currentUser.user_id);
+
+    // Đăng ký lắng nghe tin nhắn mới ngay khi kết nối
+    const removeNewMessageHandler = ChatService.onNewMessage((message) => {
+      console.log('Nhận tin nhắn mới:', message);
+      
+      // Ensure we have all required fields
+      if (!message.to_user_id || !message.content) {
+        console.error('Invalid message format:', message);
+        return;
+      }
+
+      // Add timestamp if missing
+      if (!message.created_at) {
+        message.created_at = new Date().toISOString();
+      }
+
+      // Check if message is relevant to current chat
+      const isRelevantToCurrentChat = selectedUser && (
+        (Number(message.to_user_id) === Number(selectedUser.id) && Number(message.from_user_id) === Number(currentUser.user_id)) ||
+        (Number(message.to_user_id) === Number(currentUser.user_id) && Number(message.from_user_id) === Number(selectedUser.id))
+      );
+
+      if (isRelevantToCurrentChat) {
+        setMessages(prev => {
+          // Check for duplicate messages
+          const isDuplicate = prev.some(m => 
+            m.content === message.content && 
+            m.to_user_id === message.to_user_id &&
+            m.from_user_id === message.from_user_id &&
+            Math.abs(new Date(m.created_at) - new Date(message.created_at)) < 1000
+          );
+          
+          if (isDuplicate) {
+            console.log('Duplicate message detected, skipping:', message);
+            return prev;
+          }
+          
+          const newMessages = [...prev, message];
+          // Sort messages by timestamp
+          return newMessages.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+        });
+        
+        // Auto scroll to new message
+        setTimeout(() => {
+          messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+        }, 100);
+      }
+    });
+
+    // Đăng ký lắng nghe cập nhật trạng thái online
+    const removeOnlineUsersHandler = ChatService.onOnlineUsersUpdate((users) => {
+      console.log('Cập nhật người dùng online:', users);
+      setOnlineUsers(users);
+    });
+
+    // Thiết lập test data
+    const testContacts = [];
+    if (currentUser.user_id === 1) {
+      testContacts.push({
+        id: 6,
+        name: "User Test 6",
+        avatar: null
+      });
+    } else if (currentUser.user_id === 6) {
+      testContacts.push({
+        id: 1,
+        name: "User Test 1",
+        avatar: null
+      });
+    }
+    setContacts(testContacts);
+
+    return () => {
+      removeNewMessageHandler();
+      removeOnlineUsersHandler();
+      ChatService.disconnect();
     };
+  }, [currentUser?.user_id]); // Chỉ phụ thuộc vào currentUser.user_id
 
-    checkLoginStatus();
-    // Set up interval to check login status
-    const interval = setInterval(checkLoginStatus, 30000); // Check every 30 seconds
-
-    return () => clearInterval(interval);
-  }, []);
-
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  const selectUser = async (user) => {
+    setSelectedUser(user);
+    try {
+      console.log('Lấy lịch sử chat với user:', user.id);
+      const history = await ChatService.getChatHistory(currentUser.user_id, user.id);
+      console.log('Lịch sử chat:', history);
+      console.log('Current user ID:', currentUser.user_id);
+      setMessages(history || []);
+      // Auto scroll xuống tin nhắn mới nhất
+      setTimeout(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+      }, 100);
+    } catch (error) {
+      console.error('Lỗi khi lấy lịch sử chat:', error);
+    }
   };
 
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
-
-  const handleSendMessage = (e) => {
+  const handleSendMessage = async (e) => {
     e.preventDefault();
-    if (inputMessage.trim() && selectedUser) {
-      setMessages([...messages, { text: inputMessage, sender: 'user', receiver: selectedUser.name }]);
-      setInputMessage('');
-      // Here you would typically make an API call to your backend
-      // For now, we'll just simulate a response
-      setTimeout(() => {
-        setMessages(prev => [...prev, { 
-          text: `This is a simulated response from ${selectedUser.name}`, 
-          sender: 'bot',
-          receiver: 'user'
-        }]);
-      }, 1000);
+    if (!inputMessage.trim() || !selectedUser || !currentUser) return;
+
+    const messageContent = inputMessage.trim();
+    setInputMessage(''); // Clear input immediately for better UX
+
+    try {
+      console.log('Sending message to user:', selectedUser.id);
+      
+      // Create message object
+      const newMessage = {
+        content: messageContent,
+        to_user_id: selectedUser.id,
+        from_user_id: currentUser.user_id,
+        created_at: new Date().toISOString()
+      };
+
+      // Optimistically add message to UI
+      setMessages(prev => [...prev, newMessage]);
+      
+      // Send message to server
+      const sentMessage = await ChatService.sendMessage(selectedUser.id, messageContent);
+      console.log('Message sent successfully:', sentMessage);
+      
+      // Auto scroll to new message
+      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    } catch (error) {
+      console.error('Error sending message:', error);
+      // Show error to user
+      alert('Failed to send message. Please try again.');
+      
+      // Remove failed message from UI
+      setMessages(prev => prev.filter(msg => 
+        msg.content !== messageContent || 
+        msg.to_user_id !== selectedUser.id
+      ));
     }
   };
 
   const toggleChat = () => {
     setIsChatOpen(!isChatOpen);
-    setIsDropdownOpen(false);
   };
 
-  const selectUser = (user) => {
-    setSelectedUser(user);
-    setIsDropdownOpen(false);
-    // Clear messages when switching users
-    setMessages([]);
+  const formatMessageDate = (timestamp) => {
+    const date = new Date(timestamp);
+    const today = new Date();
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+
+    if (date.toDateString() === today.toDateString()) {
+      return 'Hôm nay';
+    } else if (date.toDateString() === yesterday.toDateString()) {
+      return 'Hôm qua';
+    } else {
+      return date.toLocaleDateString('vi-VN');
+    }
   };
 
-  // Only render if user is logged in
-  if (!isLoggedIn) {
-    return null;
-  }
+  const formatMessageTime = (timestamp) => {
+    return new Date(timestamp).toLocaleTimeString('vi-VN', {
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
+  const groupMessagesByDate = (messages) => {
+    const groups = {};
+    messages.forEach(msg => {
+      const date = formatMessageDate(msg.created_at || new Date());
+      if (!groups[date]) {
+        groups[date] = [];
+      }
+      groups[date].push(msg);
+    });
+    return groups;
+  };
+
+  if (!currentUser) return null;
 
   return (
-    <>
-      {/* Chat Container - Wraps both button and window */}
-      <div className="fixed bottom-4 right-4 flex items-end gap-4 z-40 chatbox-container">
-        {/* Chat Window */}
-        {isChatOpen && (
-          <div className="w-96 bg-white rounded-lg shadow-lg animate-fade-in">
-            {/* Chat Header */}
-            <div className="bg-blue-600 text-white p-4 rounded-t-lg">
-              <div className="flex justify-between items-center">
-                <div className="relative flex-1">
-                  <button
-                    onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                    className="flex items-center gap-2 hover:bg-blue-700 px-2 py-1 rounded-lg transition-colors w-full"
-                  >
-                    <span className="text-lg font-medium">
-                      {selectedUser ? (
-                        <div className="flex items-center gap-2">
-                          <div className="w-8 h-8 rounded-full bg-blue-400 flex items-center justify-center text-sm font-medium">
-                            {selectedUser.avatar}
-                          </div>
-                          <span>{selectedUser.name}</span>
-                        </div>
-                      ) : (
-                        'Chat with'
-                      )}
-                    </span>
-                    <FontAwesomeIcon 
-                      icon={faChevronDown} 
-                      className={`transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`}
-                    />
-                  </button>
+    <div className="chatbox-container">
+      <button className="chat-toggle" onClick={toggleChat}>
+        <FontAwesomeIcon icon={faComments} />
+      </button>
 
-                  {/* Dropdown Menu */}
-                  {isDropdownOpen && (
-                    <div className="absolute top-full left-0 w-full mt-2 bg-white rounded-lg shadow-lg overflow-hidden z-50">
-                      {chatUsers.map(user => (
-                        <button
-                          key={user.id}
-                          onClick={() => selectUser(user)}
-                          className="flex items-center gap-2 w-full p-3 hover:bg-gray-100 transition-colors text-gray-800"
-                        >
-                          <div className="w-8 h-8 rounded-full bg-blue-400 text-white flex items-center justify-center text-sm font-medium">
-                            {user.avatar}
-                          </div>
-                          <span className="font-normal">{user.name}</span>
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
-                <button 
-                  onClick={toggleChat}
-                  className="ml-4 text-white hover:text-gray-200 transition-colors"
+      {isChatOpen && (
+        <div className="chat-window">
+          <div className="chat-header">
+            <span>
+              {selectedUser ? selectedUser.name : 'Chọn người dùng'}
+            </span>
+            <FontAwesomeIcon 
+              icon={faTimes} 
+              onClick={toggleChat}
+              style={{ cursor: 'pointer' }}
+            />
+          </div>
+
+          {!selectedUser ? (
+            <div className="contacts-list">
+              {contacts.map(contact => (
+                <div
+                  key={contact.id}
+                  className="contact-item"
+                  onClick={() => selectUser(contact)}
                 >
-                  <FontAwesomeIcon icon={faTimes} />
-                </button>
-              </div>
-            </div>
-
-            {/* Messages Container */}
-            <div className="h-96 overflow-y-auto p-4">
-              {!selectedUser ? (
-                <div className="flex items-center justify-center h-full text-gray-500 font-normal">
-                  Select a user to start chatting
+                  <span className={onlineUsers.includes(contact.id) ? 'online-indicator' : 'offline-indicator'} />
+                  {contact.name}
                 </div>
-              ) : (
-                <>
-                  {messages.map((message, index) => (
-                    <div
-                      key={index}
-                      className={`mb-4 flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}
-                    >
-                      <div
-                        className={`max-w-[80%] rounded-lg p-3 ${
-                          message.sender === 'user'
-                            ? 'bg-blue-600 text-white'
-                            : 'bg-gray-200 text-gray-800'
-                        } font-normal`}
-                      >
-                        {message.text}
-                      </div>
-                    </div>
-                  ))}
-                </>
-              )}
-              <div ref={messagesEndRef} />
+              ))}
             </div>
+          ) : (
+            <>
+              <div className="chat-messages">
+                {Object.entries(groupMessagesByDate(messages)).map(([date, dateMessages]) => (
+                  <div key={date} className="message-group">
+                    <div className="date-separator">
+                      <span>{date}</span>
+                    </div>
+                    {dateMessages.map((msg, index) => {
+                      // Nếu to_user_id là selectedUser.id -> tin nhắn mình gửi -> bên phải xanh
+                      // Nếu to_user_id là currentUser.id -> tin nhắn người khác gửi -> bên trái xám
+                      const isSent = Number(msg.to_user_id) === Number(selectedUser.id);
+                      
+                      const showTime = index === dateMessages.length - 1 || 
+                          dateMessages[index + 1]?.to_user_id !== msg.to_user_id;
+                      
+                      console.log('Message:', {
+                          content: msg.content,
+                          to_user_id: msg.to_user_id,
+                          currentUserId: currentUser.user_id,
+                          selectedUserId: selectedUser.id,
+                          isSent: isSent
+                      });
+                      
+                      return (
+                        <div
+                          key={index}
+                          className={`message ${isSent ? 'sent' : 'received'}`}
+                        >
+                          <div className="message-content">
+                            {msg.content}
+                          </div>
+                          {showTime && (
+                            <div className="time">
+                              {formatMessageTime(msg.created_at || new Date())}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                ))}
+                <div ref={messagesEndRef} />
+              </div>
 
-            {/* Input Form */}
-            <form onSubmit={handleSendMessage} className="p-4 border-t">
-              <div className="flex gap-2">
+              <form className="chat-input" onSubmit={handleSendMessage}>
                 <input
                   type="text"
                   value={inputMessage}
                   onChange={(e) => setInputMessage(e.target.value)}
-                  placeholder={selectedUser ? "Type your message..." : "Select a user to start chatting"}
-                  disabled={!selectedUser}
-                  className="flex-1 p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed font-normal"
+                  placeholder="Nhập tin nhắn..."
                 />
-                <button
-                  type="submit"
-                  disabled={!selectedUser}
-                  className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed font-medium"
-                >
-                  Send
+                <button type="submit">
+                  <FontAwesomeIcon icon={faPaperPlane} />
                 </button>
-              </div>
-            </form>
-          </div>
-        )}
-
-        {/* Chat Button */}
-        <button
-          onClick={toggleChat}
-          className="w-12 h-12 bg-blue-600 text-white rounded-full shadow-lg flex items-center justify-center hover:bg-blue-700 transition-all transform hover:scale-110"
-          title={isChatOpen ? "Close chat" : "Open chat"}
-        >
-          <FontAwesomeIcon 
-            icon={faComments} 
-            className="text-xl"
-          />
-        </button>
-      </div>
-    </>
+              </form>
+            </>
+          )}
+        </div>
+      )}
+    </div>
   );
 };
 
