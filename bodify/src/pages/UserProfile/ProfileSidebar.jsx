@@ -8,9 +8,10 @@ import PTManagement from "./GymOwner/PTManagement";
 import MembershipManagement from "./GymOwner/MembershipManagement";
 import UserMemberships from "./User/UserMemberships";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faCalendar, faClipboardList, faUsers, faDumbbell, faWeightScale, faCreditCard, faHeartPulse } from "@fortawesome/free-solid-svg-icons";
+import { faCalendar, faClipboardList, faUsers, faDumbbell, faWeightScale, faCreditCard, faHeartPulse, faUserPlus } from "@fortawesome/free-solid-svg-icons";
 import BMICalculator from "./BMICalculator";
 import HealthInformation from "./User/HealthInformation";
+import CreateMembership from "../Membership/GymMembershipForm";
 
 const ProfileSidebar = ({ initialTab }) => {
   const location = useLocation();
@@ -94,6 +95,12 @@ const ProfileSidebar = ({ initialTab }) => {
             <MembershipManagement />
           </div>
         );
+        case "create-memberships":
+          return (
+            <div className="">
+              <CreateMembership />
+            </div>
+          );
         case "bmi":
           return (
             <div className="">
@@ -172,6 +179,19 @@ const ProfileSidebar = ({ initialTab }) => {
               <div className="flex items-center font-bold text-white">
                 <FontAwesomeIcon icon={faCreditCard} className="mr-3 ml-2 w-6 h-6" />
                 Membership  
+              </div>
+            </li>
+            <li
+              onClick={() => handleSelection("create-memberships")}
+              className={`cursor-pointer block p-2 rounded-xl  ${
+                selectedSection === "create-memberships"
+                  ? "bg-primary-500 text-gray-600  "
+                  : "bg-gray-400"
+              }`}
+            >
+              <div className="flex items-center font-bold text-white">
+                <FontAwesomeIcon icon={faUserPlus} className="mr-3 ml-2 w-6 h-6" />
+                Create Membership  
               </div>
             </li>
             <li
