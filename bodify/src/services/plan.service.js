@@ -384,6 +384,49 @@ class PlanService {
     }
   }
 
+  // Tạo bản sao của một plan
+  async copyPlan(planId) {
+    try {
+      // Kiểm tra đăng nhập
+      const currentUser = await this.getCurrentUser();
+      if (!currentUser?.user_id && !currentUser?.id) {
+        throw new Error('Vui lòng đăng nhập để sao chép kế hoạch');
+      }
+
+      // Lấy thông tin plan gốc
+      const originalPlan = await this.getPlanById(planId);
+      if (!originalPlan) {
+        throw new Error('Không tìm thấy kế hoạch gốc');
+      }
+
+      // Lấy thông tin slots của plan gốc
+      const originalSlots = await this.getPlanSlots(planId);
+
+      // Tạo plan mới
+      const newPlanData = {
+        user_id: Number(currentUser.user_id || currentUser.id),
+        plan_name: `${originalPlan.plan_name} (Bản sao)`,
+        Description: originalPlan.Description,
+        total_duration: Number(originalPlan.total_duration || 0),
+        planSlots: originalSlots.map((slot, index) => ({
+          no: (index + 1).toString(),
+          note: slot.note || '',
+          duration: Number(slot.duration || 0),
+          exercise_post_id: slot.exercise_post_id || slot.exercisePostId || null
+        }))
+      };
+
+      // Gọi API tạo plan mới
+      const response = await axios.post(`${API_URL}/plans`, newPlanData);
+      
+      // Trả về plan mới đã tạo
+      return response.data;
+    } catch (error) {
+      console.error('Lỗi khi sao chép kế hoạch:', error);
+      throw error;
+    }
+  }
+
   /* PLAN SLOTS */
   // Lấy các slots của một plan
   async getPlanSlots(planId) {

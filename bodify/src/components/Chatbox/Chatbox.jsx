@@ -63,18 +63,9 @@ style.textContent = `
 .message {
   display: flex;
   flex-direction: column;
-  max-width: 70%;
-  margin: 2px 0;
+  margin: 4px 0;
+  max-width: 80%;
   width: fit-content;
-}
-
-.message-content {
-  padding: 8px 12px;
-  border-radius: 18px;
-  word-wrap: break-word;
-  position: relative;
-  font-size: 14px;
-  line-height: 1.4;
 }
 
 .message.sent {
@@ -87,36 +78,68 @@ style.textContent = `
   margin-right: auto;
 }
 
-.message.sent .message-content {
-  background: #0084ff;
-  color: white;
-  border-bottom-right-radius: 4px;
+.message-content {
+  padding: 10px 14px;
+  border-radius: 18px;
+  word-wrap: break-word;
+  width: fit-content;
+  max-width: 100%;
+  font-size: 0.9rem;
+  line-height: 1.4;
 }
 
-.message.received .message-content {
-  background: #e4e6eb;
-  color: black;
+.sent .message-content {
+  background-color: #0084ff;
+  color: white;
+  border-bottom-right-radius: 4px;
+  margin-left: auto;
+}
+
+.received .message-content {
+  background-color: #f0f0f0;
+  color: #000;
   border-bottom-left-radius: 4px;
 }
 
-.message .time {
-  font-size: 11px;
+.message-plan {
+  display: inline-block;
+  width: 100%;
+}
+
+.plan-title {
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.plan-link {
+  color: inherit;
+  text-decoration: underline;
+}
+
+.sent .plan-link {
+  color: #ffffff;
+}
+
+.received .plan-link {
+  color: #0066cc;
+}
+
+.time {
+  font-size: 0.75rem;
+  color: #8e8e8e;
   margin-top: 2px;
-  opacity: 0.7;
 }
 
-.message.sent .time {
-  text-align: right;
-  color: #8e8e8e;
+.sent .time {
+  align-self: flex-end;
 }
 
-.message.received .time {
-  text-align: left;
-  color: #8e8e8e;
+.received .time {
+  align-self: flex-start;
 }
 
 .message-group {
-  margin: 12px 0;
+  margin: 8px 0;
 }
 
 .date-separator {
@@ -204,8 +227,79 @@ style.textContent = `
   display: inline-block;
   margin-right: 5px;
 }
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
 `;
 document.head.appendChild(style);
+
+// Simple encryption utils
+const encryptionKey = 'bodify_secure_key'; // Simple key - can be more complex in production
+
+// Encrypt Plan ID
+const encryptPlanId = (planId) => {
+  try {
+    // Convert plan ID to string
+    const planIdStr = String(planId);
+    
+    // Simple XOR encryption with the key
+    let result = '';
+    for (let i = 0; i < planIdStr.length; i++) {
+      const charCode = planIdStr.charCodeAt(i) ^ encryptionKey.charCodeAt(i % encryptionKey.length);
+      result += String.fromCharCode(charCode);
+    }
+    
+    // Convert to base64 for URL safety
+    return btoa(result).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  } catch (error) {
+    console.error('Encryption error:', error);
+    return planId;
+  }
+};
+
+// Decrypt Plan ID
+const decryptPlanId = (encryptedId) => {
+  try {
+    // Replace URL-safe chars and decode base64
+    const base64 = encryptedId.replace(/-/g, '+').replace(/_/g, '/');
+    const decoded = atob(base64);
+    
+    // Reverse XOR operation
+    let result = '';
+    for (let i = 0; i < decoded.length; i++) {
+      const charCode = decoded.charCodeAt(i) ^ encryptionKey.charCodeAt(i % encryptionKey.length);
+      result += String.fromCharCode(charCode);
+    }
+    
+    return result;
+  } catch (error) {
+    console.error('Decryption error:', error);
+    return encryptedId;
+  }
+};
+
+// Process URL to encrypt plan ID
+const processUrl = (url) => {
+  try {
+    // Chỉ xử lý URL cho plan-detail
+    if (!url.includes('plan-detail')) return url;
+    
+    // Trích xuất plan ID từ URL
+    const match = url.match(/id=(\d+)/);
+    if (!match || !match[1]) return url;
+    
+    const planId = match[1];
+    const encryptedId = encryptPlanId(planId);
+    
+    // Thay thế ID trong URL bằng phiên bản mã hóa
+    return url.replace(`id=${planId}`, `id=${encryptedId}&e=1`);
+  } catch (error) {
+    console.error('Lỗi xử lý URL:', error);
+    return url;
+  }
+};
 
 const Chatbox = () => {
   const [messages, setMessages] = useState([]);
@@ -421,6 +515,92 @@ const Chatbox = () => {
     return groups;
   };
 
+  // Xử lý URL trong tin nhắn thông thường
+  const processMessage = (text) => {
+    // Kiểm tra nếu là tin nhắn chia sẻ kế hoạch
+    if (text.includes('Chia sẻ kế hoạch tập luyện') || text.includes('Bắt đầu tập ngay:')) {
+      const urlMatch = text.match(/(https?:\/\/[^\s]+|localhost:[0-9]+\/[^\s]+|\/plan-detail\?id=[^\s]+)/);
+      if (urlMatch) {
+        const url = urlMatch[0].replace(/[()]/g, '');
+        const isLocalhost = url.startsWith('localhost');
+        const isRelative = url.startsWith('/');
+        
+        let fullUrl;
+        if (isRelative) {
+          // Xử lý URL tương đối
+          const baseUrl = window.location.origin + url;
+          fullUrl = processUrl(baseUrl);
+        } else {
+          const processedUrl = isLocalhost ? `http://${url}` : url;
+          fullUrl = processUrl(processedUrl);
+        }
+        
+        return (
+          <div className="message-plan">
+            <div className="plan-title">Kế hoạch tập luyện được chia sẻ</div>
+            <a
+              href={fullUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="plan-link"
+            >
+              Xem chi tiết kế hoạch
+            </a>
+          </div>
+        );
+      }
+    }
+    
+    // Xử lý các URL trong tin nhắn thông thường
+    const urlRegex = /(https?:\/\/[^\s]+|localhost:[0-9]+\/[^\s]+|\/plan-detail\?id=[^\s]+)/g;
+    if (!text.match(urlRegex)) return text;
+    
+    const parts = [];
+    let lastIndex = 0;
+    let match;
+    
+    const regex = new RegExp(urlRegex);
+    while ((match = regex.exec(text)) !== null) {
+      if (match.index > lastIndex) {
+        parts.push(text.substring(lastIndex, match.index));
+      }
+      
+      const url = match[0].replace(/[()]/g, '');
+      const isLocalhost = url.startsWith('localhost');
+      const isRelative = url.startsWith('/');
+      
+      let fullUrl;
+      if (isRelative) {
+        // Xử lý URL tương đối
+        const baseUrl = window.location.origin + url;
+        fullUrl = processUrl(baseUrl);
+      } else {
+        const processedUrl = isLocalhost ? `http://${url}` : url;
+        fullUrl = processUrl(processedUrl);
+      }
+      
+      parts.push(
+        <a
+          key={match.index}
+          href={fullUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{ color: 'inherit', textDecoration: 'underline' }}
+        >
+          {url.includes('plan-detail') ? 'Xem kế hoạch' : url}
+        </a>
+      );
+      
+      lastIndex = match.index + match[0].length;
+    }
+    
+    if (lastIndex < text.length) {
+      parts.push(text.substring(lastIndex));
+    }
+    
+    return parts.length === 1 ? parts[0] : parts;
+  };
+
   if (!currentUser) return null;
 
   return (
@@ -473,20 +653,9 @@ const Chatbox = () => {
                       <span>{date}</span>
                     </div>
                     {dateMessages.map((msg, index) => {
-                      // Nếu to_user_id là selectedUser.id -> tin nhắn mình gửi -> bên phải xanh
-                      // Nếu to_user_id là currentUser.id -> tin nhắn người khác gửi -> bên trái xám
                       const isSent = Number(msg.to_user_id) === Number(selectedUser.id);
-                      
                       const showTime = index === dateMessages.length - 1 || 
                           dateMessages[index + 1]?.to_user_id !== msg.to_user_id;
-                      
-                      console.log('Message:', {
-                          content: msg.content,
-                          to_user_id: msg.to_user_id,
-                          currentUserId: currentUser.user_id,
-                          selectedUserId: selectedUser.id,
-                          isSent: isSent
-                      });
                       
                       return (
                         <div
@@ -494,11 +663,11 @@ const Chatbox = () => {
                           className={`message ${isSent ? 'sent' : 'received'}`}
                         >
                           <div className="message-content">
-                            {msg.content}
+                            {processMessage(msg.content)}
                           </div>
                           {showTime && (
                             <div className="time">
-                              {formatMessageTime(msg.created_at || new Date())}
+                              {formatMessageTime(msg.created_at)}
                             </div>
                           )}
                         </div>
