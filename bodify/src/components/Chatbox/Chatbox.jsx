@@ -230,7 +230,7 @@ const Chatbox = () => {
       console.log('Nhận tin nhắn mới:', message);
       
       // Ensure we have all required fields
-      if (!message.to_user_id || !message.content) {
+      if (!message.content) {
         console.error('Invalid message format:', message);
         return;
       }
@@ -240,37 +240,27 @@ const Chatbox = () => {
         message.created_at = new Date().toISOString();
       }
 
-      // Check if message is relevant to current chat
-      const isRelevantToCurrentChat = selectedUser && (
-        (Number(message.to_user_id) === Number(selectedUser.id) && Number(message.from_user_id) === Number(currentUser.user_id)) ||
-        (Number(message.to_user_id) === Number(currentUser.user_id) && Number(message.from_user_id) === Number(selectedUser.id))
-      );
-
-      if (isRelevantToCurrentChat) {
-        setMessages(prev => {
-          // Check for duplicate messages
-          const isDuplicate = prev.some(m => 
-            m.content === message.content && 
-            m.to_user_id === message.to_user_id &&
-            m.from_user_id === message.from_user_id &&
-            Math.abs(new Date(m.created_at) - new Date(message.created_at)) < 1000
-          );
-          
-          if (isDuplicate) {
-            console.log('Duplicate message detected, skipping:', message);
-            return prev;
-          }
-          
-          const newMessages = [...prev, message];
-          // Sort messages by timestamp
-          return newMessages.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
-        });
+      // Always update messages state with new message
+      setMessages(prev => {
+        // Simple duplicate check based on exact content and timestamp
+        const isDuplicate = prev.some(m => 
+          m.content === message.content && 
+          Math.abs(new Date(m.created_at) - new Date(message.created_at)) < 500
+        );
         
-        // Auto scroll to new message
-        setTimeout(() => {
-          messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-        }, 100);
-      }
+        if (isDuplicate) {
+          console.log('Duplicate message detected, skipping');
+          return prev;
+        }
+
+        const newMessages = [...prev, message];
+        return newMessages.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+      });
+      
+      // Auto scroll to new message
+      setTimeout(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+      }, 100);
     });
 
     // Đăng ký lắng nghe cập nhật trạng thái online
@@ -279,26 +269,56 @@ const Chatbox = () => {
       setOnlineUsers(users);
     });
 
-    // Thiết lập test data
-    const testContacts = [];
-    if (currentUser.user_id === 1) {
-      testContacts.push({
-        id: 6,
-        name: "User Test 6",
-        avatar: null
-      });
-    } else if (currentUser.user_id === 6) {
-      testContacts.push({
-        id: 1,
-        name: "User Test 1",
-        avatar: null
-      });
-    }
-    setContacts(testContacts);
+    // Lắng nghe sự kiện selectUser từ nút Liên hệ
+    const handleSelectUser = (event) => {
+      const contact = event.detail;
+      if (contact) {
+        // Thêm contact mới vào danh sách nếu chưa có
+        setContacts(prev => {
+          const exists = prev.some(c => c.id === contact.id);
+          if (!exists) {
+            return [...prev, contact];
+          }
+          return prev;
+        });
+        selectUser(contact);
+      }
+    };
+    document.querySelector('.chatbox-container')?.addEventListener('selectUser', handleSelectUser);
+
+    // Lấy danh sách người dùng đã chat
+    const fetchChatUsers = async () => {
+      try {
+        const response = await ChatService.getAllChatUsers(currentUser.user_id);
+        console.log('Danh sách người dùng đã chat:', response);
+        
+        // Kiểm tra và lấy mảng users từ response
+        let chatUsers = [];
+        if (response.data && Array.isArray(response.data)) {
+          chatUsers = response.data;
+        } else if (response.data && Array.isArray(response.data.data)) {
+          chatUsers = response.data.data;
+        }
+
+        // Chuyển đổi format dữ liệu để phù hợp với contacts
+        const formattedContacts = chatUsers.map(user => ({
+          id: user.user_id,
+          name: user.name || user.username,
+          avatar: user.avatar_url
+        }));
+        console.log('Formatted contacts:', formattedContacts);
+        setContacts(formattedContacts);
+      } catch (error) {
+        console.error('Lỗi khi lấy danh sách người dùng đã chat:', error);
+      }
+    };
+
+    fetchChatUsers();
 
     return () => {
       removeNewMessageHandler();
       removeOnlineUsersHandler();
+      document.querySelector('.chatbox-container')?.removeEventListener('selectUser', handleSelectUser);
       ChatService.disconnect();
     };
   }, [currentUser?.user_id]); // Chỉ phụ thuộc vào currentUser.user_id
@@ -328,8 +348,6 @@ const Chatbox = () => {
     setInputMessage(''); // Clear input immediately for better UX
 
     try {
-      console.log('Sending message to user:', selectedUser.id);
-      
       // Create message object
       const newMessage = {
         content: messageContent,
@@ -338,25 +356,30 @@ const Chatbox = () => {
         created_at: new Date().toISOString()
       };
 
-      // Optimistically add message to UI
-      setMessages(prev => [...prev, newMessage]);
-      
-      // Send message to server
-      const sentMessage = await ChatService.sendMessage(selectedUser.id, messageContent);
-      console.log('Message sent successfully:', sentMessage);
-      
+      // Update UI immediately for sender
+      setMessages(prev => {
+        const newMessages = [...prev, newMessage];
+        return newMessages.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+      });
+
       // Auto scroll to new message
-      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+      setTimeout(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+      }, 100);
+
+      // Send message to server
+      await ChatService.sendMessage(selectedUser.id, messageContent);
+      console.log('Message sent successfully');
     } catch (error) {
       console.error('Error sending message:', error);
-      // Show error to user
       alert('Failed to send message. Please try again.');
       
       // Remove failed message from UI
       setMessages(prev => prev.filter(msg => 
         msg.content !== messageContent || 
-        msg.to_user_id !== selectedUser.id
+        msg.created_at !== newMessage.created_at
       ));
+      setInputMessage(messageContent); // Restore failed message to input
     }
   };
 
@@ -410,7 +433,16 @@ const Chatbox = () => {
         <div className="chat-window">
           <div className="chat-header">
             <span>
-              {selectedUser ? selectedUser.name : 'Chọn người dùng'}
+              {selectedUser ? (
+                <>
+                  <FontAwesomeIcon 
+                    icon={faChevronDown} 
+                    onClick={() => setSelectedUser(null)}
+                    style={{ cursor: 'pointer', marginRight: '10px' }}
+                  />
+                  {selectedUser.name}
+                </>
+              ) : 'Chọn người dùng'}
             </span>
             <FontAwesomeIcon 
               icon={faTimes} 

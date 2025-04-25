@@ -1,5 +1,6 @@
 import React from "react";
 import Main from './layout/Main'
+import MainLayout from './layout/MainLayout'
 import SignUpForm from './pages/Login/login'
 import UserInformation from './pages/UserProfile/UserInformation'
 import AdminLayout from './pages/Admin/AdminLayout'
@@ -20,10 +21,18 @@ import TrainerList from "./pages/PTList/TrainerList";
 import GymOwnerApprovalPage from './pages/Approval/GymOwnerApprovalPage';
 import PlanList from "./pages/PlanDetail/PlanList";
 
+const withMainLayout = (Component) => {
+  return (
+    <MainLayout>
+      <Component />
+    </MainLayout>
+  );
+};
+
 const routes = createBrowserRouter([
     {
         path: '/',
-        element: <Main/>
+        element: withMainLayout(Main)
     },
     {
         path: '/admin',
@@ -31,11 +40,11 @@ const routes = createBrowserRouter([
     },
     {
         path: '/sign-up',
-        element: <SignUpForm/>
+        element: withMainLayout(SignUpForm)
     },
     {
         path: '/sign-in',
-        element: <SignUpForm/>
+        element: withMainLayout(SignUpForm)
     },
     {
         path: '/userprofile',
@@ -51,19 +60,19 @@ const routes = createBrowserRouter([
     },
     {
         path: '/exercise',
-        element: <ExerciseHome/>
+        element: withMainLayout(ExerciseHome)
     },
     {
         path: '/exercise-post/:id',
-        element: <ExerciseDetail/>
+        element: withMainLayout(ExerciseDetail)
     },
     {
         path: '/exercise/:id',
-        element: <ExerciseDetail/>
+        element: withMainLayout(ExerciseDetail)
     },
     {
         path: '/plan',
-        element: <Plan/>
+        element: withMainLayout(Plan)
     },
     {
         path: '/plans',
@@ -71,35 +80,35 @@ const routes = createBrowserRouter([
     },
     {
         path: '/pt/exercises',
-        element: <ExerciseManagement/>
+        element: withMainLayout(ExerciseManagement)
     },
     {
         path: '/gymowner/approve-exercises',
-        element: <ExerciseApproval/>
+        element: withMainLayout(ExerciseApproval)
     },
     {
         path: '/gymowner/pt-management',
-        element: <PTManagement/>
+        element: withMainLayout(PTManagement)
     },
     {
         path: '/register-pt',
-        element: <FormPT/>
+        element: withMainLayout(FormPT)
     },
     {
         path: '/gyms',
-        element: <GymList/>
+        element: withMainLayout(GymList)
     },
     {
         path: '/users/public/:id',
-        element: <GymDetail/>
+        element: withMainLayout(GymDetail)
     },
     {
         path: '/payment-status',
-        element: <PaymentStatus/>
+        element: withMainLayout(PaymentStatus)
     },
     {
         path: '/payment-callback',
-        element: <PaymentCallback/>
+        element: withMainLayout(PaymentCallback)
     },
     {
         path: '/admin/*',
@@ -107,15 +116,15 @@ const routes = createBrowserRouter([
     },
     {
         path: '/pt-list',
-        element: <TrainerList/>
+        element: withMainLayout(TrainerList)
     },
     {
         path: '/gymowner/approve-pt',
-        element: <GymOwnerApprovalPage/>
+        element: withMainLayout(GymOwnerApprovalPage)
     },
     {
         path: '/plan-detail',
-        element: <PlanList/>
+        element: withMainLayout(PlanList)
     }
 ]);
 

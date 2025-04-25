@@ -2,7 +2,22 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { SectionTitle } from '../../../components/Title/SectionTitle';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faHeartPulse, faCalendar, faPencilAlt, faCheck, faTimes } from '@fortawesome/free-solid-svg-icons';
+import { 
+  faHeartPulse, 
+  faCalendar, 
+  faPencilAlt, 
+  faCheck, 
+  faTimes,
+  faUser,
+  faDumbbell,
+  faDroplet,
+  faWeightScale,
+  faRuler,
+  faHeart,
+  faClock,
+  faFire,
+  faChartLine
+} from '@fortawesome/free-solid-svg-icons';
 import UserService from '../../../services/user.service';
 
 const HealthInformation = () => {
@@ -12,17 +27,24 @@ const HealthInformation = () => {
     error: null
   });
 
-  const [isEditing, setIsEditing] = useState({
-    health: false,
-    illness: false,
-    bmi: false
-  });
+  const [isEditing, setIsEditing] = useState(false);
 
   const [formData, setFormData] = useState({
-    Health_information: '',
-    illness: '',
+    age: '',
+    gender: '',
+    weight: '',
     height: '',
-    weight: ''
+    maxHeartRate: '',
+    avgHeartRate: '',
+    restingHeartRate: '',
+    sessionDuration: '',
+    caloriesBurned: '',
+    experienceLevel: '',
+    fatPercentage: '',
+    waterIntake: '',
+    workoutFrequency: '',
+    bmi: '',
+    illness: ''
   });
 
   const user = JSON.parse(localStorage.getItem('user'));
@@ -31,74 +53,52 @@ const HealthInformation = () => {
     fetchUserData();
   }, []);
 
-  // Function to parse BMI history from Health_information string
-  const parseBMIHistory = (healthInfo) => {
-    if (!healthInfo) return [];
+  const parseHealthInfo = (healthInfo) => {
+    if (!healthInfo) return {};
     
+    try {
+      const data = {};
     const lines = healthInfo.split('\n');
-    const bmiEntries = [];
     
     lines.forEach(line => {
-      // Check for formatted BMI entries
-      if (line.startsWith('BMI:')) {
-        const match = line.match(/BMI: (\d+\.?\d*) \((.*?)\) - Height: (\d+)cm, Weight: (\d+)kg - Status: (.*?) -/);
-        if (match) {
-          try {
-            const dateStr = match[2];
-            const date = new Date(dateStr);
-            
-            if (!isNaN(date.getTime())) {
-              bmiEntries.push({
-                bmi: parseFloat(match[1]),
-                date: date.toISOString(),
-                height: parseInt(match[3]),
-                weight: parseInt(match[4]),
-                status: match[5],
-                healthTags: line.split('Health Tags: ')[1]?.split(', ') || []
-              });
-            }
-          } catch (error) {
-            console.warn('Could not parse date:', match[2]);
-          }
+        const [key, value] = line.split(':').map(str => str.trim());
+        if (key && value) {
+          data[key.toLowerCase().replace(/\s+/g, '')] = value;
         }
-      } else {
-        // Check for standalone numbers that might be BMI values
-        const words = line.split(/\s+/);
-        words.forEach(word => {
-          const number = parseFloat(word);
-          if (!isNaN(number) && number > 10 && number < 50) { // Reasonable BMI range
-            const now = new Date();
-            bmiEntries.push({
-              bmi: number,
-              date: now.toISOString(),
-              status: calculateBMIStatus(number).status,
-              healthTags: getBMIHealthTags(number)
-            });
-          }
-        });
-      }
-    });
-    
-    return bmiEntries.sort((a, b) => new Date(b.date) - new Date(a.date));
+      });
+      
+      return data;
+    } catch (error) {
+      console.error('Error parsing health info:', error);
+      return {};
+    }
   };
 
   const fetchUserData = async () => {
     try {
       const response = await UserService.getUserProfile(user.user_id);
+      const parsedHealthInfo = parseHealthInfo(response.data.Health_information);
       
-      // Parse BMI history from Health_information
-      const bmiHistory = parseBMIHistory(response.data.Health_information);
-      
-      // Update form data
       setFormData({
-        Health_information: response.data.Health_information || '',
-        illness: response.data.illness || '',
-        height: '',
-        weight: ''
+        age: parsedHealthInfo.age || '',
+        gender: parsedHealthInfo.gender || '',
+        weight: parsedHealthInfo.weight || '',
+        height: parsedHealthInfo.height || '',
+        maxHeartRate: parsedHealthInfo.maxheartrate || '',
+        avgHeartRate: parsedHealthInfo.avgheartrate || '',
+        restingHeartRate: parsedHealthInfo.restingheartrate || '',
+        sessionDuration: parsedHealthInfo.sessionduration || '',
+        caloriesBurned: parsedHealthInfo.caloriesburned || '',
+        experienceLevel: parsedHealthInfo.experiencelevel || '',
+        fatPercentage: parsedHealthInfo.fatpercentage || '',
+        waterIntake: parsedHealthInfo.waterintake || '',
+        workoutFrequency: parsedHealthInfo.workoutfrequency || '',
+        bmi: parsedHealthInfo.bmi || '',
+        illness: response.data.illness || ''
       });
 
       setHealthData({
-        bmiHistory,
+        bmiHistory: [],
         loading: false,
         error: null
       });
@@ -112,84 +112,42 @@ const HealthInformation = () => {
     }
   };
 
-  const calculateBMIStatus = (bmi) => {
-    if (!bmi || isNaN(bmi)) return { status: 'No data', color: 'text-gray-500' };
-    if (bmi < 18.5) return { status: 'Underweight', color: 'text-blue-500' };
-    if (bmi < 24.9) return { status: 'Normal weight', color: 'text-green-500' };
-    if (bmi < 29.9) return { status: 'Overweight', color: 'text-yellow-500' };
-    return { status: 'Obese', color: 'text-red-500' };
-  };
-
-  const getBMIHealthTags = (bmi) => {
-    if (!bmi || isNaN(bmi)) return [];
-    
-    let tags = [];
-    if (bmi < 18.5) {
-      tags.push('Weight Gain', 'Muscle Gain', 'Overall Health');
-    } else if (bmi < 24.9) {
-      tags.push('Fitness', 'Overall Health', 'Muscle Gain');
-    } else if (bmi < 29.9) {
-      tags.push('Weight Loss', 'Fitness', 'Overall Health');
-    } else {
-      tags.push('Weight Loss', 'Overall Health', 'Fitness');
-    }
-    return tags;
-  };
-
-  const handleSubmit = async (field) => {
+  const handleSubmit = async () => {
     try {
-      let updateData = {};
-      
-      if (field === 'bmi') {
+      // Calculate BMI
         const height = parseFloat(formData.height);
         const weight = parseFloat(formData.weight);
-        if (!height || !weight) {
-          alert('Please enter both height and weight');
-          return;
-        }
-        const bmi = (weight / ((height / 100) * (height / 100))).toFixed(1);
-        const now = new Date();
-        const dateStr = now.toLocaleDateString('en-US'); // Format: MM/DD/YYYY
-        const bmiStatus = calculateBMIStatus(parseFloat(bmi)).status;
-        const healthTags = getBMIHealthTags(parseFloat(bmi));
-        
-        // Only save the new BMI information
-        const bmiInfo = `BMI: ${bmi} (${dateStr}) - Height: ${height}cm, Weight: ${weight}kg - Status: ${bmiStatus} - Health Tags: ${healthTags.join(', ')}`;
-        
-        updateData = {
-          Health_information: bmiInfo,
-          illness: formData.illness || ''
-        };
-      } else {
-        // For other fields, don't process BMI values from text
-        updateData = {
-          Health_information: formData[field] || '',
-          illness: formData.illness || ''
-        };
-      }
+      const bmi = height && weight ? (weight / ((height / 100) * (height / 100))).toFixed(1) : '';
 
-      // Update user health info using UserService
+      // Format health information string
+      const healthInfo = `
+Age: ${formData.age}
+Gender: ${formData.gender}
+Weight: ${formData.weight} kg
+Height: ${formData.height} cm
+Max Heart Rate: ${formData.maxHeartRate} BPM
+Average Heart Rate: ${formData.avgHeartRate} BPM
+Resting Heart Rate: ${formData.restingHeartRate} BPM
+Session Duration: ${formData.sessionDuration} hours
+Calories Burned: ${formData.caloriesBurned}
+Experience Level: ${formData.experienceLevel}
+Fat Percentage: ${formData.fatPercentage}%
+Water Intake: ${formData.waterIntake} L
+Workout Frequency: ${formData.workoutFrequency}
+BMI: ${bmi}`.trim();
+
+      const updateData = {
+        Health_information: healthInfo,
+        illness: formData.illness
+      };
+
       await UserService.updateHealthInfo(user.user_id, updateData);
 
-      // Update local storage user data
       const updatedUser = { ...user, ...updateData };
       localStorage.setItem('user', JSON.stringify(updatedUser));
 
-      setIsEditing(prev => ({
-        ...prev,
-        [field === 'bmi' ? 'health' : field]: false
-      }));
-      
-      // Clear BMI inputs after submission
-      if (field === 'bmi') {
-        setFormData(prev => ({
-          ...prev,
-          height: '',
-          weight: ''
-        }));
-      }
-      
-      fetchUserData(); // Refresh data after update
+      setIsEditing(false);
+      fetchUserData();
     } catch (error) {
       console.error('Error updating data:', error);
       alert('Could not update information. Please try again later.');
@@ -201,12 +159,6 @@ const HealthInformation = () => {
       ...prev,
       [e.target.name]: e.target.value
     }));
-  };
-
-  const formatDate = (dateString) => {
-    if (!dateString) return 'No data';
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US');
   };
 
   if (healthData.loading) {
@@ -225,227 +177,348 @@ const HealthInformation = () => {
     );
   }
 
-  const latestBMI = healthData.bmiHistory[0] || {};
-
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="flex justify-between items-center mb-6">
         <SectionTitle>Health Information</SectionTitle>
+        <button
+          onClick={() => setIsEditing(!isEditing)}
+          className="bg-orange-500 text-white px-4 py-2 rounded-lg hover:bg-orange-600 transition-colors duration-200 flex items-center gap-2"
+        >
+          <FontAwesomeIcon icon={isEditing ? faTimes : faPencilAlt} />
+          {isEditing ? 'Cancel' : 'Edit Information'}
+        </button>
       </div>
 
-      {/* Latest Health Metrics */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
-        <div className="bg-white p-6 rounded-lg shadow-md">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center">
-              <FontAwesomeIcon icon={faHeartPulse} className="text-primary-500 text-xl mr-2" />
-              <h3 className="text-lg font-semibold">BMI Calculator</h3>
+      {isEditing ? (
+        <form onSubmit={(e) => { e.preventDefault(); handleSubmit(); }} className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Personal Information Card */}
+          <div className="bg-white rounded-xl shadow-md p-6 hover:shadow-lg transition-shadow duration-200">
+            <div className="flex items-center gap-2 mb-4">
+              <FontAwesomeIcon icon={faUser} className="text-orange-500 text-xl" />
+              <h3 className="text-lg font-semibold">Personal Information</h3>
             </div>
-            <button
-              onClick={() => setIsEditing(prev => ({ ...prev, bmi: !prev.bmi }))}
-              className="text-primary-500 hover:text-primary-600"
-            >
-              <FontAwesomeIcon icon={isEditing.bmi ? faTimes : faPencilAlt} />
-            </button>
-          </div>
-          {isEditing.bmi ? (
             <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Height (cm)
-                  </label>
-                  <input
-                    type="number"
-                    name="height"
-                    value={formData.height}
-                    onChange={handleChange}
-                    className="w-full p-2 border rounded-md"
-                    placeholder="e.g., 170"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Weight (kg)
-                  </label>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Age</label>
+                <input
+                  type="number"
+                  name="age"
+                  value={formData.age}
+                  onChange={handleChange}
+                  className="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Gender</label>
+                <select
+                  name="gender"
+                  value={formData.gender}
+                  onChange={handleChange}
+                  className="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500"
+                >
+                  <option value="">Select gender</option>
+                  <option value="male">Male</option>
+                  <option value="female">Female</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Weight (kg)</label>
+                <div className="relative">
+                  <FontAwesomeIcon icon={faWeightScale} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
                   <input
                     type="number"
                     name="weight"
                     value={formData.weight}
                     onChange={handleChange}
-                    className="w-full p-2 border rounded-md"
-                    placeholder="e.g., 65"
+                    step="0.1"
+                    className="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500 pl-10"
                   />
                 </div>
               </div>
-              <button
-                onClick={() => handleSubmit('bmi')}
-                className="w-full px-4 py-2 bg-primary-500 text-white rounded-lg hover:bg-primary-600 transition-colors"
-              >
-                Calculate BMI
-              </button>
+                <div>
+                <label className="block text-sm font-medium text-gray-700">Height (cm)</label>
+                <div className="relative">
+                  <FontAwesomeIcon icon={faRuler} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                  <input
+                    type="number"
+                    name="height"
+                    value={formData.height}
+                    onChange={handleChange}
+                    className="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500 pl-10"
+                  />
+                </div>
+              </div>
             </div>
-          ) : (
-            <>
-              <p className="text-2xl font-bold text-gray-800">{latestBMI.bmi ? latestBMI.bmi.toFixed(1) : 'N/A'}</p>
-              <p className={`text-sm font-medium ${calculateBMIStatus(latestBMI.bmi).color}`}>
-                {calculateBMIStatus(latestBMI.bmi).status}
-              </p>
-            </>
-          )}
-        </div>
-
-        <div className="bg-white p-6 rounded-lg shadow-md">
-          <div className="flex items-center mb-4">
-            <FontAwesomeIcon icon={faCalendar} className="text-primary-500 text-xl mr-2" />
-            <h3 className="text-lg font-semibold">Last Updated</h3>
           </div>
-          <p className="text-2xl font-bold text-gray-800">{formatDate(latestBMI.date)}</p>
+
+          {/* Heart Rate Card */}
+          <div className="bg-white rounded-xl shadow-md p-6 hover:shadow-lg transition-shadow duration-200">
+            <div className="flex items-center gap-2 mb-4">
+              <FontAwesomeIcon icon={faHeart} className="text-orange-500 text-xl" />
+              <h3 className="text-lg font-semibold">Heart Rate Information</h3>
+            </div>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Maximum Heart Rate (BPM)</label>
+                <input
+                  type="number"
+                  name="maxHeartRate"
+                  value={formData.maxHeartRate}
+                  onChange={handleChange}
+                  className="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Average Heart Rate (BPM)</label>
+                <input
+                  type="number"
+                  name="avgHeartRate"
+                  value={formData.avgHeartRate}
+                  onChange={handleChange}
+                  className="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Resting Heart Rate (BPM)</label>
+                <input
+                  type="number"
+                  name="restingHeartRate"
+                  value={formData.restingHeartRate}
+                  onChange={handleChange}
+                  className="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Workout Information Card */}
+          <div className="bg-white rounded-xl shadow-md p-6 hover:shadow-lg transition-shadow duration-200">
+            <div className="flex items-center gap-2 mb-4">
+              <FontAwesomeIcon icon={faDumbbell} className="text-orange-500 text-xl" />
+              <h3 className="text-lg font-semibold">Workout Information</h3>
+            </div>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Session Duration (hours)</label>
+                <div className="relative">
+                  <FontAwesomeIcon icon={faClock} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                  <input
+                    type="number"
+                    name="sessionDuration"
+                    value={formData.sessionDuration}
+                    onChange={handleChange}
+                    step="0.1"
+                    className="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500 pl-10"
+                  />
+                </div>
+                </div>
+                <div>
+                <label className="block text-sm font-medium text-gray-700">Calories Burned</label>
+                <div className="relative">
+                  <FontAwesomeIcon icon={faFire} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                  <input
+                    type="number"
+                    name="caloriesBurned"
+                    value={formData.caloriesBurned}
+                    onChange={handleChange}
+                    className="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500 pl-10"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Experience Level</label>
+                <select
+                  name="experienceLevel"
+                  value={formData.experienceLevel}
+                  onChange={handleChange}
+                  className="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500"
+                >
+                  <option value="">Select level</option>
+                  <option value="beginner">Beginner</option>
+                  <option value="intermediate">Intermediate</option>
+                  <option value="advanced">Advanced</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Workout Frequency (per week)</label>
+                <div className="relative">
+                  <FontAwesomeIcon icon={faChartLine} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                  <input
+                    type="number"
+                    name="workoutFrequency"
+                    value={formData.workoutFrequency}
+                    onChange={handleChange}
+                    className="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500 pl-10"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Body Composition Card */}
+          <div className="bg-white rounded-xl shadow-md p-6 hover:shadow-lg transition-shadow duration-200">
+            <div className="flex items-center gap-2 mb-4">
+              <FontAwesomeIcon icon={faDroplet} className="text-orange-500 text-xl" />
+              <h3 className="text-lg font-semibold">Body Composition</h3>
+            </div>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Fat Percentage (%)</label>
+                <input
+                  type="number"
+                  name="fatPercentage"
+                  value={formData.fatPercentage}
+                  onChange={handleChange}
+                  step="0.1"
+                  className="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Water Intake (L)</label>
+                <input
+                  type="number"
+                  name="waterIntake"
+                  value={formData.waterIntake}
+                  onChange={handleChange}
+                  step="0.1"
+                  className="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Medical Conditions</label>
+                <textarea
+                  name="illness"
+                  value={formData.illness}
+                  onChange={handleChange}
+                  rows="3"
+                  className="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500"
+                  placeholder="Enter any medical conditions..."
+                />
+              </div>
         </div>
       </div>
 
-      {/* Health Info and Illness */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-        <div className="bg-white p-6 rounded-lg shadow-md">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold">Health Information</h3>
-            <div className="flex items-center space-x-2">
-              {isEditing.health ? (
-                <>
+          <div className="col-span-2 flex justify-end space-x-4 mt-6">
                   <button
-                    onClick={() => handleSubmit('Health_information')}
-                    className="text-green-500 hover:text-green-600"
+              type="button"
+              onClick={() => setIsEditing(false)}
+              className="px-6 py-2 rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors duration-200"
                   >
-                    <FontAwesomeIcon icon={faCheck} />
+              Cancel
                   </button>
                   <button
-                    onClick={() => setIsEditing(prev => ({ ...prev, health: false }))}
-                    className="text-red-500 hover:text-red-600"
+              type="submit"
+              className="px-6 py-2 rounded-lg bg-orange-500 text-white hover:bg-orange-600 transition-colors duration-200"
                   >
-                    <FontAwesomeIcon icon={faTimes} />
+              Save Changes
                   </button>
-                </>
-              ) : (
-                <button
-                  onClick={() => setIsEditing(prev => ({ ...prev, health: true }))}
-                  className="text-primary-500 hover:text-primary-600"
-                >
-                  <FontAwesomeIcon icon={faPencilAlt} />
-                </button>
-              )}
-            </div>
           </div>
-          {isEditing.health ? (
-            <textarea
-              name="Health_information"
-              value={formData.Health_information || ''}
-              onChange={handleChange}
-              className="w-full p-2 border rounded-md"
-              rows="4"
-              placeholder="Enter your health information..."
-            />
-          ) : (
-            <p className="text-gray-700 whitespace-pre-line">
-              {formData.Health_information || 'No health information available'}
-            </p>
-          )}
-        </div>
-        <div className="bg-white p-6 rounded-lg shadow-md">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold">Medical Conditions</h3>
-            <div className="flex items-center space-x-2">
-              {isEditing.illness ? (
-                <>
-                  <button
-                    onClick={() => handleSubmit('illness')}
-                    className="text-green-500 hover:text-green-600"
-                  >
-                    <FontAwesomeIcon icon={faCheck} />
-                  </button>
-                  <button
-                    onClick={() => setIsEditing(prev => ({ ...prev, illness: false }))}
-                    className="text-red-500 hover:text-red-600"
-                  >
-                    <FontAwesomeIcon icon={faTimes} />
-                  </button>
-                </>
-              ) : (
-                <button
-                  onClick={() => setIsEditing(prev => ({ ...prev, illness: true }))}
-                  className="text-primary-500 hover:text-primary-600"
-                >
-                  <FontAwesomeIcon icon={faPencilAlt} />
-                </button>
-              )}
-            </div>
-          </div>
-          {isEditing.illness ? (
-            <textarea
-              name="illness"
-              value={formData.illness || ''}
-              onChange={handleChange}
-              className="w-full p-2 border rounded-md"
-              rows="4"
-              placeholder="Enter any medical conditions..."
-            />
-          ) : (
-            <p className="text-gray-700 whitespace-pre-line">
-              {formData.illness || 'No medical conditions'}
-            </p>
-          )}
-        </div>
-      </div>
-
-      {/* BMI Details */}
-      {healthData.bmiHistory.length > 0 ? (
-        <div className="bg-white rounded-lg shadow-md overflow-hidden">
-          <div className="p-6">
-            <h3 className="text-xl font-semibold mb-4">Current BMI Details</h3>
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Last Updated
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      BMI
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Status
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Recommended Focus
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {healthData.bmiHistory.slice(0, 1).map((record, index) => (
-                    <tr key={index} className="bg-white">
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {formatDate(record.date)}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {record.bmi ? record.bmi.toFixed(1) : 'N/A'}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm">
-                        <span className={`font-medium ${calculateBMIStatus(record.bmi).color}`}>
-                          {record.status || calculateBMIStatus(record.bmi).status}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 text-sm text-gray-900">
-                        {record.healthTags?.join(', ') || 'N/A'}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
+        </form>
       ) : (
-        <div className="text-center py-8 text-gray-500">
-          No BMI data available
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Personal Information Display Card */}
+          <div className="bg-white rounded-xl shadow-md p-6 hover:shadow-lg transition-shadow duration-200">
+            <div className="flex items-center gap-2 mb-4">
+              <FontAwesomeIcon icon={faUser} className="text-orange-500 text-xl" />
+              <h3 className="text-lg font-semibold">Personal Information</h3>
+            </div>
+            <div className="space-y-3">
+              <p className="flex items-center gap-2">
+                <span className="font-medium min-w-[120px]">Age:</span>
+                <span className="text-gray-600">{formData.age}</span>
+              </p>
+              <p className="flex items-center gap-2">
+                <span className="font-medium min-w-[120px]">Gender:</span>
+                <span className="text-gray-600">{formData.gender}</span>
+              </p>
+              <p className="flex items-center gap-2">
+                <span className="font-medium min-w-[120px]">Weight:</span>
+                <span className="text-gray-600">{formData.weight} kg</span>
+              </p>
+              <p className="flex items-center gap-2">
+                <span className="font-medium min-w-[120px]">Height:</span>
+                <span className="text-gray-600">{formData.height} cm</span>
+              </p>
+              <p className="flex items-center gap-2">
+                <span className="font-medium min-w-[120px]">BMI:</span>
+                <span className="text-gray-600">{formData.bmi}</span>
+              </p>
+            </div>
+          </div>
+
+          {/* Heart Rate Display Card */}
+          <div className="bg-white rounded-xl shadow-md p-6 hover:shadow-lg transition-shadow duration-200">
+            <div className="flex items-center gap-2 mb-4">
+              <FontAwesomeIcon icon={faHeart} className="text-orange-500 text-xl" />
+              <h3 className="text-lg font-semibold">Heart Rate Information</h3>
+            </div>
+            <div className="space-y-3">
+              <p className="flex items-center gap-2">
+                <span className="font-medium min-w-[160px]">Maximum Heart Rate:</span>
+                <span className="text-gray-600">{formData.maxHeartRate} BPM</span>
+              </p>
+              <p className="flex items-center gap-2">
+                <span className="font-medium min-w-[160px]">Average Heart Rate:</span>
+                <span className="text-gray-600">{formData.avgHeartRate} BPM</span>
+              </p>
+              <p className="flex items-center gap-2">
+                <span className="font-medium min-w-[160px]">Resting Heart Rate:</span>
+                <span className="text-gray-600">{formData.restingHeartRate} BPM</span>
+              </p>
+            </div>
+          </div>
+
+          {/* Workout Information Display Card */}
+          <div className="bg-white rounded-xl shadow-md p-6 hover:shadow-lg transition-shadow duration-200">
+            <div className="flex items-center gap-2 mb-4">
+              <FontAwesomeIcon icon={faDumbbell} className="text-orange-500 text-xl" />
+              <h3 className="text-lg font-semibold">Workout Information</h3>
+            </div>
+            <div className="space-y-3">
+              <p className="flex items-center gap-2">
+                <span className="font-medium min-w-[160px]">Session Duration:</span>
+                <span className="text-gray-600">{formData.sessionDuration} hours</span>
+              </p>
+              <p className="flex items-center gap-2">
+                <span className="font-medium min-w-[160px]">Calories Burned:</span>
+                <span className="text-gray-600">{formData.caloriesBurned}</span>
+              </p>
+              <p className="flex items-center gap-2">
+                <span className="font-medium min-w-[160px]">Experience Level:</span>
+                <span className="text-gray-600">{formData.experienceLevel}</span>
+              </p>
+              <p className="flex items-center gap-2">
+                <span className="font-medium min-w-[160px]">Workout Frequency:</span>
+                <span className="text-gray-600">{formData.workoutFrequency} times per week</span>
+              </p>
+        </div>
+      </div>
+
+          {/* Body Composition Display Card */}
+          <div className="bg-white rounded-xl shadow-md p-6 hover:shadow-lg transition-shadow duration-200">
+            <div className="flex items-center gap-2 mb-4">
+              <FontAwesomeIcon icon={faDroplet} className="text-orange-500 text-xl" />
+              <h3 className="text-lg font-semibold">Body Composition</h3>
+            </div>
+            <div className="space-y-3">
+              <p className="flex items-center gap-2">
+                <span className="font-medium min-w-[120px]">Fat Percentage:</span>
+                <span className="text-gray-600">{formData.fatPercentage}%</span>
+              </p>
+              <p className="flex items-center gap-2">
+                <span className="font-medium min-w-[120px]">Water Intake:</span>
+                <span className="text-gray-600">{formData.waterIntake} L</span>
+              </p>
+              <div className="mt-4">
+                <p className="font-medium mb-2">Medical Conditions:</p>
+                <p className="text-gray-600 bg-gray-50 p-3 rounded-lg">
+                  {formData.illness || 'No medical conditions reported'}
+                </p>
+              </div>
+            </div>
+          </div>
         </div>
       )}
     </div>

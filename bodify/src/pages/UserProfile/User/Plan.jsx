@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import Header from '../../../layout/Header';
-import Footer from '../../../layout/Footer';
+import { SectionTitle } from '../../../components/Title/SectionTitle';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faPlus, faClock, faSave, faTrash, faExclamationTriangle, faSpinner } from '@fortawesome/free-solid-svg-icons';
 import PlanService from '../../../services/plan.service';
@@ -745,240 +744,224 @@ const Plan = () => {
 
   if (loading && !isSaving) {
     return (
-      <>
-        <Header />
-        <div className="container mx-auto px-4 py-8 flex justify-center items-center h-64">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary-500"></div>
-        </div>
-        <Footer />
-      </>
+      <div className="container mx-auto px-4 py-8 flex justify-center items-center h-64">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary-500"></div>
+      </div>
     );
   }
 
   // Hiển thị màn hình lưu/xóa đang xử lý
   if (isSaving) {
     return (
-      <>
-        <Header />
-        <div className="container mx-auto px-4 py-8 flex flex-col justify-center items-center h-screen">
-          <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-md">
-            <div className="text-center">
-              {saveComplete ? (
-                <div className="text-green-600 text-6xl mb-4">✓</div>
-              ) : (
-                <FontAwesomeIcon icon={faSpinner} spin className="text-primary-500 text-5xl mb-4" />
-              )}
-              <h2 className="text-xl font-bold mb-4">
-                {saveComplete ? "Hoàn tất!" : "Đang xử lý..."}
-              </h2>
-              <p className="text-gray-700 mb-6">{savingMessage}</p>
-              
-              {saveComplete && (
-                <p className="text-sm text-gray-500">
-                  Sẽ tự động chuyển hướng trong giây lát...
-                </p>
-              )}
-            </div>
+      <div className="container mx-auto px-4 py-8 flex flex-col justify-center items-center h-screen">
+        <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-md">
+          <div className="text-center">
+            {saveComplete ? (
+              <div className="text-green-600 text-6xl mb-4">✓</div>
+            ) : (
+              <FontAwesomeIcon icon={faSpinner} spin className="text-primary-500 text-5xl mb-4" />
+            )}
+            <h2 className="text-xl font-bold mb-4">
+              {saveComplete ? "Hoàn tất!" : "Đang xử lý..."}
+            </h2>
+            <p className="text-gray-700 mb-6">{savingMessage}</p>
+            
+            {saveComplete && (
+              <p className="text-sm text-gray-500">
+                Sẽ tự động chuyển hướng trong giây lát...
+              </p>
+            )}
           </div>
         </div>
-        <Footer />
-      </>
+      </div>
     );
   }
 
   if (error) {
     return (
-      <>
-        <Header />
-        <div className="container mx-auto px-4 py-8">
-          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
-            <p>{error}</p>
-            <button 
-              className="mt-2 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600"
-              onClick={fetchData}
-            >
-              Thử lại
-            </button>
-          </div>
+      <div className="container mx-auto px-4 py-8">
+        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+          <p>{error}</p>
+          <button 
+            className="mt-2 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600"
+            onClick={fetchData}
+          >
+            Thử lại
+          </button>
         </div>
-        <Footer />
-      </>
+      </div>
     );
   }
 
   return (
-    <>
-      <Header />
-      <div className="container mx-auto px-4 py-8">
-        <h1 className="text-2xl font-bold mb-6">Training Plan</h1>
-        
-        {/* Plan header */}
-        <div className="bg-white shadow-md rounded-lg p-4 mb-6">
-          <div className="mb-4">
-            <label className="block text-gray-700 font-bold mb-2">Tên kế hoạch</label>
-            <input
-              type="text"
-              value={planName}
-              onChange={(e) => setPlanName(e.target.value)}
-              className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="Nhập tên kế hoạch tập luyện..."
-            />
-          </div>
-          <div>
-            <label className="block text-gray-700 font-bold mb-2">Mô tả</label>
-            <textarea
-              value={planDescription}
-              onChange={(e) => setPlanDescription(e.target.value)}
-              className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="Nhập mô tả cho kế hoạch tập luyện này..."
-              rows="2"
-            ></textarea>
+    <div className="container mx-auto px-4 py-8">
+      <h1 className="text-2xl font-bold mb-6">Training Plan</h1>
+      
+      {/* Plan header */}
+      <div className="bg-white shadow-md rounded-lg p-4 mb-6">
+        <div className="mb-4">
+          <label className="block text-gray-700 font-bold mb-2">Tên kế hoạch</label>
+          <input
+            type="text"
+            value={planName}
+            onChange={(e) => setPlanName(e.target.value)}
+            className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+            placeholder="Nhập tên kế hoạch tập luyện..."
+          />
+        </div>
+        <div>
+          <label className="block text-gray-700 font-bold mb-2">Mô tả</label>
+          <textarea
+            value={planDescription}
+            onChange={(e) => setPlanDescription(e.target.value)}
+            className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+            placeholder="Nhập mô tả cho kế hoạch tập luyện này..."
+            rows="2"
+          ></textarea>
+        </div>
+      </div>
+      
+      <div className="flex flex-col md:flex-row gap-6">
+        {/* Danh sách exercise post */}
+        <div className="w-full md:w-1/4 bg-white shadow-md rounded-lg p-4">
+          <h2 className="font-bold text-lg mb-4 border-b pb-2">Danh sách bài tập</h2>
+          
+          {exercisePosts.length > 0 ? (
+            exercisePosts.map(exercise => (
+              <div 
+                key={exercise.exercisepost_id || exercise.id}
+                className="border rounded-md p-3 mb-3 bg-gray-50 cursor-move hover:bg-gray-100 transition"
+                draggable="true"
+                onDragStart={() => handleDragStart(exercise)}
+              >
+                <p className="font-medium">{exercise.name}</p>
+              </div>
+            ))
+          ) : (
+            <div className="text-center py-4 text-gray-500">
+              <p>Không có bài tập nào.</p>
+            </div>
+          )}
+          
+          <div className="mt-4 text-sm text-gray-500">
+            <p>Kéo thả bài tập vào vị trí plan slot để tạo kế hoạch tập luyện.</p>
           </div>
         </div>
         
-        <div className="flex flex-col md:flex-row gap-6">
-          {/* Danh sách exercise post */}
-          <div className="w-full md:w-1/4 bg-white shadow-md rounded-lg p-4">
-            <h2 className="font-bold text-lg mb-4 border-b pb-2">Danh sách bài tập</h2>
-            
-            {exercisePosts.length > 0 ? (
-              exercisePosts.map(exercise => (
-                <div 
-                  key={exercise.exercisepost_id || exercise.id}
-                  className="border rounded-md p-3 mb-3 bg-gray-50 cursor-move hover:bg-gray-100 transition"
-                  draggable="true"
-                  onDragStart={() => handleDragStart(exercise)}
-                >
-                  <p className="font-medium">{exercise.name}</p>
-                </div>
-              ))
-            ) : (
-              <div className="text-center py-4 text-gray-500">
-                <p>Không có bài tập nào.</p>
-              </div>
-            )}
-            
-            <div className="mt-4 text-sm text-gray-500">
-              <p>Kéo thả bài tập vào vị trí plan slot để tạo kế hoạch tập luyện.</p>
-            </div>
-          </div>
+        {/* Plan detail */}
+        <div className="w-full md:w-3/4 bg-white shadow-md rounded-lg p-4">
+          <h2 className="font-bold text-lg mb-4 border-b pb-2">Chi tiết kế hoạch</h2>
           
-          {/* Plan detail */}
-          <div className="w-full md:w-3/4 bg-white shadow-md rounded-lg p-4">
-            <h2 className="font-bold text-lg mb-4 border-b pb-2">Chi tiết kế hoạch</h2>
-            
-            {planSlots.length > 0 ? (
-              planSlots.map(slot => (
-                <div 
-                  key={slot.id}
-                  className="border rounded-md p-4 mb-4 hover:border-blue-300 transition"
-                  onDragOver={(e) => {
-                    e.preventDefault();
-                    e.currentTarget.classList.add('bg-blue-50');
-                  }}
-                  onDragLeave={(e) => {
-                    e.preventDefault();
-                    e.currentTarget.classList.remove('bg-blue-50');
-                  }}
-                  onDrop={(e) => handleDrop(e, slot.id)}
-                >
-                  <div className="flex justify-between items-center mb-2">
-                    <h3 className="font-semibold">Slot #{slot.no}</h3>
-                    <div className="flex items-center">
-                      <FontAwesomeIcon icon={faClock} className="text-gray-500 mr-2" />
-                      <input
-                        type="number"
-                        value={slot.duration}
-                        onChange={(e) => handleDurationChange(slot.id, e.target.value)}
-                        className="w-16 border rounded p-1 text-center"
-                        min="1"
-                      />
-                      <span className="ml-1 text-gray-500">phút</span>
-                    </div>
+          {planSlots.length > 0 ? (
+            planSlots.map(slot => (
+              <div 
+                key={slot.id}
+                className="border rounded-md p-4 mb-4 hover:border-blue-300 transition"
+                onDragOver={(e) => {
+                  e.preventDefault();
+                  e.currentTarget.classList.add('bg-blue-50');
+                }}
+                onDragLeave={(e) => {
+                  e.preventDefault();
+                  e.currentTarget.classList.remove('bg-blue-50');
+                }}
+                onDrop={(e) => handleDrop(e, slot.id)}
+              >
+                <div className="flex justify-between items-center mb-2">
+                  <h3 className="font-semibold">Slot #{slot.no}</h3>
+                  <div className="flex items-center">
+                    <FontAwesomeIcon icon={faClock} className="text-gray-500 mr-2" />
+                    <input
+                      type="number"
+                      value={slot.duration}
+                      onChange={(e) => handleDurationChange(slot.id, e.target.value)}
+                      className="w-16 border rounded p-1 text-center"
+                      min="1"
+                    />
+                    <span className="ml-1 text-gray-500">phút</span>
                   </div>
-                  
-                  {slot.exercisePostId || slot.exerciseInfo ? (
-                    <div className="bg-blue-50 p-3 rounded-md relative">
-                      <div className="absolute top-2 right-2">
-                        <button 
-                          onClick={() => removeExerciseFromSlot(slot.id)}
-                          className="text-red-500 hover:text-red-700"
-                        >
-                          <FontAwesomeIcon icon={faTrash} size="xs" />
-                        </button>
-                      </div>
-                      <h4 className="font-medium">
-                        {slot.exerciseInfo?.name || 
-                         exercisePosts.find(ex => {
-                           // Kiểm tra nhiều trường ID khác nhau có thể có
-                           const exId = ex.exercisepost_id || ex.id;
-                           return Number(exId) === Number(slot.exercisePostId);
-                         })?.name || 'Unknown exercise'}
-                      </h4>
-                      <p className="text-sm text-gray-500 mt-1">
-                        Bài tập được gán cho slot này (ID: {slot.exercisePostId})
+                </div>
+                
+                {slot.exercisePostId || slot.exerciseInfo ? (
+                  <div className="bg-blue-50 p-3 rounded-md relative">
+                    <div className="absolute top-2 right-2">
+                      <button 
+                        onClick={() => removeExerciseFromSlot(slot.id)}
+                        className="text-red-500 hover:text-red-700"
+                      >
+                        <FontAwesomeIcon icon={faTrash} size="xs" />
+                      </button>
+                    </div>
+                    <h4 className="font-medium">
+                      {slot.exerciseInfo?.name || 
+                       exercisePosts.find(ex => {
+                         // Kiểm tra nhiều trường ID khác nhau có thể có
+                         const exId = ex.exercisepost_id || ex.id;
+                         return Number(exId) === Number(slot.exercisePostId);
+                       })?.name || 'Unknown exercise'}
+                    </h4>
+                    <p className="text-sm text-gray-500 mt-1">
+                      Bài tập được gán cho slot này (ID: {slot.exercisePostId})
+                    </p>
+                    {!slot.exercise_post_id && slot.exerciseInfo && (
+                      <p className="text-xs text-orange-500 mt-1">
+                        <FontAwesomeIcon icon={faExclamationTriangle} className="mr-1" />
+                        Bài tập này chỉ được lưu cục bộ, có thể mất khi tải lại trang
                       </p>
-                      {!slot.exercise_post_id && slot.exerciseInfo && (
-                        <p className="text-xs text-orange-500 mt-1">
-                          <FontAwesomeIcon icon={faExclamationTriangle} className="mr-1" />
-                          Bài tập này chỉ được lưu cục bộ, có thể mất khi tải lại trang
-                        </p>
-                      )}
-                    </div>
-                  ) : (
-                    <div className="bg-gray-50 p-3 rounded-md flex justify-center items-center">
-                      <p className="text-gray-500">Kéo thả bài tập vào đây</p>
-                    </div>
-                  )}
-                </div>
-              ))
-            ) : (
-              <div className="text-center py-8 text-gray-500">
-                <p>Chưa có slot nào. Hãy thêm slot mới để bắt đầu.</p>
+                    )}
+                  </div>
+                ) : (
+                  <div className="bg-gray-50 p-3 rounded-md flex justify-center items-center">
+                    <p className="text-gray-500">Kéo thả bài tập vào đây</p>
+                  </div>
+                )}
               </div>
-            )}
-            
-            <button 
-              className="border rounded-md p-3 w-full text-center hover:bg-gray-50 transition"
-              onClick={addNewSlot}
-            >
-              <FontAwesomeIcon icon={faPlus} className="mr-2" />
-              Thêm slot mới
-            </button>
-            
-            <div className="mt-6 border-t pt-4">
-              <div className="flex flex-col md:flex-row justify-between items-center">
-                <div className="font-medium mb-4 md:mb-0">
-                  <span>Tổng thời gian: </span>
-                  <span className="font-bold">{totalDuration} phút</span>
-                </div>
-                <div className="flex space-x-3">
+            ))
+          ) : (
+            <div className="text-center py-8 text-gray-500">
+              <p>Chưa có slot nào. Hãy thêm slot mới để bắt đầu.</p>
+            </div>
+          )}
+          
+          <button 
+            className="border rounded-md p-3 w-full text-center hover:bg-gray-50 transition"
+            onClick={addNewSlot}
+          >
+            <FontAwesomeIcon icon={faPlus} className="mr-2" />
+            Thêm slot mới
+          </button>
+          
+          <div className="mt-6 border-t pt-4">
+            <div className="flex flex-col md:flex-row justify-between items-center">
+              <div className="font-medium mb-4 md:mb-0">
+                <span>Tổng thời gian: </span>
+                <span className="font-bold">{totalDuration} phút</span>
+              </div>
+              <div className="flex space-x-3">
+                <button 
+                  className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition flex items-center"
+                  onClick={savePlan}
+                  disabled={loading}
+                >
+                  <FontAwesomeIcon icon={faSave} className="mr-2" />
+                  Lưu
+                </button>
+                {planId && (
                   <button 
-                    className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition flex items-center"
-                    onClick={savePlan}
+                    className="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition flex items-center"
+                    onClick={deletePlan}
                     disabled={loading}
                   >
-                    <FontAwesomeIcon icon={faSave} className="mr-2" />
-                    Lưu
+                    <FontAwesomeIcon icon={faTrash} className="mr-2" />
+                    Xóa
                   </button>
-                  {planId && (
-                    <button 
-                      className="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition flex items-center"
-                      onClick={deletePlan}
-                      disabled={loading}
-                    >
-                      <FontAwesomeIcon icon={faTrash} className="mr-2" />
-                      Xóa
-                    </button>
-                  )}
-                </div>
+                )}
               </div>
             </div>
           </div>
         </div>
       </div>
-      <Footer />
-    </>
+    </div>
   );
 };
 

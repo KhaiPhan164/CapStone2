@@ -12,19 +12,30 @@ const Header = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
-  useEffect(() => {
-    const checkLoginStatus = () => {
-      const user = JSON.parse(localStorage.getItem('user'));
-      if (user) {
-        setCurrentUser(user);
-        setShowAccount(true);
-      } else {
-        setCurrentUser(null);
-        setShowAccount(false);
-      }
-    };
+  const checkLoginStatus = () => {
+    const user = JSON.parse(localStorage.getItem('user'));
+    if (user) {
+      setCurrentUser(user);
+      setShowAccount(true);
+    } else {
+      setCurrentUser(null);
+      setShowAccount(false);
+    }
+  };
 
+  useEffect(() => {
     checkLoginStatus();
+    
+    // Thêm event listener để lắng nghe thay đổi localStorage
+    window.addEventListener('storage', checkLoginStatus);
+    
+    // Custom event để handle login
+    window.addEventListener('login', checkLoginStatus);
+    
+    return () => {
+      window.removeEventListener('storage', checkLoginStatus);
+      window.removeEventListener('login', checkLoginStatus);
+    };
   }, []);
 
   const handleLogout = () => {

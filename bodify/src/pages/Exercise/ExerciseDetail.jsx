@@ -1,12 +1,9 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import { SectionTitle } from '../../components/Title/SectionTitle'
-import Header from '../../layout/Header'
 import Modal from 'react-modal';
-import Footer from '../../layout/Footer';
 import Button from '../../components/button/button';
 import { useParams } from 'react-router-dom';
 import ExerciseService from '../../services/exercise.service';
-import AuthService from '../../services/auth.service';
 import { Link } from 'react-router-dom';
 
 export const ExerciseDetail = () => {
@@ -70,11 +67,9 @@ export const ExerciseDetail = () => {
     if (loading) {
         return (
             <div>
-                <Header />
                 <div className="container mx-auto px-4 xl:max-w-[1067px] flex items-center justify-center min-h-[400px]">
                     <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary-500"></div>
                 </div>
-                <Footer />
             </div>
         );
     }
@@ -82,21 +77,18 @@ export const ExerciseDetail = () => {
     if (error || !exercise) {
         return (
             <div>
-                <Header />
                 <div className="container mx-auto px-4 xl:max-w-[1067px] flex items-center justify-center min-h-[400px]">
                     <div className="text-red-500 text-center">
                         {error || 'Không tìm thấy bài tập này'}
                     </div>
                 </div>
-                <Footer />
             </div>
         );
     }
 
     return (
         <div>
-            <Header />
-            <div className="container mx-auto px-4 xl:max-w-[1067px]">
+            <div className="container mx-auto px-4 py-8">
                 <div className="flex flex-col md:flex-row gap-8 mt-10">
                     {/* Bên trái: Video + Thông tin */}
                     <div className="w-full md:w-3/5 mb-10">
@@ -216,8 +208,6 @@ export const ExerciseDetail = () => {
                     ></iframe>
                 </div>
             </Modal>
-
-            <Footer />
         </div>
     );
 }

@@ -189,7 +189,17 @@ class ChatService {
       throw error;
     }
   }
-
+  async getAllChatUsers(userId) {
+    try {
+      console.log('Đang lấy danh sách người đã từng chat với user:', userId);
+      const response = await axios.get(`${CHAT_URL}/users/${userId}/chat-users`);
+      console.log('Phản hồi danh sách người dùng đã chat:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('Lỗi khi lấy danh sách người dùng đã chat:', error);
+      throw error;
+    }
+  }
   // Xóa tin nhắn
   async deleteMessage(messageId) {
     try {
@@ -223,5 +233,6 @@ class ChatService {
     });
   }
 }
+
 
 export default new ChatService(); 

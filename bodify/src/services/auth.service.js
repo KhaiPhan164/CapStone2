@@ -23,12 +23,20 @@ class AuthService {
     return token ? { Authorization: `Bearer ${token}` } : {};
   }
 
-  login(username, password) {
+  async login(username, password) {
     // Xóa dữ liệu người dùng cũ trước khi đăng nhập mới
     localStorage.removeItem('profile');
     localStorage.removeItem('token');
     localStorage.removeItem('user');
-    return ApiService.login(username, password);
+    
+    try {
+      const response = await ApiService.login(username, password);
+      // Dispatch event sau khi đăng nhập thành công
+      window.dispatchEvent(new Event('login'));
+      return response;
+    } catch (error) {
+      throw error;
+    }
   }
 
   logout() {

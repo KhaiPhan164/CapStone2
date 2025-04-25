@@ -117,6 +117,49 @@ const Calendar = () => {
     );
   };
 
+  const handleEventDrop = async (dropInfo) => {
+    const event = dropInfo.event;
+    const newStart = event.start;
+    const newEnd = event.end;
+
+    try {
+      // Format thời gian theo yêu cầu của server
+      const formatTimeToISO = (date) => {
+        const hours = date.getHours().toString().padStart(2, '0');
+        const minutes = date.getMinutes().toString().padStart(2, '0');
+        const day = date.toISOString().split('T')[0];
+        return `${day}T${hours}:${minutes}:00.000Z`;
+      };
+
+      // Cập nhật lịch với thời gian mới
+      await ScheduleService.updateSchedule(event.id, {
+        day: newStart.toISOString(),
+        start_hour: formatTimeToISO(newStart),
+        end_hour: formatTimeToISO(newEnd)
+      });
+
+      // Cập nhật state để hiển thị ngay lập tức
+      setEvents(prevEvents => {
+        return prevEvents.map(e => {
+          if (e.id === event.id) {
+            return {
+              ...e,
+              start: newStart,
+              end: newEnd
+            };
+          }
+          return e;
+        });
+      });
+
+      toast.success('Cập nhật lịch thành công');
+    } catch (error) {
+      console.error('Error updating schedule:', error);
+      toast.error('Không thể cập nhật lịch. Vui lòng thử lại.');
+      dropInfo.revert();
+    }
+  };
+
   return (
     <div className="p-4">
       <div className="flex justify-between items-center mb-4">
@@ -174,6 +217,8 @@ const Calendar = () => {
             expandRows={true}
             stickyHeaderDates={true}
             nowIndicator={true}
+            editable={true}
+            eventDrop={handleEventDrop}
             businessHours={{
               daysOfWeek: [1, 2, 3, 4, 5, 6, 0],
               startTime: '05:00',
