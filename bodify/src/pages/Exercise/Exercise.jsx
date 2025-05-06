@@ -37,13 +37,17 @@ const Exercise = () => {
     try {
       setLoading(true);
       const response = await ExerciseService.getAll();
+      
+      // Lọc lấy chỉ bài tập có status_id = 2 (đã được duyệt)
+      const approvedExercises = response.data.filter(exercise => exercise.status_id === 2);
+      
       if (selectedFilter !== 'all') {
-        const filtered = response.data.filter(exercise => 
+        const filtered = approvedExercises.filter(exercise => 
           exercise.tags && exercise.tags.some(tag => tag.tag_name.toLowerCase() === selectedFilter)
         );
         setExercises(filtered);
       } else {
-        setExercises(response.data);
+        setExercises(approvedExercises);
       }
       setError(null);
     } catch (error) {
@@ -80,8 +84,11 @@ const Exercise = () => {
         const exercisesResponse = await ExerciseService.getExercisesByTags(allTags);
         
         if (exercisesResponse && exercisesResponse.length > 0) {
+          // Lọc chỉ lấy bài tập đã được duyệt
+          const approvedExercises = exercisesResponse.filter(exercise => exercise.status_id === 2);
+          
           // Add matching tags to each exercise for display
-          const exercisesWithTags = exercisesResponse.map(exercise => ({
+          const exercisesWithTags = approvedExercises.map(exercise => ({
             ...exercise,
             matching_tags: exercise.tags.filter(tag => 
               allTags.includes(tag.tag_name)
@@ -116,7 +123,11 @@ const Exercise = () => {
     try {
       setLoading(true);
       const response = await ExerciseService.searchExercises(searchTerm);
-      setExercises(response);
+      
+      // Lọc chỉ lấy bài tập đã được duyệt (status_id = 2)
+      const approvedExercises = response.filter(exercise => exercise.status_id === 2);
+      
+      setExercises(approvedExercises);
       setError(null);
     } catch (error) {
       setError('Error searching exercises');

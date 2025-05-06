@@ -36,8 +36,55 @@ class ExerciseService {
     return this.getAll();
   }
 
-  async createExercisePost(data) {
-    return axios.post(API_URL, data);
+  async createExercisePost(data, file) {
+    const formData = new FormData();
+    
+    if (data.name) formData.append('name', data.name);
+    if (data.description) formData.append('description', data.description);
+    
+    // Xử lý tagIds
+    if (data.tagIds && Array.isArray(data.tagIds)) {
+      data.tagIds.forEach((tagId, index) => {
+        // Chuyển tagId thành số nếu là chuỗi
+        const numericTagId = typeof tagId === 'string' ? parseInt(tagId) : tagId;
+        formData.append(`tagIds[${index}]`, numericTagId);
+      });
+    }
+    
+    // Xử lý steps - Chỉ truyền step_number và instruction
+    if (data.steps && Array.isArray(data.steps)) {
+      data.steps.forEach((step, index) => {
+        formData.append(`steps[${index}][step_number]`, step.step_number);
+        formData.append(`steps[${index}][instruction]`, step.instruction || '');
+      });
+    }
+    
+    // Quan trọng: Đảm bảo tên file đúng với tên trong FileInterceptor (image)
+    if (file) {
+      formData.append('image', file);
+    }
+    
+    if (data.video_rul) {
+      formData.append('video_rul', data.video_rul);
+    }
+    
+    // QUAN TRỌNG: Phải truyền user_id từ dữ liệu, KHÔNG được mặc định là 1
+    if (data.user_id) {
+      formData.append('user_id', data.user_id);
+    }
+    
+    // Debug
+    console.log("FormData entries for create:");
+    for (let pair of formData.entries()) {
+      console.log(pair[0] + ': ' + (pair[1] instanceof File ? 'File: ' + pair[1].name : pair[1]));
+    }
+    
+    return axios.post(API_URL, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+        ...this.getAuthHeader()
+      }
+    });
   }
 
   // Alias for getExercisePostById to maintain compatibility
@@ -51,20 +98,51 @@ class ExerciseService {
 
   async updateExercisePost(id, data, file) {
     const formData = new FormData();
-    formData.append('name', data.name);
-    formData.append('description', data.description);
-    if (data.tagIds) {
-      formData.append('tagIds', JSON.stringify(data.tagIds));
+    
+    if (data.name) formData.append('name', data.name);
+    if (data.description) formData.append('description', data.description);
+    
+    // Xử lý tagIds
+    if (data.tagIds && Array.isArray(data.tagIds)) {
+      data.tagIds.forEach((tagId, index) => {
+        // Chuyển tagId thành số nếu là chuỗi
+        const numericTagId = typeof tagId === 'string' ? parseInt(tagId) : tagId;
+        formData.append(`tagIds[${index}]`, numericTagId);
+      });
     }
-    if (data.steps) {
-      formData.append('steps', JSON.stringify(data.steps));
+    
+    // Xử lý steps - Chỉ truyền step_number và instruction
+    if (data.steps && Array.isArray(data.steps)) {
+      data.steps.forEach((step, index) => {
+        formData.append(`steps[${index}][step_number]`, step.step_number);
+        formData.append(`steps[${index}][instruction]`, step.instruction || '');
+      });
     }
+    
+    // Quan trọng: Đảm bảo tên file đúng với tên trong FileInterceptor (image)
     if (file) {
-      formData.append('imgUrl', file);
+      formData.append('image', file);
     }
+    
     if (data.video_rul) {
       formData.append('video_rul', data.video_rul);
     }
+    
+    // Truyền user_id nếu có
+    if (data.user_id) {
+      formData.append('user_id', data.user_id);
+    }
+    
+    // Luôn gán status_id = 1 (Pending Approval) khi update exercise
+    // Điều này đảm bảo mọi bài tập khi cập nhật sẽ quay lại trạng thái chờ duyệt
+    formData.append('status_id', '1');
+    
+    // Để debug
+    console.log("FormData entries for update:");
+    for (let pair of formData.entries()) {
+      console.log(pair[0] + ': ' + (pair[1] instanceof File ? 'File: ' + pair[1].name : pair[1]));
+    }
+    
     return axios.patch(`${API_URL}/${id}`, formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
@@ -72,7 +150,7 @@ class ExerciseService {
       }
     });
   }
-
+  
   async updateExercisePostStatus(id, status_id) {
     return axios.patch(`${API_URL}/${id}/status`, { status_id }, {
       headers: {
@@ -87,7 +165,24 @@ class ExerciseService {
   }
 
   async getAllTags() {
-    return axios.get(`${API_URL}-tag/tag`);
+    try {
+      const response = await axios.get(`${API_URL}/tag/tag`);
+      console.log("getAllTags response:", response.data);
+      return response;
+    } catch (error) {
+      console.error("Error in getAllTags:", error);
+      // Nếu API gốc lỗi, thử API thay thế
+      try {
+        console.log("Trying alternative tag API endpoint");
+        const altResponse = await axios.get(`${API_URL}/tag`);
+        console.log("Alternative tag API response:", altResponse.data);
+        return altResponse;
+      } catch (altError) {
+        console.error("Error in alternative tag API:", altError);
+        // Trả về một đối tượng với mảng rỗng để tránh lỗi
+        return { data: [] };
+      }
+    }
   }
 }
 

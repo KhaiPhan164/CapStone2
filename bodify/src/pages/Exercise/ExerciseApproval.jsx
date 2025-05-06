@@ -3,18 +3,27 @@ import { Table, Button, Space, Tag } from "antd";
 import { CheckOutlined, CloseOutlined } from "@ant-design/icons";
 import ExerciseService from "../../services/exercise.service";
 import AuthService from "../../services/auth.service";
-import Header from "../../layout/Header";
 import { SectionTitle } from "../../components/Title/SectionTitle";
 import "./styles.css";
 import { toast, ToastContainer } from "react-toastify";
+import { useNavigate } from "react-router-dom";
 
 const ExerciseApproval = () => {
   const [exercises, setExercises] = useState([]);
   const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
+    // Kiểm tra quyền truy cập
+    const currentUser = AuthService.getCurrentUser();
+    if (!currentUser || currentUser.role_id !== 4) {
+      toast.error("Bạn không có quyền truy cập trang này");
+      navigate("/");
+      return;
+    }
+    
     fetchExercises();
-  }, []);
+  }, [navigate]);
 
   const fetchExercises = async () => {
     try {
@@ -131,9 +140,8 @@ const ExerciseApproval = () => {
   ];
   
   return (
-    <div>
-      <Header />
-      <div className="px-6 pb-6 h-screen bg-gray-50 pt-4">
+    <div className="pt-16">
+      <div className="px-6 pb-6 min-h-screen bg-gray-50">
         <div className="mb-5 mx-5">
           <SectionTitle title="Exercise Approval" />
         </div>

@@ -62,7 +62,7 @@ const Header = () => {
       <div className="container mx-auto flex justify-between items-center py-4 px-6">
         <Link to="/">
           <img
-            src="./icon/logo.svg"
+            src="/icon/logo.svg"
             alt="Logo"
             className="h-10 w-auto ml-10 cursor-pointer"
           />
@@ -137,18 +137,25 @@ const Header = () => {
                 >
                   User Profile
                 </Link>
-                <Link
-                  to="/pt/exercises"
-                  className="block px-4 py-2 text-black hover:rounded-md hover:bg-gray-200"
-                >
-                  Create Exercies
-                </Link>
-                <Link
-                  to="/gymowner/approve-exercises"
-                  className="block px-4 py-2 text-black hover:rounded-md hover:bg-gray-200"
-                >
-                  Approve
-                </Link>
+                
+                {currentUser && currentUser.role_id === 3 && (
+                  <Link
+                    to="/pt/exercises"
+                    className="block px-4 py-2 text-black hover:rounded-md hover:bg-gray-200"
+                  >
+                    Create Exercies
+                  </Link>
+                )}
+                
+                {currentUser && currentUser.role_id === 4 && (
+                  <Link
+                    to="/gymowner/approve-exercises"
+                    className="block px-4 py-2 text-black hover:rounded-md hover:bg-gray-200"
+                  >
+                    Approve
+                  </Link>
+                )}
+                
                 <button
                   className="block w-full text-left px-4 py-2 text-black hover:rounded-md hover:bg-gray-200"
                   onClick={handleLogout}

@@ -22,10 +22,11 @@ import {
 } from "@ant-design/icons";
 import ExerciseService from "../../services/exercise.service";
 import AuthService from "../../services/auth.service";
-import Header from "../../layout/Header";
 import "./styles.css";
 import { SectionTitle } from "../../components/Title/SectionTitle";
 import { toast, ToastContainer } from "react-toastify";
+import { useNavigate } from "react-router-dom";
+import axios from "axios";
 const { TextArea } = Input;
 const { Option } = Select;
 
@@ -38,19 +39,115 @@ const ExerciseManagement = () => {
   const [editingId, setEditingId] = useState(null);
   const [fileList, setFileList] = useState([]);
   const [steps, setSteps] = useState([]);
-  const [stepImages, setStepImages] = useState([]);
+  const navigate = useNavigate();
+
+  // Hàm để đảm bảo user_id hợp lệ
+  const ensureValidUserId = (user) => {
+    if (!user) {
+      console.error("User is null or undefined");
+      message.error("Vui lòng đăng nhập để tiếp tục");
+      navigate("/login");
+      return null;
+    }
+    
+    console.log("Checking user object:", user);
+    
+    // Kiểm tra user_id và đảm bảo nó là số
+    if (!user.user_id && user.user_id !== 0) {
+      console.error("User object does not have valid user_id:", user);
+      
+      // Thử lấy từ localStorage một lần nữa
+      const userStr = localStorage.getItem('user');
+      console.log("Raw user from localStorage:", userStr);
+      
+      if (userStr) {
+        try {
+          const parsedUser = JSON.parse(userStr);
+          console.log("Parsed user from localStorage:", parsedUser);
+          
+          if (parsedUser && parsedUser.user_id) {
+            user.user_id = parsedUser.user_id;
+            console.log("Recovered user_id from localStorage:", user.user_id);
+          }
+        } catch (e) {
+          console.error("Error parsing user from localStorage:", e);
+        }
+      }
+      
+      // Nếu vẫn không có user_id hợp lệ
+      if (!user.user_id && user.user_id !== 0) {
+        message.error("Không tìm thấy thông tin người dùng, vui lòng đăng nhập lại");
+        navigate("/login");
+        return null;
+      }
+    }
+    
+    console.log("User ID confirmed:", user.user_id);
+    return user;
+  };
+
+  // Hàm kiểm tra và hiển thị thông tin file
+  const handleFileChange = ({ fileList }) => {
+    console.log("File change:", fileList);
+    if (fileList.length > 0) {
+      const file = fileList[0];
+      console.log("Selected file:", {
+        name: file.name,
+        size: file.size,
+        type: file.type,
+        originFileObj: file.originFileObj ? "Available" : "Not available"
+      });
+      
+      if (file.originFileObj) {
+        console.log("File details:", {
+          name: file.originFileObj.name,
+          size: file.originFileObj.size,
+          type: file.originFileObj.type,
+          lastModified: new Date(file.originFileObj.lastModified).toISOString()
+        });
+      }
+    }
+    setFileList(fileList);
+  };
 
   useEffect(() => {
+    // Kiểm tra quyền truy cập
+    const currentUser = AuthService.getCurrentUser();
+    if (!currentUser || currentUser.role_id !== 3) {
+      message.error("Bạn không có quyền truy cập trang này");
+      navigate("/");
+      return;
+    }
+    
     fetchExercises();
     fetchTags();
-  }, []);
+  }, [navigate]);
 
   const fetchExercises = async () => {
     try {
       setLoading(true);
+      
+      // Lấy thông tin người dùng hiện tại
+      const currentUser = AuthService.getCurrentUser();
+      if (!currentUser) {
+        message.error("Vui lòng đăng nhập để xem bài tập của bạn");
+        navigate("/login");
+        return;
+      }
+      
       const response = await ExerciseService.getAllExercisePosts();
-      setExercises(response.data);
+      
+      // Lọc chỉ lấy bài tập của người dùng hiện tại (so sánh user_id)
+      const userExercises = response.data.filter(exercise => {
+        // Kiểm tra cả hai trường có thể chứa user_id
+        const exerciseUserId = exercise.user_id || (exercise.user && exercise.user.user_id);
+        return exerciseUserId === currentUser.user_id;
+      });
+      
+      console.log(`Tìm thấy ${userExercises.length} bài tập của người dùng ${currentUser.user_id}`);
+      setExercises(userExercises);
     } catch (error) {
+      console.error("Error fetching exercises:", error);
       message.error("Không thể tải danh sách bài tập");
     } finally {
       setLoading(false);
@@ -60,8 +157,26 @@ const ExerciseManagement = () => {
   const fetchTags = async () => {
     try {
       const response = await ExerciseService.getAllTags();
-      setTags(response.data);
+      console.log("Tags response:", response.data);
+      
+      // Kiểm tra dữ liệu tags
+      if (Array.isArray(response.data)) {
+        setTags(response.data);
+      } else if (response.data && Array.isArray(response.data.data)) {
+        // Nếu dữ liệu nằm trong trường data
+        setTags(response.data.data);
+      } else if (response.data && Array.isArray(response.data.tags)) {
+        // Nếu dữ liệu nằm trong trường tags
+        setTags(response.data.tags);
+      } else {
+        // Nếu không tìm thấy mảng, thiết lập mảng rỗng
+        console.error("Tags data is not in expected format:", response.data);
+        setTags([]);
+        message.error("Không thể tải danh sách tags: Dữ liệu không đúng định dạng");
+      }
     } catch (error) {
+      console.error("Error fetching tags:", error);
+      setTags([]); // Đảm bảo tags luôn là mảng ngay cả khi có lỗi
       message.error("Không thể tải danh sách tags");
     }
   };
@@ -69,11 +184,17 @@ const ExerciseManagement = () => {
   const handleCreate = async (values) => {
     try {
       setLoading(true);
-      const user = AuthService.getCurrentUser();
+      let user = AuthService.getCurrentUser();
+      
+      // Đảm bảo user_id hợp lệ
+      user = ensureValidUserId(user);
       if (!user) {
-        message.error("Vui lòng đăng nhập để tạo bài tập");
+        setLoading(false);
         return;
       }
+
+      console.log("Current user:", user);
+      console.log("User ID being used:", user.user_id);
 
       // Validate required fields
       if (!values.name || !values.description) {
@@ -81,29 +202,50 @@ const ExerciseManagement = () => {
         return;
       }
 
+      // Lấy file từ fileList
+      const file = fileList.length > 0 ? fileList[0]?.originFileObj : null;
+      
+      if (!file) {
+        message.error("Vui lòng upload hình ảnh cho bài tập");
+        setLoading(false);
+        return;
+      }
+      
+      console.log("File selected:", file);
+      
       // Chuẩn bị dữ liệu cho bài tập
       const data = {
         name: values.name,
         description: values.description,
+        user_id: user.user_id,
+        status_id: 1,
         video_rul: values.video_rul || "",
-        imgUrl: fileList[0]?.originFileObj,
+        tagIds: values.tagIds || [],
         steps: steps.map((step, index) => ({
           instruction: step.instruction,
-          img_url: stepImages[index]?.originFileObj || null,
+          step_number: index + 1,
         })),
-        tagIds: values.tagIds || [],
       };
 
-      const response = await ExerciseService.createExercisePost(data);
-
-      if (response.data) {
+      console.log("Creating exercise with data:", data);
+      console.log("User ID included in data:", data.user_id);
+      console.log("File to upload:", file ? file.name : "No file");
+      
+      // Sử dụng service để tạo bài tập
+      try {
+        const response = await ExerciseService.createExercisePost(data, file);
+        console.log("Create exercise response:", response.data);
+        
         toast.success("Exercise created successfully, pending approval");
         setModalVisible(false);
         form.resetFields();
         setFileList([]);
         setSteps([]);
-        setStepImages([]);
         fetchExercises();
+      } catch (innerError) {
+        console.error("Error in API call:", innerError);
+        console.log("Error response:", innerError.response?.data);
+        message.error(`Lỗi khi tạo bài tập: ${innerError.response?.data?.message || innerError.message}`);
       }
     } catch (error) {
       console.error("Error creating exercise:", error);
@@ -120,52 +262,62 @@ const ExerciseManagement = () => {
   const handleUpdate = async (values) => {
     try {
       setLoading(true);
-      const user = AuthService.getCurrentUser();
+      let user = AuthService.getCurrentUser();
+      
+      // Đảm bảo user_id hợp lệ
+      user = ensureValidUserId(user);
       if (!user) {
-        message.error("Vui lòng đăng nhập để cập nhật bài tập");
+        setLoading(false);
         return;
       }
 
-      const formData = new FormData();
-      formData.append("name", values.name);
-      formData.append("description", values.description);
-      formData.append("user_id", user.user_id);
-      formData.append("video_rul", values.video_rul || "");
+      console.log("Current user for update:", user);
+      console.log("User ID being used for update:", user.user_id);
 
-      if (fileList[0]?.originFileObj) {
-        formData.append("imgUrl", fileList[0].originFileObj);
-      }
-
-      if (steps.length > 0) {
-        const formattedSteps = steps.map((step, index) => ({
+      // Lấy file hình ảnh chính
+      const file = fileList.length > 0 ? fileList[0]?.originFileObj : null;
+      
+      // Chuẩn bị dữ liệu cho bài tập
+      const data = {
+        name: values.name,
+        description: values.description,
+        user_id: user.user_id, // Đảm bảo truyền user_id từ current user
+        status_id: 1, // Đặt lại thành pending approval khi update
+        video_rul: values.video_rul || "",
+        tagIds: values.tagIds || [],
+        steps: steps.map((step, index) => ({
           step_number: index + 1,
           instruction: step.instruction,
-          img_url: null,
-        }));
-        formData.append("steps", JSON.stringify(formattedSteps));
+        })),
+      };
 
-        steps.forEach((_, index) => {
-          if (stepImages[index]?.originFileObj) {
-            formData.append(`step_images`, stepImages[index].originFileObj);
-          }
-        });
+      console.log("Updating exercise with ID:", editingId);
+      console.log("Update data:", data);
+      console.log("User ID included in update data:", data.user_id);
+      console.log("Status ID set to:", data.status_id);
+      console.log("File to upload:", file ? file.name : "No file");
+      
+      // Sử dụng service để cập nhật bài tập
+      try {
+        // Truyền rõ user_id và status_id vào service để đảm bảo nó được sử dụng
+        const response = await ExerciseService.updateExercisePost(editingId, data, file);
+        console.log("Update exercise response:", response.data);
+        
+        toast.success("Exercise updated successfully");
+        setModalVisible(false);
+        form.resetFields();
+        setFileList([]);
+        setSteps([]);
+        setEditingId(null);
+        fetchExercises();
+      } catch (innerError) {
+        console.error("Error in API call:", innerError);
+        console.log("Error response:", innerError.response?.data);
+        message.error(`Lỗi khi cập nhật bài tập: ${innerError.response?.data?.message || innerError.message}`);
       }
-
-      if (values.tagIds && values.tagIds.length > 0) {
-        formData.append("tagIds", JSON.stringify(values.tagIds));
-      }
-
-      await ExerciseService.updateExercisePost(editingId, formData);
-      toast.success("Exercise updated successfully");
-      setModalVisible(false);
-      form.resetFields();
-      setFileList([]);
-      setSteps([]);
-      setStepImages([]);
-      setEditingId(null);
-      fetchExercises();
     } catch (error) {
       console.error("Error updating exercise:", error);
+      console.log("Error response data:", error.response?.data);
       const errorMessage =
         error.response?.data?.message ||
         error.message ||
@@ -249,7 +401,6 @@ const ExerciseManagement = () => {
       video_rul: record.video_rul,
     });
     setSteps(record.step || []);
-    setStepImages(record.step?.map((step) => ({ url: step.img_url })) || []);
     if (record.img_url) {
       setFileList([
         {
@@ -265,29 +416,18 @@ const ExerciseManagement = () => {
 
   const addStep = () => {
     setSteps([...steps, { instruction: "" }]);
-    setStepImages([...stepImages, null]);
   };
 
   const removeStep = (index) => {
     const newSteps = [...steps];
-    const newStepImages = [...stepImages];
     newSteps.splice(index, 1);
-    newStepImages.splice(index, 1);
     setSteps(newSteps);
-    setStepImages(newStepImages);
   };
 
   const updateStep = (index, field, value) => {
     const newSteps = [...steps];
     newSteps[index] = { ...newSteps[index], [field]: value };
     setSteps(newSteps);
-  };
-
-  const handleStepImageChange = (index, file) => {
-    console.log("Step image changed:", { index, file });
-    const newStepImages = [...stepImages];
-    newStepImages[index] = file;
-    setStepImages(newStepImages);
   };
 
   const columns = [
@@ -371,9 +511,8 @@ const ExerciseManagement = () => {
     },
   ];
   return (
-    <div>
-      <Header />
-      <div className="px-6 pb-6 h-screen bg-gray-50 pt-3">
+    <div className="pt-16">
+      <div className="px-6 pb-6 min-h-screen bg-gray-50">
         <div className="flex justify-between items-center mb-5 mx-5">
           <SectionTitle title="Exercise Management" />
           <Button
@@ -384,7 +523,6 @@ const ExerciseManagement = () => {
               form.resetFields();
               setFileList([]);
               setSteps([]);
-              setStepImages([]);
               setModalVisible(true);
             }}
             className="bg-gray-400 text-white text-base px-4 py-5 border-none rounded-md hover:!bg-primary-500 hover:!text-white hover:!border-none transition flex items-center"
@@ -413,7 +551,18 @@ const ExerciseManagement = () => {
           <Form
             form={form}
             layout="vertical"
-            onFinish={editingId ? handleUpdate : handleCreate}
+            onFinish={(values) => {
+              console.log("Form onFinish called with values:", values);
+              console.log("Current fileList:", fileList);
+              console.log("Current steps:", steps);
+              console.log("Current user:", AuthService.getCurrentUser());
+              
+              if (editingId) {
+                handleUpdate(values);
+              } else {
+                handleCreate(values);
+              }
+            }}
           >
             <Form.Item
               name="name"
@@ -433,11 +582,15 @@ const ExerciseManagement = () => {
 
             <Form.Item name="tagIds" label="Tags">
               <Select mode="multiple" placeholder="Select tags">
-                {tags.map((tag) => (
-                  <Option key={tag.tag_id} value={tag.tag_id}>
-                    {tag.tag_name}
-                  </Option>
-                ))}
+                {Array.isArray(tags) && tags.length > 0 ? (
+                  tags.map((tag) => (
+                    <Option key={tag.tag_id} value={tag.tag_id}>
+                      {tag.tag_name}
+                    </Option>
+                  ))
+                ) : (
+                  <Option disabled>No tags available</Option>
+                )}
               </Select>
             </Form.Item>
 
@@ -445,15 +598,44 @@ const ExerciseManagement = () => {
               <Input />
             </Form.Item>
 
-            <Form.Item label="Exercise Image">
+            <Form.Item 
+              label="Exercise Image" 
+              required 
+              rules={[{ required: true, message: "Please upload an exercise image" }]}
+              help="Hình ảnh bài tập là bắt buộc. Định dạng hỗ trợ: JPG, PNG, JPEG."
+            >
               <Upload
                 fileList={fileList}
-                onChange={({ fileList }) => setFileList(fileList)}
-                beforeUpload={() => false}
+                onChange={handleFileChange}
+                beforeUpload={(file) => {
+                  const isImage = file.type.startsWith('image/');
+                  if (!isImage) {
+                    message.error('Bạn chỉ có thể upload file hình ảnh!');
+                    return false;
+                  }
+                  const isLt5M = file.size / 1024 / 1024 < 5;
+                  if (!isLt5M) {
+                    message.error('Kích thước hình ảnh phải nhỏ hơn 5MB!');
+                    return false;
+                  }
+                  return false;
+                }}
                 maxCount={1}
+                accept="image/*"
+                name="image"
+                listType="picture-card"
               >
-                <Button icon={<UploadOutlined />}>Upload Image</Button>
+                {fileList.length === 0 && (
+                  <div>
+                    <UploadOutlined />
+                    <div style={{ marginTop: 8 }}>Upload Image</div>
+                    <div style={{ fontSize: 12, color: 'red' }}>(Required)</div>
+                  </div>
+                )}
               </Upload>
+              <div className="text-xs text-gray-500 mt-1">
+                Lưu ý: Ảnh sẽ được đổi tên khi tải lên. Kích thước tối đa: 5MB
+              </div>
             </Form.Item>
 
             <div className="mb-4">
@@ -488,18 +670,6 @@ const ExerciseManagement = () => {
                       rows={3}
                       placeholder="Enter instructions for this step"
                     />
-                  </Form.Item>
-                  <Form.Item label="Illustrative Image">
-                    <Upload
-                      fileList={stepImages[index] ? [stepImages[index]] : []}
-                      onChange={({ fileList }) =>
-                        handleStepImageChange(index, fileList[0])
-                      }
-                      beforeUpload={() => false}
-                      maxCount={1}
-                    >
-                      <Button icon={<UploadOutlined />}>Upload Image</Button>
-                    </Upload>
                   </Form.Item>
                 </Card>
               ))}

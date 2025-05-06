@@ -172,7 +172,7 @@ const PlanList = () => {
             <div className="bg-white px-4 py-3 rounded-lg shadow text-gray-800">
               <div className="text-sm text-gray-500">⏱ Tổng thời gian</div>
             <div className="text-lg font-bold">{plan.total_duration || 0} phút</div>
-          </div>
+            </div>
           </div>
 
           {/* Danh sách buổi tập */}

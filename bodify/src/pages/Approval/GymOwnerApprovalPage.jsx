@@ -3,29 +3,33 @@ import { Table, Button, Modal, message, Tag, Image } from 'antd';
 import { CheckOutlined, CloseOutlined, EyeOutlined } from '@ant-design/icons';
 import UserService from '../../services/user.service';
 import AuthService from '../../services/auth.service';
+import { useNavigate } from 'react-router-dom';
 
 const GymOwnerApprovalPage = () => {
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState(null);
   const [modalVisible, setModalVisible] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
     fetchPendingPTs();
-  }, []);
+  }, [navigate]);
 
   const fetchPendingPTs = async () => {
     try {
       setLoading(true);
       const user = AuthService.getCurrentUser();
       console.log('Current user:', user);
-      console.log('Gym name:', user.name);
-
+      
       if (!user || user.role_id !== 4) {
         message.error('Bạn không có quyền truy cập trang này');
+        navigate('/');
         return;
       }
 
+      console.log('Gym name:', user.name);
+      
       // Lấy danh sách PT của phòng gym
       const response = await UserService.getPTsByGym(user.name);
       console.log('PTs response:', response);
@@ -156,7 +160,7 @@ const GymOwnerApprovalPage = () => {
   ];
 
   return (
-    <div className="p-6">
+    <div className="pt-16 p-6">
       <div className="mb-6">
         <h1 className="text-2xl font-bold">Duyệt PT</h1>
         <p className="text-gray-600">Danh sách PT đang chờ duyệt</p>
