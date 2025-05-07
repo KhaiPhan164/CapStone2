@@ -20,6 +20,7 @@ import TrainerList from "./pages/PTList/TrainerList";
 import GymOwnerApprovalPage from './pages/Approval/GymOwnerApprovalPage';
 import PlanList from "./pages/PlanDetail/PlanList";
 import Home from './pages/Home/Home';
+import Dashboard from "./pages/Dashboard/SidebarPT";
 
 const routes = createBrowserRouter([
     {
@@ -117,7 +118,11 @@ const routes = createBrowserRouter([
     {
         path: '/plan-detail',
         element: <MainLayout><PlanList /></MainLayout>
-    }
+    },
+    {
+        path: '/dbpt',
+        element: <Dashboard/>
+    },
 ]);
 
 export default routes;

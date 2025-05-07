@@ -194,7 +194,7 @@ const ProfileSidebar = ({ initialTab }) => {
                 Create Membership  
               </div>
             </li>
-            <li
+            <li 
               onClick={() => handleSelection("bmi")}
               className={`cursor-pointer block p-2 rounded-xl  ${
                 selectedSection === "bmi"

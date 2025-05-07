@@ -132,7 +132,6 @@ const ExerciseApproval = () => {
   
   return (
     <div>
-      <Header />
       <div className="px-6 pb-6 h-screen bg-gray-50 pt-4">
         <div className="mb-5 mx-5">
           <SectionTitle title="Exercise Approval" />

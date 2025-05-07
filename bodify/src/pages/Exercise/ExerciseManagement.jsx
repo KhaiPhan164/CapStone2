@@ -372,7 +372,6 @@ const ExerciseManagement = () => {
   ];
   return (
     <div>
-      <Header />
       <div className="px-6 pb-6 h-screen bg-gray-50 pt-3">
         <div className="flex justify-between items-center mb-5 mx-5">
           <SectionTitle title="Exercise Management" />

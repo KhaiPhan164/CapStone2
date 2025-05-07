@@ -149,6 +149,12 @@ const Header = () => {
                 >
                   Approve
                 </Link>
+                <Link
+                  to="/dbpt"
+                  className="block px-4 py-2 text-black hover:rounded-md hover:bg-gray-200"
+                >
+                  DashBoard
+                </Link>
                 <button
                   className="block w-full text-left px-4 py-2 text-black hover:rounded-md hover:bg-gray-200"
                   onClick={handleLogout}
