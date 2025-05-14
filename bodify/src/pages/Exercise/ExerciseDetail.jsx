@@ -138,7 +138,7 @@ export const ExerciseDetail = () => {
                                                 : "border-gray-300 hover:bg-gray-100"
                                         } rounded-md mb-2`}
                                     >
-                                        <h3 className="font-semibold text-lg">Bước {step.step_number || index + 1}</h3>
+                                        <h3 className="font-semibold text-lg">Step {step.step_number || index + 1}</h3>
                                         <p className="text-gray-700">{step.instruction}</p>
                                     </div>
                                 ))}
@@ -175,12 +175,12 @@ export const ExerciseDetail = () => {
                                     </Link>
                                 ))
                             ) : (
-                                <div className="text-center text-gray-500">Không có bài tập liên quan</div>
+                                <div className="text-center text-gray-500">No related exercises</div>
                             )}
                             <div className='w-full flex justify-end'>
                                 <Link to="/exercise">
                                     <Button>
-                                        Xem thêm
+                                        See more
                                     </Button>
                                 </Link>
                             </div>

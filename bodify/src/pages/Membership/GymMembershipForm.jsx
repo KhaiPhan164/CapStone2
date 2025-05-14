@@ -139,7 +139,7 @@ export default function CreateMembership() {
             className={`px-6 py-2 text-white rounded-md flex items-center justify-center ${
               loading
                 ? "bg-orange-400 cursor-not-allowed"
-                : "bg-orange-500 hover:bg-orange-600"
+                : "bg-orange-400 hover:bg-primary-500"
             }`}
           >
             {loading && (

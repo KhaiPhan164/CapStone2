@@ -250,7 +250,7 @@ const PlanListTab = () => {
         <SectionTitle title="Workout Plan List" />
         <Link 
           to="/plan" 
-          className="bg-gray-400 text-white px-4 py-2 rounded-md hover:bg-primary-500 transition flex items-center"
+          className="bg-orange-400 text-white px-4 py-2 rounded-md hover:bg-primary-500 transition flex items-center"
         >
           <FontAwesomeIcon icon={faPlus} className="mr-2" />
           Create a new plan
@@ -310,7 +310,7 @@ const PlanListTab = () => {
           <p className="text-gray-500 mb-4 italic">You don't have any workout plan yet.</p>
           <Link 
             to="/plan" 
-            className="bg-gray-400 text-white px-4 py-2 rounded-md hover:bg-primary-500 transition inline-flex items-center"
+            className="bg-orange-400 text-white px-4 py-2 rounded-md hover:bg-primary-500 transition inline-flex items-center"
             onClick={(e) => {
               // Sử dụng window.location.href để đảm bảo trang được tải lại hoàn toàn
               e.preventDefault();

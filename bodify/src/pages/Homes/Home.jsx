@@ -11,7 +11,7 @@ const Home = () => {
         Transform Your Fitness Journey from Anywhere
         </p>
         <p className="text-black mb-6 max-w-full w-[550px]">
-        Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed diam nonummy nibh euismod tincidunt ut laoreet dolore magna aliquam erat volutpat. Ut
+        Work out effectively anytime, anywhere with personalized programs for all fitness levels. Start your healthy journey today!
         </p>
         <div className="flex space-x-4">
         <button className="bg-black text-white px-6 py-2 rounded-full">

@@ -178,12 +178,12 @@ BMI: ${bmi}`.trim();
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="container mx-auto px-4">
       <div className="flex justify-between items-center mb-6">
         <SectionTitle>Health Information</SectionTitle>
         <button
           onClick={() => setIsEditing(!isEditing)}
-          className="bg-orange-500 text-white px-4 py-2 rounded-lg hover:bg-orange-600 transition-colors duration-200 flex items-center gap-2"
+          className="bg-orange-400 text-white px-4 py-2 rounded-lg hover:bg-primary-500 transition-colors duration-200 flex items-center gap-2"
         >
           <FontAwesomeIcon icon={isEditing ? faTimes : faPencilAlt} />
           {isEditing ? 'Cancel' : 'Edit Information'}
@@ -206,7 +206,7 @@ BMI: ${bmi}`.trim();
                   name="age"
                   value={formData.age}
                   onChange={handleChange}
-                  className="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500"
+                  className="mt-1 pl-3 block w-full rounded border-gray-400 border shadow-sm  focus:ring-orange-500"
                 />
               </div>
               <div>
@@ -215,7 +215,7 @@ BMI: ${bmi}`.trim();
                   name="gender"
                   value={formData.gender}
                   onChange={handleChange}
-                  className="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500"
+                  className="mt-1 block w-full  shadow-sm rounded border-gray-400 border focus:ring-orange-500"
                 >
                   <option value="">Select gender</option>
                   <option value="male">Male</option>
@@ -233,7 +233,7 @@ BMI: ${bmi}`.trim();
                     value={formData.weight}
                     onChange={handleChange}
                     step="0.1"
-                    className="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500 pl-10"
+                    className="mt-1 block w-full shadow-sm rounded border-gray-400 border focus:ring-orange-500 pl-10"
                   />
                 </div>
               </div>
@@ -246,7 +246,7 @@ BMI: ${bmi}`.trim();
                     name="height"
                     value={formData.height}
                     onChange={handleChange}
-                    className="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500 pl-10"
+                    className="mt-1 block w-full shadow-sm rounded border-gray-400 border focus:ring-orange-500 pl-10"
                   />
                 </div>
               </div>
@@ -267,7 +267,7 @@ BMI: ${bmi}`.trim();
                   name="maxHeartRate"
                   value={formData.maxHeartRate}
                   onChange={handleChange}
-                  className="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500"
+                  className="mt-1 pl-3 block w-full shadow-sm rounded border-gray-400 border focus:ring-orange-500"
                 />
               </div>
               <div>
@@ -277,7 +277,7 @@ BMI: ${bmi}`.trim();
                   name="avgHeartRate"
                   value={formData.avgHeartRate}
                   onChange={handleChange}
-                  className="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500"
+                  className="mt-1 pl-3 block w-full shadow-sm rounded border-gray-400 border focus:ring-orange-500"
                 />
               </div>
               <div>
@@ -287,7 +287,7 @@ BMI: ${bmi}`.trim();
                   name="restingHeartRate"
                   value={formData.restingHeartRate}
                   onChange={handleChange}
-                  className="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500"
+                  className="mt-1 pl-3 block w-full shadow-sm rounded border-gray-400 border focus:ring-orange-500"
                 />
               </div>
             </div>
@@ -310,7 +310,7 @@ BMI: ${bmi}`.trim();
                     value={formData.sessionDuration}
                     onChange={handleChange}
                     step="0.1"
-                    className="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500 pl-10"
+                    className="mt-1 block w-full shadow-sm rounded border-gray-400 border focus:ring-orange-500 pl-10"
                   />
                 </div>
                 </div>
@@ -323,7 +323,7 @@ BMI: ${bmi}`.trim();
                     name="caloriesBurned"
                     value={formData.caloriesBurned}
                     onChange={handleChange}
-                    className="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500 pl-10"
+                    className="mt-1 block w-full shadow-sm rounded border-gray-400 border focus:ring-orange-500 pl-10"
                   />
                 </div>
               </div>
@@ -333,7 +333,7 @@ BMI: ${bmi}`.trim();
                   name="experienceLevel"
                   value={formData.experienceLevel}
                   onChange={handleChange}
-                  className="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500"
+                  className="mt-1 block w-full shadow-sm rounded border-gray-400 border focus:ring-orange-500"
                 >
                   <option value="">Select level</option>
                   <option value="beginner">Beginner</option>
@@ -350,7 +350,7 @@ BMI: ${bmi}`.trim();
                     name="workoutFrequency"
                     value={formData.workoutFrequency}
                     onChange={handleChange}
-                    className="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500 pl-10"
+                    className="mt-1 block w-full shadow-sm rounded border-gray-400 border focus:ring-orange-500 pl-10"
                   />
                 </div>
               </div>
@@ -372,7 +372,7 @@ BMI: ${bmi}`.trim();
                   value={formData.fatPercentage}
                   onChange={handleChange}
                   step="0.1"
-                  className="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500"
+                  className="mt-1 block pl-3 w-full shadow-sm rounded border-gray-400 border focus:ring-orange-500"
                 />
               </div>
               <div>
@@ -383,7 +383,7 @@ BMI: ${bmi}`.trim();
                   value={formData.waterIntake}
                   onChange={handleChange}
                   step="0.1"
-                  className="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500"
+                  className="mt-1 block pl-3 w-full shadow-sm rounded border-gray-400 border focus:ring-orange-500"
                 />
               </div>
               <div>
@@ -393,7 +393,7 @@ BMI: ${bmi}`.trim();
                   value={formData.illness}
                   onChange={handleChange}
                   rows="3"
-                  className="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500"
+                  className="mt-1 block pl-3 w-full shadow-sm rounded border-gray-400 border focus:ring-orange-500"
                   placeholder="Enter any medical conditions..."
                 />
               </div>
@@ -404,13 +404,13 @@ BMI: ${bmi}`.trim();
                   <button
               type="button"
               onClick={() => setIsEditing(false)}
-              className="px-6 py-2 rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors duration-200"
+              className="px-6 py-2 rounded-lg bg-gray-300 text-gray-700 hover:bg-gray-400 transition-colors duration-200"
                   >
               Cancel
                   </button>
                   <button
               type="submit"
-              className="px-6 py-2 rounded-lg bg-orange-500 text-white hover:bg-orange-600 transition-colors duration-200"
+              className="px-6 py-2 rounded-lg bg-orange-400 text-white hover:bg-primary-500 transition-colors duration-200"
                   >
               Save Changes
                   </button>

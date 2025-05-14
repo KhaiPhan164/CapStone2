@@ -67,30 +67,41 @@ const Header = () => {
             className="h-10 w-auto ml-10 cursor-pointer"
           />
         </Link>
-        <ul className="hidden md:flex gap-7 text-black">
-          <Link to="/">
-            <a className="cursor-pointer hover:text-gray-400">Home</a>
-          </Link>
+<ul className="hidden md:flex gap-10 items-center text-lg font-semibold tracking-wide">
+  <li>
+    <Link
+      to="/"
+      className="text-gray-600 hover:text-orange-500 transition duration-300 ease-in-out"
+    >
+      Home
+    </Link>
+  </li>
+  <li>
+    <Link
+      to="/exercise"
+      className="text-gray-600 hover:text-orange-500 transition duration-300 ease-in-out"
+    >
+      Exercise
+    </Link>
+  </li>
+  <li>
+    <Link
+      to="/gyms"
+      className="text-gray-600 hover:text-orange-500 transition duration-300 ease-in-out"
+    >
+      Gyms
+    </Link>
+  </li>
+  <li>
+    <Link
+      to="/pt-list"
+      className="text-gray-600 hover:text-orange-500 transition duration-300 ease-in-out"
+    >
+      PT List
+    </Link>
+  </li>
+</ul>
 
-          <Link to="/exercise">
-            <a className="cursor-pointer hover:text-gray-400">Exercise</a>
-          </Link>
-
-          <Link to="/gyms">
-            <a className="cursor-pointer hover:text-gray-400">Gyms</a>
-          </Link>
-
-          <Link to="/pt-list">
-            <a className="cursor-pointer hover:text-gray-400">PT List</a>
-          </Link>
-
-          <a href="#Programs" className="cursor-pointer hover:text-gray-400">
-            Programs
-          </a>
-          <a href="#Contact" className="cursor-pointer hover:text-gray-400">
-            Contact
-          </a>
-        </ul>
 
         {/* Hiển thị nút Sign up nếu chưa đăng nhập */}
         {!showAccount && (

@@ -99,7 +99,7 @@ export const ExerciseHome = () => {
             <div className="flex items-center max-w-[300px] sm:max-w-xl mx-auto rounded-full border border-gray-400 overflow-hidden shadow-sm">
               <input
                 type="text"
-                placeholder="Tìm kiếm bài tập..."
+                placeholder="Search for exercises..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="flex-1 text-xs w-[300px] sm:text-base py-0 sm:py-2 pl-6 md:pl-8 text-gray-600 italic outline-none"

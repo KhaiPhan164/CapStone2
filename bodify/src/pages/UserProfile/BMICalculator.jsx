@@ -131,7 +131,7 @@ export default function BMICalculator() {
           <div className="mt-6 text-center">
             <button
               type="submit"
-              className="bg-primary-500 text-white py-2 px-4 rounded hover:bg-[#ffa865] transition"
+              className="bg-orange-400 text-white py-2 px-4 rounded hover:bg-primary-500 transition"
             >
               Result
             </button>

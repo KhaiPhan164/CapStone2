@@ -217,7 +217,7 @@ const ProfileSidebar = ({ initialTab }) => {
             >
               <div className="flex items-center font-bold text-white">
                 <FontAwesomeIcon icon={faHeartPulse} className="mr-3 ml-2 w-6 h-6" />
-                Thông tin sức khỏe
+                Health information
               </div>
             </li>
             {isGymOwner && (
