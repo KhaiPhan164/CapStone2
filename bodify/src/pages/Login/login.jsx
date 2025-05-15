@@ -1,6 +1,4 @@
 import React, { useState, useEffect } from "react";
-import FacebookIcon from "@mui/icons-material/Facebook";
-import GoogleIcon from "@mui/icons-material/Google";
 import { useLocation, useNavigate } from "react-router-dom";
 import AuthService from "../../services/auth.service";
 
@@ -11,6 +9,7 @@ const SignUpForm = () => {
   const [isSignUp, setIsSignUp] = useState(true);
   const [isPublicProfile, setIsPublicProfile] = useState(false);
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -23,11 +22,14 @@ const SignUpForm = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
+    setLoading(true);
     
-    try {
-      if (isSignUp) {
+    // Handle registration
+    if (isSignUp) {
+      try {
         if (!username || !name || !password) {
-          setError("Vui lòng điền đầy đủ thông tin");
+          setError("Please fill in all required information");
+          setLoading(false);
           return;
         }
         const userData = {
@@ -38,22 +40,78 @@ const SignUpForm = () => {
         };
         await AuthService.register(userData);
         navigate("/sign-in");
-      } else {
-        if (!username || !password) {
-          setError("Please fill in all fields");
-          return;
-        }
+      } catch (registerError) {
+        console.error('Registration error:', registerError);
+        setError("Username already exists");
+        setLoading(false);
+      }
+      return; // Ensure code below doesn't run
+    }
+    
+    // Handle login
+    if (!username || !password) {
+      setError("Please fill in all fields");
+      setLoading(false);
+      return;
+    }
+    
+    try {
+      console.log("Logging in with username:", username);
+      
+      const loginResponse = await AuthService.login(username, password);
+      console.log("Login result:", loginResponse);
+      
+      // Check if login was successful
+      if (!loginResponse?.access_token) {
+        throw new Error("No token received from server");
+      }
+      
+      // Get user information
+      const user = AuthService.getCurrentUser();
+      console.log("User information after login:", user);
+      
+      // Check if user is PT (role_id = 3)
+      if (user && user.role_id === 3) {
+        console.log("This is a PT account, checking status...");
         
-        const response = await AuthService.login(username, password);
-        navigate("/");
+        try {
+          // Use checkUserStatus method to get status_id from API
+          const statusCheck = await AuthService.checkUserStatus();
+          console.log("Status check result:", statusCheck);
+          
+          // If not active or status_id is not 2, account is not approved
+          if (!statusCheck.isActive || (statusCheck.status_id !== 2 && statusCheck.status_id !== "2")) {
+            console.log("PT not approved, status_id =", statusCheck.status_id);
+            
+            // Logout immediately
+            await AuthService.logout();
+            
+            // Show error message and stop processing
+            setError("Your PT account is pending approval. Please try again after being approved.");
+            setLoading(false);
+            return;
+          }
+          
+          console.log("PT is approved, allowing login");
+        } catch (statusError) {
+          console.error("Error checking PT status:", statusError);
+          
+          // If status can't be checked, allow login but log error
+          console.warn("Cannot check PT status, allowing login");
+        }
       }
-    } catch (err) {
-      console.error('Lỗi đăng nhập/đăng ký:', err);
-      if (isSignUp) {
-        setError("Tên đăng nhập đã tồn tại");
-      } else {
-        setError("Tài khoản hoặc mật khẩu không chính xác");
-      }
+      
+      // Login successful, redirect user
+      console.log("Login successful, redirecting user");
+      
+      // All users are redirected to home page
+      // For gym owners, the home page will automatically display dashboard
+      navigate("/");
+    } catch (error) {
+      console.error("Error during login process:", error);
+      // Ensure user-friendly error message is displayed
+      setError(error.response?.data?.message || "Login failed. Please check your username and password.");
+      setLoading(false);
     }
   };
 
@@ -135,32 +193,11 @@ const SignUpForm = () => {
           <button
             type="submit"
             className="w-full bg-orange-400 hover:bg-orange-500 text-white py-3 rounded"
+            disabled={loading}
           >
-            {isSignUp ? "Sign Up" : "Log In"}
+            {loading ? 'Processing...' : (isSignUp ? "Sign Up" : "Log In")}
           </button>
         </form>
-        {/* Or divider */}
-
-        {isSignUp && (
-          <div className="flex items-start">
-            <input
-              type="checkbox"
-              id="publicProfile"
-              className="mt-1 mr-2"
-              checked={isPublicProfile}
-              onChange={() => setIsPublicProfile(!isPublicProfile)}
-            />
-            <label htmlFor="publicProfile" className="text-gray-700">
-              Sign up to this site with a public profile.
-              <a
-                href="#read-more"
-                className="text-black font-medium ml-1 hover:underline"
-              >
-                Read more
-              </a>
-            </label>
-          </div>
-        )}
       </div>
     </div>
   );

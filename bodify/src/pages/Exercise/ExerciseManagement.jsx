@@ -45,7 +45,7 @@ const ExerciseManagement = () => {
   const ensureValidUserId = (user) => {
     if (!user) {
       console.error("User is null or undefined");
-      message.error("Vui lòng đăng nhập để tiếp tục");
+      message.error("Please log in to access this feature");
       navigate("/login");
       return null;
     }
@@ -76,7 +76,7 @@ const ExerciseManagement = () => {
       
       // Nếu vẫn không có user_id hợp lệ
       if (!user.user_id && user.user_id !== 0) {
-        message.error("Không tìm thấy thông tin người dùng, vui lòng đăng nhập lại");
+        message.error("Unable to find user information, please log in again");
         navigate("/login");
         return null;
       }
@@ -114,7 +114,7 @@ const ExerciseManagement = () => {
     // Kiểm tra quyền truy cập
     const currentUser = AuthService.getCurrentUser();
     if (!currentUser || currentUser.role_id !== 3) {
-      message.error("Bạn không có quyền truy cập trang này");
+      message.error("You do not have permission to access this page");
       navigate("/");
       return;
     }
@@ -130,7 +130,7 @@ const ExerciseManagement = () => {
       // Lấy thông tin người dùng hiện tại
       const currentUser = AuthService.getCurrentUser();
       if (!currentUser) {
-        message.error("Vui lòng đăng nhập để xem bài tập của bạn");
+        message.error("Please log in to view your exercises");
         navigate("/login");
         return;
       }
@@ -144,11 +144,11 @@ const ExerciseManagement = () => {
         return exerciseUserId === currentUser.user_id;
       });
       
-      console.log(`Tìm thấy ${userExercises.length} bài tập của người dùng ${currentUser.user_id}`);
+      console.log(`Found ${userExercises.length} exercises for user ${currentUser.user_id}`);
       setExercises(userExercises);
     } catch (error) {
       console.error("Error fetching exercises:", error);
-      message.error("Không thể tải danh sách bài tập");
+      message.error("Unable to load exercise list");
     } finally {
       setLoading(false);
     }
@@ -172,12 +172,12 @@ const ExerciseManagement = () => {
         // Nếu không tìm thấy mảng, thiết lập mảng rỗng
         console.error("Tags data is not in expected format:", response.data);
         setTags([]);
-        message.error("Không thể tải danh sách tags: Dữ liệu không đúng định dạng");
+        message.error("Unable to load tag list: Data format is incorrect");
       }
     } catch (error) {
       console.error("Error fetching tags:", error);
       setTags([]); // Đảm bảo tags luôn là mảng ngay cả khi có lỗi
-      message.error("Không thể tải danh sách tags");
+      message.error("Unable to load tag list");
     }
   };
 
@@ -198,7 +198,7 @@ const ExerciseManagement = () => {
 
       // Validate required fields
       if (!values.name || !values.description) {
-        message.error("Vui lòng điền đầy đủ thông tin bài tập");
+        message.error("Please fill in all exercise information");
         return;
       }
 
@@ -206,7 +206,7 @@ const ExerciseManagement = () => {
       const file = fileList.length > 0 ? fileList[0]?.originFileObj : null;
       
       if (!file) {
-        message.error("Vui lòng upload hình ảnh cho bài tập");
+        message.error("Please upload an image for the exercise");
         setLoading(false);
         return;
       }
@@ -245,14 +245,14 @@ const ExerciseManagement = () => {
       } catch (innerError) {
         console.error("Error in API call:", innerError);
         console.log("Error response:", innerError.response?.data);
-        message.error(`Lỗi khi tạo bài tập: ${innerError.response?.data?.message || innerError.message}`);
+        message.error(`Error creating exercise: ${innerError.response?.data?.message || innerError.message}`);
       }
     } catch (error) {
       console.error("Error creating exercise:", error);
       const errorMessage =
         error.response?.data?.message ||
         error.message ||
-        "Tạo bài tập thất bại";
+        "Failed to create exercise";
       message.error(errorMessage);
     } finally {
       setLoading(false);
@@ -313,7 +313,7 @@ const ExerciseManagement = () => {
       } catch (innerError) {
         console.error("Error in API call:", innerError);
         console.log("Error response:", innerError.response?.data);
-        message.error(`Lỗi khi cập nhật bài tập: ${innerError.response?.data?.message || innerError.message}`);
+        message.error(`Error updating exercise: ${innerError.response?.data?.message || innerError.message}`);
       }
     } catch (error) {
       console.error("Error updating exercise:", error);
@@ -321,7 +321,7 @@ const ExerciseManagement = () => {
       const errorMessage =
         error.response?.data?.message ||
         error.message ||
-        "Cập nhật bài tập thất bại";
+        "Failed to update exercise";
       message.error(errorMessage);
     } finally {
       setLoading(false);
@@ -332,7 +332,7 @@ const ExerciseManagement = () => {
     try {
       const user = AuthService.getCurrentUser();
       if (!user) {
-        message.error("Vui lòng đăng nhập để duyệt bài tập");
+        message.error("Please log in to approve the exercise");
         return;
       }
 
@@ -340,11 +340,11 @@ const ExerciseManagement = () => {
         status_id: 2,
         user_id: user.user_id,
       });
-      message.success("Đã duyệt bài tập");
+      message.success("Exercise approved");
       fetchExercises();
     } catch (error) {
       console.error("Error approving exercise:", error);
-      message.error("Không thể duyệt bài tập");
+      message.error("Unable to approve exercise");
     }
   };
 
@@ -352,7 +352,7 @@ const ExerciseManagement = () => {
     try {
       const user = AuthService.getCurrentUser();
       if (!user) {
-        message.error("Vui lòng đăng nhập để từ chối bài tập");
+        message.error("Please log in to reject the exercise");
         return;
       }
 
@@ -360,11 +360,11 @@ const ExerciseManagement = () => {
         status_id: 3,
         user_id: user.user_id,
       });
-      message.success("Đã từ chối bài tập");
+      message.success("Exercise rejected");
       fetchExercises();
     } catch (error) {
       console.error("Error rejecting exercise:", error);
-      message.error("Không thể từ chối bài tập");
+      message.error("Unable to reject exercise");
     }
   };
 
@@ -373,7 +373,7 @@ const ExerciseManagement = () => {
       setLoading(true);
       const user = AuthService.getCurrentUser();
       if (!user) {
-        message.error("Vui lòng đăng nhập để xóa bài tập");
+        message.error("Please log in to delete the exercise");
         return;
       }
 
@@ -602,7 +602,7 @@ const ExerciseManagement = () => {
               label="Exercise Image" 
               required 
               rules={[{ required: true, message: "Please upload an exercise image" }]}
-              help="Hình ảnh bài tập là bắt buộc. Định dạng hỗ trợ: JPG, PNG, JPEG."
+              help="Exercise image is required. Supported formats: JPG, PNG, JPEG."
             >
               <Upload
                 fileList={fileList}
@@ -610,12 +610,12 @@ const ExerciseManagement = () => {
                 beforeUpload={(file) => {
                   const isImage = file.type.startsWith('image/');
                   if (!isImage) {
-                    message.error('Bạn chỉ có thể upload file hình ảnh!');
+                    message.error('You can only upload image files!');
                     return false;
                   }
                   const isLt5M = file.size / 1024 / 1024 < 5;
                   if (!isLt5M) {
-                    message.error('Kích thước hình ảnh phải nhỏ hơn 5MB!');
+                    message.error('Image size must be smaller than 5MB!');
                     return false;
                   }
                   return false;
@@ -634,7 +634,7 @@ const ExerciseManagement = () => {
                 )}
               </Upload>
               <div className="text-xs text-gray-500 mt-1">
-                Lưu ý: Ảnh sẽ được đổi tên khi tải lên. Kích thước tối đa: 5MB
+                Note: Images will be renamed when uploaded. Maximum size: 5MB
               </div>
             </Form.Item>
 

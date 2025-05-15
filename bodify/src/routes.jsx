@@ -19,12 +19,15 @@ import { createBrowserRouter } from 'react-router-dom';
 import TrainerList from "./pages/PTList/TrainerList";
 import GymOwnerApprovalPage from './pages/Approval/GymOwnerApprovalPage';
 import PlanList from "./pages/PlanDetail/PlanList";
-import Home from './pages/Home/Home';
+import HomeRouter from './pages/Home/HomeRouter';
+import Dashboard from "./pages/Dashboard/SidebarPT";
+import PTMembershipManagement from './pages/UserProfile/PT/PTMembershipManagement';
+import NotFound from './pages/NotFound/NotFound';
 
 const routes = createBrowserRouter([
     {
         path: '/',
-        element: <MainLayout><Home /></MainLayout>
+        element: <HomeRouter />
     },
     {
         path: '/admin',
@@ -117,7 +120,11 @@ const routes = createBrowserRouter([
     {
         path: '/plan-detail',
         element: <MainLayout><PlanList /></MainLayout>
-    }
+    },
+    {
+        path: '*',
+        element: <NotFound />
+    },
 ]);
 
 export default routes;

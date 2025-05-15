@@ -6,21 +6,21 @@ import FullCalendars from "./FullCalendar";
 import PlanListTab from "./User/PlanListTab";
 import PTManagement from "./GymOwner/PTManagement";
 import MembershipManagement from "./GymOwner/MembershipManagement";
+import PTMembershipManagement from "./PT/PTMembershipManagement";
 import UserMemberships from "./User/UserMemberships";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faCalendar, faClipboardList, faUsers, faDumbbell, faWeightScale, faCreditCard, faHeartPulse, faUserPlus } from "@fortawesome/free-solid-svg-icons";
-import BMICalculator from "./BMICalculator";
 import HealthInformation from "./User/HealthInformation";
-import CreateMembership from "../Membership/GymMembershipForm";
 
 const ProfileSidebar = ({ initialTab }) => {
   const location = useLocation();
   const user = JSON.parse(localStorage.getItem('user'));
   const isGymOwner = user?.role_id === 4;
+  const isPT = user?.role_id === 3;
   
-  // Xác định tab mặc định từ prop hoặc URL
+  // Determine default tab from prop or URL
   const getDefaultTab = () => {
-    // Kiểm tra xem có tham số activeTab trên URL không
+    // Check if there's an activeTab parameter in the URL
     const queryParams = new URLSearchParams(location.search);
     const tabParam = queryParams.get('activeTab');
     
@@ -29,13 +29,13 @@ const ProfileSidebar = ({ initialTab }) => {
     if (tabParam === 'membership-management') return 'membership-management';
     if (tabParam === 'memberships') return 'memberships';
     if (initialTab) return initialTab;
-    return "home"; // Tab mặc định
+    return "home"; // Default tab
   };
   
-  // Dùng state để theo dõi lựa chọn của người dùng
+  // Use state to track user selection
   const [selectedSection, setSelectedSection] = useState(getDefaultTab());
   
-  // Cập nhật tab khi URL thay đổi
+  // Update tab when URL changes
   useEffect(() => {
     const queryParams = new URLSearchParams(location.search);
     const tabParam = queryParams.get('activeTab');
@@ -51,12 +51,12 @@ const ProfileSidebar = ({ initialTab }) => {
     }
   }, [location.search]);
 
-  // Hàm để xử lý sự thay đổi khi người dùng chọn một mục
+  // Function to handle changes when a user selects an item
   const handleSelection = (section) => {
     setSelectedSection(section);
   };
 
-  // Hàm hiển thị nội dung tùy theo mục đã chọn
+  // Function to display content based on selected item
   const renderContent = () => {
     switch (selectedSection) {
       case "home":
@@ -95,18 +95,12 @@ const ProfileSidebar = ({ initialTab }) => {
             <MembershipManagement />
           </div>
         );
-        case "create-memberships":
-          return (
-            <div className="">
-              <CreateMembership />
-            </div>
-          );
-        case "bmi":
-          return (
-            <div className="">
-              <BMICalculator />
-            </div>
-          );
+      case "pt-membership-management":
+        return (
+          <div className="">
+            <PTMembershipManagement />
+          </div>
+        );
       case "health":
         return (
           <div className="">
@@ -114,7 +108,7 @@ const ProfileSidebar = ({ initialTab }) => {
           </div>
         );
       default:
-        return <div className="p-6">Chưa chọn mục nào.</div>;
+        return <div className="p-6">No section selected.</div>;
     }
   };
 
@@ -122,7 +116,7 @@ const ProfileSidebar = ({ initialTab }) => {
     <div>
       <Header />
       <div className="flex h-full container-auto bg-gray-100 ">
-        {/* Thanh module bên trái */}
+        {/* Left module sidebar */}
         <div className="w-1/4 bg-white p-4 rounded-xl my-5 h-screen">
           <ul className="space-y-4">
             <li
@@ -136,7 +130,7 @@ const ProfileSidebar = ({ initialTab }) => {
               <div className="flex items-center font-bold text-white">
                 <img
                   src="./images/user.png" 
-                  alt="Ảnh đại diện"
+                  alt="Profile Picture"
                   className="mr-3 ml-2 w-6 h-6 filter invert" 
                 />
                   Personal Information
@@ -168,45 +162,21 @@ const ProfileSidebar = ({ initialTab }) => {
                 Workout Plan  
               </div>
             </li>
-            <li
-              onClick={() => handleSelection("memberships")}
-              className={`cursor-pointer block p-2 rounded-xl  ${
-                selectedSection === "memberships"
-                  ? "bg-primary-500 text-gray-600  "
-                  : "bg-gray-400"
-              }`}
-            >
-              <div className="flex items-center font-bold text-white">
-                <FontAwesomeIcon icon={faCreditCard} className="mr-3 ml-2 w-6 h-6" />
-                Membership  
-              </div>
-            </li>
-            <li
-              onClick={() => handleSelection("create-memberships")}
-              className={`cursor-pointer block p-2 rounded-xl  ${
-                selectedSection === "create-memberships"
-                  ? "bg-primary-500 text-gray-600  "
-                  : "bg-gray-400"
-              }`}
-            >
-              <div className="flex items-center font-bold text-white">
-                <FontAwesomeIcon icon={faUserPlus} className="mr-3 ml-2 w-6 h-6" />
-                Create Membership  
-              </div>
-            </li>
-            <li
-              onClick={() => handleSelection("bmi")}
-              className={`cursor-pointer block p-2 rounded-xl  ${
-                selectedSection === "bmi"
-                  ? "bg-primary-500 text-gray-600  "
-                  : "bg-gray-400"
-              }`}
-            >
-              <div className="flex items-center font-bold text-white">
-                <FontAwesomeIcon icon={faWeightScale} className="mr-3 ml-2 w-6 h-6" />
-                BMI
-              </div>
-            </li>
+            {!isPT && (
+              <li
+                onClick={() => handleSelection("memberships")}
+                className={`cursor-pointer block p-2 rounded-xl  ${
+                  selectedSection === "memberships"
+                    ? "bg-primary-500 text-gray-600  "
+                    : "bg-gray-400"
+                }`}
+              >
+                <div className="flex items-center font-bold text-white">
+                  <FontAwesomeIcon icon={faCreditCard} className="mr-3 ml-2 w-6 h-6" />
+                  Membership  
+                </div>
+              </li>
+            )}
             <li
               onClick={() => handleSelection("health")}
               className={`cursor-pointer block p-2 rounded-xl  ${
@@ -217,7 +187,7 @@ const ProfileSidebar = ({ initialTab }) => {
             >
               <div className="flex items-center font-bold text-white">
                 <FontAwesomeIcon icon={faHeartPulse} className="mr-3 ml-2 w-6 h-6" />
-                Thông tin sức khỏe
+                Health Information
               </div>
             </li>
             {isGymOwner && (
@@ -250,12 +220,28 @@ const ProfileSidebar = ({ initialTab }) => {
                 </li>
               </>
             )}
+            
+            {user && user.role_id === 3 && (
+              <li
+                onClick={() => handleSelection("pt-membership-management")}
+                className={`cursor-pointer block p-2 rounded-xl ${
+                  selectedSection === "pt-membership-management"
+                    ? "bg-primary-500 text-gray-600"
+                    : "bg-gray-400"
+                }`}
+              >
+                <div className="flex items-center font-bold text-white">
+                  <FontAwesomeIcon icon={faDumbbell} className="mr-3 ml-2 w-6 h-6" />
+                  Training Packages
+                </div>
+              </li>
+            )}
           </ul>
         </div>
 
-        {/* Thông tin người dùng bên phải */}
+        {/* User information on the right */}
         <div className="flex-1 pt-6 pl-6 pb-6">
-          {/* Render nội dung tương ứng với mục đã chọn */}
+          {/* Render content corresponding to the selected section */}
           {renderContent()}
         </div>
       </div>

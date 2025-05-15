@@ -4,8 +4,8 @@ import PaymentService from '../../services/paymentservice';
 import Header from '../../layout/Header';
 
 const PaymentStatus = () => {
-    // Cấu hình: Đặt thành TRUE nếu muốn LUÔN hiển thị thành công
-    const FORCE_SUCCESS = false; // true = luôn thành công, false = kiểm tra theo logic thông thường
+    // Config: Set to TRUE to always display success
+    const FORCE_SUCCESS = false; // true = always success, false = check with normal logic
     
     const location = useLocation();
     const navigate = useNavigate();
@@ -16,33 +16,24 @@ const PaymentStatus = () => {
     useEffect(() => {
         const checkStatus = async () => {
             try {
-                // Cố gắng lấy orderId từ nhiều nguồn khác nhau
+                // Try to get orderId from different sources
                 let orderId = null;
                 
-                // 1. Kiểm tra URL query parameters
+                // 1. Check URL query parameters
                 const params = new URLSearchParams(location.search);
                 orderId = params.get('orderId') || params.get('apptransid');
                 const statusParam = params.get('status');
                 const amountParam = params.get('amount');
                 const cancelParam = params.get('cancel') || params.get('cancelled');
                 
-                console.log("Thông tin từ URL query:", { 
-                    orderId, 
-                    statusParam, 
-                    amount: amountParam,
-                    cancel: cancelParam,
-                    fullUrl: location.search
-                });
-                
-                // Nếu có status=2 trong URL, ưu tiên sử dụng để hiển thị thành công
+                // If status=2 in URL, prioritize displaying success
                 if (statusParam === '2') {
                     const amount = parseFloat(amountParam || location.state?.amount) || 0;
-                    console.log("Đã tìm thấy status=2 trong URL, hiển thị thành công với số tiền:", amount);
                     
                     setStatus({
                         payment: {
                             order_id: orderId || "ORDER_" + Date.now(),
-                            status_id: 2, // Đánh dấu thành công
+                            status_id: 2, // Mark as success
                             amount_paid: amount
                         }
                     });
@@ -50,16 +41,15 @@ const PaymentStatus = () => {
                     return;
                 }
                 
-                // Xử lý trường hợp hủy giao dịch
+                // Handle cancelled transactions
                 if (cancelParam === '1' || cancelParam === 'true' || location.search.includes('cancel') || location.search.includes('cancelled')) {
-                    console.log("Phát hiện giao dịch bị hủy, hiển thị màn hình thất bại");
                     
                     setStatus({
                         payment: {
                             order_id: orderId || "CANCEL_" + Date.now(),
-                            status_id: 0, // Đánh dấu thất bại
+                            status_id: 0, // Mark as failed
                             amount_paid: parseFloat(amountParam || location.state?.amount) || 0,
-                            cancel_reason: "Giao dịch đã bị hủy bởi người dùng"
+                            cancel_reason: "Transaction cancelled by user"
                         },
                         status: 'CANCELLED',
                         statusId: 0,
@@ -69,19 +59,19 @@ const PaymentStatus = () => {
                     return;
                 }
                 
-                // 2. Nếu không có trong URL, kiểm tra trong location.state
+                // 2. If not in URL, check location.state
                 if (!orderId && location.state && location.state.paymentId) {
                     orderId = location.state.paymentId;
                 }
                 
-                // 3. Nếu vẫn không có, kiểm tra trong localStorage
+                // 3. If still not found, check localStorage
                 if (!orderId) {
                     orderId = localStorage.getItem('currentPaymentOrderId');
                 }
                 
-                // 4. Nếu vẫn không có và có paymentStatus trong location.state
+                // 4. If still not found and have paymentStatus in location.state
                 if (!orderId && location.state && location.state.paymentStatus) {
-                    // Nếu có data về payment trong state, hiển thị trực tiếp
+                    // If payment data in state, display directly
                     setStatus({
                         payment: {
                             ...location.state.paymentStatus,
@@ -93,15 +83,14 @@ const PaymentStatus = () => {
                     return;
                 }
 
-                // Kiểm tra thêm URL query param
+                // Check URL query param again
                 if (statusParam === '2') {
                     const amount = parseFloat(amountParam || location.state?.amount) || 0;
-                    console.log("Đã tìm thấy status=2 trong URL query param, đánh dấu thành công với số tiền:", amount);
                     
                     setStatus({
                         payment: {
                             order_id: orderId || "ORDER_" + Date.now(),
-                            status_id: 2, // Đánh dấu thành công
+                            status_id: 2, // Mark as success
                             amount_paid: amount
                         },
                         statusId: 2,
@@ -111,12 +100,11 @@ const PaymentStatus = () => {
                     return;
                 }
                 
-                // Nếu không tìm thấy orderId ở đâu cả, hiển thị trang thất bại thay vì redirect
+                // If orderId not found, display failure page instead of redirect
                 if (!orderId) {
-                    // Thử tạo trạng thái thành công nếu có dấu hiệu thành công trong URL
+                    // Try to create success status if success indication in URL
                     if (location.search.includes('success') || location.search.includes('Success')) {
                         const amount = parseFloat(amountParam || location.state?.amount) || 0;
-                        console.log("Tìm thấy từ khóa 'success' trong URL, đánh dấu thành công với số tiền:", amount);
                         
                         setStatus({
                             payment: {
@@ -131,17 +119,16 @@ const PaymentStatus = () => {
                         return;
                     }
                     
-                    // Nếu có dấu hiệu hủy
+                    // If cancel indication
                     if (location.search.includes('cancel') || location.search.includes('fail') || 
                         location.search.includes('Cancel') || location.search.includes('Fail')) {
-                        console.log("Phát hiện từ khóa hủy/thất bại trong URL, hiển thị màn hình thất bại");
                         
                         setStatus({
                             payment: {
                                 order_id: "CANCEL_" + Date.now(),
                                 status_id: 0,
                                 amount_paid: parseFloat(amountParam || location.state?.amount) || 0,
-                                cancel_reason: "Giao dịch đã bị hủy hoặc thất bại"
+                                cancel_reason: "Transaction cancelled or failed"
                             },
                             status: 'CANCELLED',
                             statusId: 0,
@@ -151,14 +138,13 @@ const PaymentStatus = () => {
                         return;
                     }
                     
-                    // Ngay cả khi không có thông tin gì, vẫn hiển thị màn hình thất bại thay vì redirect
-                    console.log("Không tìm thấy thông tin thanh toán, hiển thị màn hình thất bại");
+                    // Even with no information, display failure screen instead of redirect
                     setStatus({
                         payment: {
                             order_id: "UNKNOWN_" + Date.now(),
                             status_id: 0,
                             amount_paid: 0,
-                            cancel_reason: "Không tìm thấy thông tin thanh toán"
+                            cancel_reason: "Payment information not found"
                         },
                         status: 'UNKNOWN',
                         statusId: 0
@@ -169,61 +155,45 @@ const PaymentStatus = () => {
 
                 const result = await PaymentService.checkPaymentStatus(orderId);
                 
-                // Log kết quả chi tiết để debug
-                console.log("Kết quả từ API:", result);
-                
-                // Kiểm tra status_id = 2 để xác định thành công
+                // Check status_id = 2 to determine success
                 if (result) {
-                    // LUÔN kiểm tra status_id = 2 trong mọi vị trí có thể
+                    // ALWAYS check status_id = 2 in all possible locations
                     if (result.status_id === 2) {
-                        console.log("ĐÃ TÌM THẤY status_id = 2 trong API, đánh dấu THÀNH CÔNG");
                         setStatus({
                             payment: {
                                 order_id: result.orderId || orderId,
-                                status_id: 2, // Luôn đánh dấu thành công
-                                amount_paid: parseFloat(result.amount) || 0 // Chuyển đổi chuỗi sang số
+                                status_id: 2, // Always mark as success
+                                amount_paid: parseFloat(result.amount) || 0 // Convert string to number
                             },
                             statusId: 2
                         });
                     } 
-                    // kiểm tra trong payment nếu có
+                    // Check in payment if exists
                     else if (result.payment && result.payment.status_id === 2) {
-                        console.log("ĐÃ TÌM THẤY payment.status_id = 2 trong API, đánh dấu THÀNH CÔNG");
                         setStatus({
                             payment: {
                                 ...result.payment,
-                                status_id: 2, // Đảm bảo status_id = 2
+                                status_id: 2, // Ensure status_id = 2
                                 amount_paid: parseFloat(result.payment.amount_paid || result.amount) || 0
                             },
                             statusId: 2
                         });
                     }
-                    // Kiểm tra thêm các thuộc tính khác (để debug)
+                    // Check other properties (for debugging)
                     else {
-                        console.log("Đang kiểm tra các giá trị khác trong result:", {
-                            statusId: result.statusId,
-                            status: result.status,
-                            isSuccess: result.isSuccess
-                        });
-                        
-                        // Nếu API trả về isSuccess = true hoặc statusId = 2, coi như thành công
+                        // If API returns isSuccess = true or statusId = 2, consider as success
                         if (result.statusId === 2 || result.isSuccess === true) {
-                            console.log("Tìm thấy statusId = 2 hoặc isSuccess = true, đánh dấu THÀNH CÔNG");
                             setStatus({
                                 payment: {
                                     order_id: result.orderId || orderId,
-                                    status_id: 2, // Force thành thành công
+                                    status_id: 2, // Force to success
                                     amount_paid: parseFloat(result.amount) || 0
                                 },
                                 statusId: 2
                             });
                         }
-                        // Nếu không, tạo đối tượng mới từ dữ liệu hiện có
+                        // Otherwise, create new object from existing data
                         else {
-                            console.log("Không tìm thấy dấu hiệu thành công, giữ nguyên dữ liệu API");
-                            // In ra amount để debug
-                            console.log("Số tiền từ API:", result.amount, typeof result.amount);
-                            
                             setStatus({
                                 ...result,
                                 payment: result.payment || {
@@ -235,8 +205,7 @@ const PaymentStatus = () => {
                         }
                     }
                 } else {
-                    console.log("API không trả về kết quả hoặc có lỗi");
-                    // Tạo một đối tượng status mặc định nếu không có kết quả
+                    // Create a default status object if no result
                     setStatus({
                         payment: {
                             order_id: orderId,
@@ -246,8 +215,8 @@ const PaymentStatus = () => {
                     });
                 }
             } catch (err) {
-                console.error("Lỗi khi kiểm tra trạng thái:", err);
-                // Hiển thị màn hình thất bại thay vì chuyển hướng về trang chủ
+                console.error("Error checking payment status:", err);
+                // Display failure screen instead of redirecting to home
                 const params = new URLSearchParams(location.search);
                 const amountParam = params.get('amount');
                 const orderId = params.get('orderId') || params.get('apptransid') || "ERROR_" + Date.now();
@@ -257,15 +226,13 @@ const PaymentStatus = () => {
                         order_id: orderId,
                         status_id: 0,
                         amount_paid: parseFloat(amountParam || 0),
-                        cancel_reason: err.message || "Đã xảy ra lỗi khi kiểm tra trạng thái thanh toán"
+                        cancel_reason: err.message || "An error occurred while checking payment status"
                     },
                     status: 'ERROR',
                     statusId: 0,
                     error: true
                 });
                 setLoading(false);
-                // Comment dòng navigate('/') để không redirect về trang chủ
-                // navigate('/');
             } finally {
                 setLoading(false);
             }
@@ -299,70 +266,56 @@ const PaymentStatus = () => {
                 <Header />
                 <div className="flex flex-col items-center justify-center min-h-screen p-4">
                     <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4">
-                        <strong className="font-bold">Lỗi!</strong>
+                        <strong className="font-bold">Error!</strong>
                         <span className="block sm:inline"> {error}</span>
                     </div>
                     <button
                         onClick={handleBackToHome}
                         className="bg-primary-500 text-white px-4 py-2 rounded hover:bg-primary-600"
                     >
-                        Về trang chủ
+                        Back to Home
                     </button>
                 </div>
             </div>
         );
     }
 
-    // STATUS_ID = 2 là THÀNH CÔNG
-    // STATUS_ID = 0 là THẤT BẠI
-    // ĐẢM BẢO HIỂN THỊ ĐÚNG TRẠNG THÁI
-    console.log("Dữ liệu payment nhận được:", status);
+    // STATUS_ID = 2 is SUCCESS
+    // STATUS_ID = 0 is FAILURE
+    // ENSURE CORRECT STATUS DISPLAY
     
-    // FORCE_SUCCESS = true sẽ luôn hiển thị thành công bất kể dữ liệu
-    if (FORCE_SUCCESS) {
-        console.log("⚡ FORCE_SUCCESS được bật - Luôn hiển thị thành công");
-    }
+    // FORCE_SUCCESS = true will always display success regardless of data
     
-    // LUÔN ƯU TIÊN HIỂN THỊ THÀNH CÔNG nếu có bất kỳ dấu hiệu nào
-    // Status = 2 ở BẤT KỲ nơi nào, hoặc isSuccess = true
-    let isSuccess = FORCE_SUCCESS; // Bắt đầu với giá trị của FORCE_SUCCESS
+    // ALWAYS PRIORITIZE SUCCESS DISPLAY if any indication
+    // Status = 2 ANYWHERE, or isSuccess = true
+    let isSuccess = FORCE_SUCCESS; // Start with FORCE_SUCCESS value
     
-    // Nếu FORCE_SUCCESS = true, không cần kiểm tra thêm
+    // If FORCE_SUCCESS = true, no need to check further
     if (!FORCE_SUCCESS) {
-        // Kiểm tra tất cả các vị trí có thể chứa status_id/statusId
+        // Check all possible locations for status_id/statusId
         if (status?.payment?.status_id === 2) {
             isSuccess = true;
-            console.log("✅ Thành công: status.payment.status_id = 2");
         } else if (status?.statusId === 2) {
             isSuccess = true;
-            console.log("✅ Thành công: status.statusId = 2");
         } else if (status?.status_id === 2) {
             isSuccess = true;
-            console.log("✅ Thành công: status.status_id = 2");
         } else if (status?.isSuccess === true) {
             isSuccess = true;
-            console.log("✅ Thành công: status.isSuccess = true");
         }
-        // Kiểm tra dấu hiệu giao dịch bị hủy
+        // Check for transaction cancellation
         else if (status?.cancelled === true || status?.status === 'CANCELLED' || 
                  status?.payment?.cancel_reason || location.search.includes('cancel') || 
                  location.search.includes('Cancel')) {
-            isSuccess = false; // Đánh dấu là thất bại
-            console.log("❌ Thất bại: Giao dịch bị hủy");
+            isSuccess = false; // Mark as failure
         }
-        // Kiểm tra thêm trong URL query param
+        // Check URL query param
         else {
             const params = new URLSearchParams(location.search);
             const statusParam = params.get('status');
             if (statusParam === '2') {
                 isSuccess = true;
-                console.log("✅ Thành công: URL param status = 2");
             } else if (location.search.includes('success') || location.search.includes('Success')) {
                 isSuccess = true;
-                console.log("✅ Thành công: URL chứa từ khóa 'success'");
-            } else {
-                console.log("❌ Thất bại: Không tìm thấy dấu hiệu thành công", status);
-                console.log("URL search:", location.search);
             }
         }
     }
@@ -389,72 +342,63 @@ const PaymentStatus = () => {
                             )}
                         </div>
                         <h2 className="text-2xl font-bold mb-2">
-                            {isSuccess ? 'Thanh toán thành công!' : 'Thanh toán thất bại'}
+                            {isSuccess ? 'Payment Successful!' : 'Payment Failed'}
                         </h2>
                     </div>
                     
                     <div className="space-y-4">
                         {status?.payment?.order_id && (
                             <div className="flex justify-between items-center">
-                                <span className="font-semibold">Mã đơn hàng:</span>
-                                <span>{status.payment.order_id}</span>
+                                <span className="font-semibold">Order ID:</span>
+                                <span className="text-gray-700">{status.payment.order_id}</span>
                             </div>
                         )}
-
+                        
                         {status?.payment?.amount_paid !== undefined && (
                             <div className="flex justify-between items-center">
-                                <span className="font-semibold">Số tiền:</span>
-                                <span className="font-bold text-primary-500">
-                                    {typeof status.payment.amount_paid === 'number' 
-                                        ? status.payment.amount_paid.toLocaleString('vi-VN') 
-                                        : '0'}đ
+                                <span className="font-semibold">Amount:</span>
+                                <span className="text-gray-700">
+                                    {new Intl.NumberFormat('en-US', {
+                                        style: 'currency',
+                                        currency: 'VND',
+                                        maximumFractionDigits: 0
+                                    }).format(status.payment.amount_paid)}
                                 </span>
                             </div>
                         )}
-
-                        <div className="flex justify-between items-center">
-                            <span className="font-semibold">Trạng thái:</span>
-                            <span className={`px-3 py-1 rounded-full ${
-                                isSuccess ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                            }`}>
-                                {isSuccess ? 'Thành công' : 'Thất bại'}
-                            </span>
-                        </div>
-
-                        {status?.payment?.cancel_reason && (
-                            <div className="mt-4 p-4 bg-gray-50 rounded">
-                                <h3 className="font-semibold mb-2">Lý do:</h3>
-                                <p className="text-gray-700">{status.payment.cancel_reason}</p>
+                        
+                        {status?.payment?.transaction_info && (
+                            <div className="flex justify-between items-center">
+                                <span className="font-semibold">Transaction info:</span>
+                                <span className="text-gray-700">{status.payment.transaction_info}</span>
                             </div>
                         )}
-
-                        {status?.zaloPayStatus && (
-                            <div className="mt-4 p-4 bg-gray-50 rounded">
-                                <h3 className="font-semibold mb-2">Thông tin ZaloPay:</h3>
-                                <p className="text-gray-700">{status.zaloPayStatus.return_message}</p>
+                        
+                        {isFailed && status?.payment?.cancel_reason && (
+                            <div className="bg-red-50 border border-red-200 rounded p-3 text-red-800 text-sm mt-4">
+                                <p><span className="font-medium">Reason:</span> {status.payment.cancel_reason}</p>
                             </div>
                         )}
-
-                        <div className="mt-6 space-y-3">
-                            {isSuccess && (
-                                <button
-                                    onClick={handleViewMembership}
-                                    className="w-full bg-primary-500 text-white px-4 py-2 rounded hover:bg-primary-600"
-                                >
-                                    Xem Membership của tôi
-                                </button>
-                            )}
+                    </div>
+                    
+                    <div className="flex flex-col space-y-3 mt-6">
+                        {isSuccess && (
                             <button
-                                onClick={handleBackToHome}
-                                className={`w-full px-4 py-2 rounded ${
-                                    isSuccess 
-                                        ? 'bg-gray-100 text-gray-700 hover:bg-gray-200' 
-                                        : 'bg-primary-500 text-white hover:bg-primary-600'
-                                }`}
+                                onClick={handleViewMembership}
+                                className="bg-primary-500 hover:bg-primary-600 text-white font-semibold py-2 px-4 rounded transition-colors"
                             >
-                                Về trang chủ
+                                View Membership
                             </button>
-                        </div>
+                        )}
+                        
+                        <button
+                            onClick={handleBackToHome}
+                            className={`${
+                                isSuccess ? 'bg-gray-100 hover:bg-gray-200 text-gray-800' : 'bg-primary-500 hover:bg-primary-600 text-white'
+                            } font-semibold py-2 px-4 rounded transition-colors`}
+                        >
+                            Back to Home
+                        </button>
                     </div>
                 </div>
             </div>

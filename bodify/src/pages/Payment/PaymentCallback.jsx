@@ -13,23 +13,23 @@ const PaymentCallback = () => {
     useEffect(() => {
         const handleCallback = async () => {
             try {
-                // Lấy tất cả query parameters từ URL
+                // Get all query parameters from URL
                 const params = new URLSearchParams(location.search);
                 const callbackData = Object.fromEntries(params.entries());
 
-                // Gửi callback data đến server
+                // Send callback data to server
                 const result = await PaymentService.handlePaymentCallback(callbackData);
                 
                 if (result.success) {
                     setSuccess(true);
                     
-                    // Chuyển hướng đến trang status với orderId
+                    // Redirect to status page with orderId
                     if (callbackData.orderId) {
                         navigate(`/payment-status?orderId=${callbackData.orderId}`);
                         return;
                     }
                 } else {
-                    setError(result.message || 'Thanh toán thất bại');
+                    setError(result.message || 'Payment failed');
                 }
             } catch (err) {
                 setError(err.message);
@@ -51,7 +51,7 @@ const PaymentCallback = () => {
                 <Header />
                 <div className="flex items-center justify-center min-h-screen">
                     <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary-500"></div>
-                    <span className="ml-3 text-gray-600">Đang xử lý thanh toán...</span>
+                    <span className="ml-3 text-gray-600">Processing payment...</span>
                 </div>
             </div>
         );
@@ -63,14 +63,14 @@ const PaymentCallback = () => {
                 <Header />
                 <div className="flex flex-col items-center justify-center min-h-screen p-4">
                     <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4">
-                        <strong className="font-bold">Lỗi!</strong>
+                        <strong className="font-bold">Error!</strong>
                         <span className="block sm:inline"> {error}</span>
                     </div>
                     <button
                         onClick={handleBackToHome}
                         className="bg-primary-500 text-white px-4 py-2 rounded hover:bg-primary-600"
                     >
-                        Về trang chủ
+                        Back to Home
                     </button>
                 </div>
             </div>
@@ -88,9 +88,9 @@ const PaymentCallback = () => {
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
                             </svg>
                         </div>
-                        <h2 className="text-2xl font-bold mb-4">Đang xử lý thanh toán của bạn</h2>
+                        <h2 className="text-2xl font-bold mb-4">Processing your payment</h2>
                         <p className="text-gray-600 mb-6">
-                            Chúng tôi đang xác nhận thanh toán của bạn. Vui lòng đợi trong giây lát.
+                            We are confirming your payment. Please wait a moment.
                         </p>
                         <div className="animate-pulse flex justify-center">
                             <div className="h-2 w-24 bg-primary-200 rounded"></div>

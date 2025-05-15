@@ -18,50 +18,46 @@ const GymDetail = () => {
   const [processingPayment, setProcessingPayment] = useState(false);
   const [errorMessage, setErrorMessage] = useState(null);
   
-  // Hàm xóa thông báo lỗi sau một khoảng thời gian
+  // Function to clear error message after a delay
   const clearErrorAfterDelay = (delay = 5000) => {
     setTimeout(() => {
       setErrorMessage(null);
     }, delay);
   };
   
-  // Bỏ qua lỗi Google Pay manifest trong console
-  // Lỗi "Unable to download payment manifest" không ảnh hưởng đến chức năng ZaloPay
+  // Ignore Google Pay manifest errors in console
   useEffect(() => {
-    // Định nghĩa lại console.error để bỏ qua lỗi Google Pay manifest
+    // Redefine console.error to ignore Google Pay manifest errors
     const originalConsoleError = console.error;
     console.error = function(msg, ...args) {
       if (typeof msg === 'string' && msg.includes('payment manifest')) {
-        // Bỏ qua lỗi liên quan đến payment manifest của Google Pay
+        // Skip errors related to Google Pay payment manifest
         return;
       }
       originalConsoleError.apply(console, [msg, ...args]);
     };
 
-    // Cleanup khi component unmount
+    // Cleanup when component unmounts
     return () => {
       console.error = originalConsoleError;
     };
   }, []);
   
-  // Kiểm tra xem có tham số query payment_status không (từ callback thanh toán)
+  // Check if there's a payment_status query parameter (from payment callback)
   useEffect(() => {
-    // Sử dụng phương thức handlePaymentResult của PaymentService để xử lý kết quả
+    // Use PaymentService's handlePaymentResult method to process the result
     PaymentService.handlePaymentResult((result) => {
       if (result) {
-        console.log("Kết quả thanh toán:", result);
-        
-        // Nếu có lỗi
+        // If there's an error
         if (result.error) {
           setProcessingPayment(false);
-          setErrorMessage(`Lỗi thanh toán: ${result.errorMessage}`);
           clearErrorAfterDelay();
           return;
         }
         
-        // Xử lý theo trạng thái (chỉ có 2 trạng thái: thành công và thất bại)
+        // Process according to status (only 2 statuses: success and failure)
         if (result.isSuccess) {
-          alert(`Thanh toán thành công: ${result.status_description}`);
+          alert(`Payment successful: ${result.status_description}`);
           navigate('/payment-status', { 
             state: { 
               paymentStatus: result,
@@ -69,7 +65,6 @@ const GymDetail = () => {
             }
           });
         } else if (result.isFailed) {
-          setErrorMessage(`Thanh toán thất bại: ${result.status_description}`);
           clearErrorAfterDelay();
         }
         
@@ -81,18 +76,17 @@ const GymDetail = () => {
   useEffect(() => {
     const fetchGymDetails = async () => {
       try {
-        // Lấy thông tin phòng gym (user_id)
+        // Get gym information (user_id)
         const gymResponse = await axios.get(`http://localhost:3000/users/${id}`);
         setGym(gymResponse.data);
 
-        // Lấy thông tin membership theo user_id của gym
+        // Get membership information by gym's user_id
         const membershipResponse = await axios.get(`http://localhost:3000/membership/gym/${id}`);
         setMemberships(membershipResponse.data);
         
         setLoading(false);
       } catch (err) {
-        console.error('Lỗi khi tải thông tin gym:', err);
-        setError('Không thể tải thông tin phòng gym. Vui lòng thử lại sau.');
+        setError('Unable to load gym information. Please try again later.');
         setLoading(false);
       }
     };
@@ -106,68 +100,65 @@ const GymDetail = () => {
   };
   
   /**
-   * Xử lý quá trình thanh toán khi người dùng xác nhận trong modal
-   * Trạng thái thanh toán:
-   * - SUCCESS (1): Thanh toán thành công
-   * - FAILED (2): Thanh toán thất bại (mặc định ban đầu)
+   * Handle payment process when user confirms in modal
+   * Payment statuses:
+   * - SUCCESS (1): Payment successful
+   * - FAILED (2): Payment failed (default initial state)
    */
   const handlePayment = async () => {
     try {
-      // Đảm bảo đã chọn membership
+      // Make sure a membership is selected
       if (!selectedMembership) {
-        setErrorMessage('Vui lòng chọn gói membership!');
+        setErrorMessage('Please select a membership package!');
         clearErrorAfterDelay();
         return;
       }
       
-      // Đóng modal
+      // Close modal
       setShowPaymentModal(false);
 
-      // Hiển thị loading
+      // Show loading
       setProcessingPayment(true);
 
-      // Kiểm tra xem người dùng đã đăng nhập chưa
+      // Check if user is logged in
       const token = localStorage.getItem('token');
       if (!token) {
-        setErrorMessage('Vui lòng đăng nhập để thực hiện thanh toán!');
+        setErrorMessage('Please login to make a payment!');
         clearErrorAfterDelay();
         navigate('/sign-in');
         return;
       }
 
-      // Thử lấy thông tin user từ localStorage trước
+      // Try to get user info from localStorage first
       let userId = null;
       
       try {
-        // Kiểm tra profile trong localStorage
+        // Check profile in localStorage
         const storedProfileStr = localStorage.getItem('profile');
         if (storedProfileStr) {
           const profile = JSON.parse(storedProfileStr);
           if (profile && (profile.user_id || profile.id)) {
             userId = profile.user_id || profile.id;
-            console.log('Lấy user_id từ profile trong localStorage:', userId);
           }
         }
         
-        // Nếu không có trong profile, kiểm tra trong user
+        // If not in profile, check in user
         if (!userId) {
           const storedUserStr = localStorage.getItem('user');
           if (storedUserStr) {
             const user = JSON.parse(storedUserStr);
             if (user && (user.user_id || user.id)) {
               userId = user.user_id || user.id;
-              console.log('Lấy user_id từ user trong localStorage:', userId);
             }
           }
         }
       } catch (e) {
-        console.error('Lỗi khi đọc thông tin từ localStorage:', e);
+        // Error reading from localStorage
       }
       
-      // Nếu không tìm thấy user_id trong localStorage, gọi API
+      // If user_id not found in localStorage, call API
       if (!userId) {
-        console.log('Không tìm thấy user_id trong localStorage, gọi API');
-        // Lấy thông tin user từ API profile
+        // Get user info from profile API
         const profileResponse = await axios.get('http://localhost:3000/auth/profile', {
           headers: {
             'Authorization': `Bearer ${token}`
@@ -175,26 +166,26 @@ const GymDetail = () => {
         });
 
         if (!profileResponse.data || !profileResponse.data.user_id) {
-          throw new Error('Không thể lấy thông tin người dùng');
+          throw new Error('Unable to get user information');
         }
 
         userId = Number(profileResponse.data.user_id);
       }
 
-      // Chuyển userId thành số nếu là chuỗi
+      // Convert userId to number if it's a string
       userId = Number(userId);
       const membershipId = Number(selectedMembership.membership_id);
       const amount = Number(selectedMembership.price);
 
-      // Kiểm tra giá trị hợp lệ
+      // Check for valid values
       if (isNaN(userId) || isNaN(membershipId) || isNaN(amount)) {
-        throw new Error('Dữ liệu không hợp lệ');
+        throw new Error('Invalid data');
       }
 
-      // Lưu thông tin về membership đã chọn vào localStorage để có thể hiển thị sau này
+      // Save information about selected membership to localStorage for later display
       localStorage.setItem('selectedMembership', JSON.stringify({
         membershipId: membershipId,
-        membershipName: selectedMembership.name,
+        membershipName: selectedMembership.membership_name || selectedMembership.name || 'Unnamed Package',
         amount: amount,
         duration: selectedMembership.duration,
         description: selectedMembership.description,
@@ -203,33 +194,30 @@ const GymDetail = () => {
         timestamp: Date.now()
       }));
 
-      // Tạo payment data với dữ liệu đúng định dạng theo DTO
+      // Create payment data with correct format according to DTO
       const paymentData = {
         user_id: userId,
         membership_id: membershipId,
         amount_paid: amount,
-        status_id: 2, // Mặc định là FAILED (2) khi tạo payment, sẽ được backend cập nhật thành SUCCESS (1) khi thanh toán thành công
+        status_id: 2, // Default is FAILED (2) when creating payment, will be updated to SUCCESS (1) by backend when payment is successful
         payment_method: 'ZaloPay',
         order_id: `ORDER_${Date.now()}`
       };
 
-      console.log('Payment data:', paymentData);
-
       try {
-        // Sử dụng PaymentService để tạo thanh toán và tự động chuyển hướng
-        const result = await PaymentService.createPayment(paymentData, false); // Không tự động redirect
-        console.log('Payment Response:', result);
+        // Use PaymentService to create payment and automatically redirect
+        const result = await PaymentService.createPayment(paymentData, false); // Don't auto redirect
 
         if (result && result.payment_url) {
-          // Sử dụng hàm redirectToPayment của PaymentService để chuyển hướng
+          // Use PaymentService's redirectToPayment function to redirect
           PaymentService.redirectToPayment(result);
         } else {
-          // Nếu không có URL thanh toán, chuyển hướng đến trang payment-status
+          // If no payment URL, redirect to payment-status page
           navigate('/payment-status', { 
             state: { 
               paymentId: result.payment_id,
               amount: amount,
-              membershipName: selectedMembership.name,
+              membershipName: selectedMembership.membership_name || selectedMembership.name || 'Unnamed Package',
               duration: selectedMembership.duration,
               paymentStatus: {
                 statusId: result.status_id,
@@ -241,23 +229,20 @@ const GymDetail = () => {
           });
         }
       } catch (paymentError) {
-        // Xử lý lỗi cụ thể từ PaymentService
-        console.error('Lỗi từ PaymentService:', paymentError);
+        // Handle specific errors from PaymentService
         throw paymentError;
       }
     } catch (error) {
-      console.error('Lỗi khi tạo payment:', error);
-      let errorMsg = 'Có lỗi xảy ra khi tạo thanh toán. Vui lòng thử lại.';
+      let errorMsg = 'An error occurred while creating payment. Please try again.';
       
       if (error.response) {
-        // Server trả về lỗi
-        console.error('Server Error:', error.response.data);
+        // Server returned an error
         errorMsg = error.response.data.message || errorMsg;
       } else if (error.request) {
-        // Không nhận được response từ server
-        errorMsg = 'Không thể kết nối đến server. Vui lòng kiểm tra kết nối và thử lại.';
+        // No response received from server
+        errorMsg = 'Unable to connect to server. Please check your connection and try again.';
       } else if (error.message) {
-        // Lỗi từ PaymentService hoặc các lỗi khác
+        // Error from PaymentService or other errors
         errorMsg = error.message;
       }
       
@@ -271,16 +256,16 @@ const GymDetail = () => {
   const formatDuration = (days) => {
     if (days >= 30) {
       const months = Math.floor(days / 30);
-      return `${months} tháng`;
+      return `${months} months`;
     }
-    return `${days} ngày`;
+    return `${days} days`;
   };
 
   if (loading) return (
     <div className="flex justify-center items-center min-h-screen">
       <div className="text-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500 mx-auto"></div>
-        <p className="mt-4 text-lg">Đang tải thông tin phòng gym...</p>
+        <p className="mt-4 text-lg">Loading gym information...</p>
       </div>
     </div>
   );
@@ -293,7 +278,7 @@ const GymDetail = () => {
           onClick={() => window.location.reload()}
           className="mt-4 bg-primary-500 text-white px-6 py-2 rounded-full hover:bg-primary-600 transition-colors"
         >
-          Thử lại
+          Try again
         </button>
       </div>
     </div>
@@ -302,7 +287,7 @@ const GymDetail = () => {
   if (!gym) return (
     <div className="flex justify-center items-center min-h-screen">
       <div className="text-center text-gray-600">
-        <p className="text-lg">Không tìm thấy thông tin phòng gym.</p>
+        <p className="text-lg">Gym information not found.</p>
       </div>
     </div>
   );
@@ -313,13 +298,13 @@ const GymDetail = () => {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white p-6 rounded-lg shadow-xl flex flex-col items-center">
             <FontAwesomeIcon icon={faSpinner} spin className="text-4xl text-primary-500 mb-4" />
-            <p className="text-lg font-medium">Đang xử lý thanh toán...</p>
-            <p className="text-sm text-gray-500 mt-2">Vui lòng không đóng trang này.</p>
+            <p className="text-lg font-medium">Processing payment...</p>
+            <p className="text-sm text-gray-500 mt-2">Please do not close this page.</p>
           </div>
         </div>
       )}
       
-      {/* Hiển thị thông báo lỗi */}
+      {/* Display error message */}
       {errorMessage && (
         <div className="fixed top-4 right-4 bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded shadow-md z-50 max-w-md animate-fade-in-down">
           <div className="flex items-start">
@@ -353,7 +338,7 @@ const GymDetail = () => {
         className="flex items-center text-gray-600 hover:text-primary-500 mb-6"
       >
         <FontAwesomeIcon icon={faArrowLeft} className="mr-2" />
-        Quay lại danh sách
+        Back to list
       </button>
 
       {/* Header Section */}
@@ -395,103 +380,110 @@ const GymDetail = () => {
             )}
           </div>
 
-          <div className="bg-gray-50 p-4 rounded-lg">
-            <h2 className="text-xl font-semibold mb-2">Giới thiệu</h2>
-            <p className="text-gray-600 whitespace-pre-line">{gym.introduction || 'Chưa có mô tả'}</p>
-          </div>
-        </div>
-      </div>
-
-      {/* Membership Section */}
-      <div className="bg-white rounded-lg shadow-lg overflow-hidden">
-        <div className="p-6">
-          <h2 className="text-2xl font-bold mb-6">Gói Membership</h2>
-          
-          {memberships.length === 0 ? (
-            <div className="text-center py-8">
-              <p className="text-gray-600">Chưa có gói membership nào.</p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {memberships.map((membership) => (
-                <div key={membership.membership_id} className="border rounded-lg p-6 hover:shadow-lg transition-shadow">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-xl font-semibold">{membership.name}</h3>
-                    <span className="bg-primary-100 text-primary-600 px-3 py-1 rounded-full text-sm">
-                      {formatDuration(membership.duration)}
-                    </span>
-                  </div>
-                  
-                  <div className="mb-4">
-                    <p className="text-3xl font-bold text-primary-500">
-                      {membership.price.toLocaleString('vi-VN')}đ
-                    </p>
-                    <p className="text-gray-500 text-sm">/gói</p>
-                  </div>
-
-                  <div className="space-y-3 mb-6">
-                    {membership.description && (
-                      <div className="flex items-start text-gray-600">
-                        <FontAwesomeIcon icon={faDumbbell} className="mt-1 mr-2" />
-                        <p>{membership.description}</p>
-                      </div>
-                    )}
-                    {membership.benefits && membership.benefits.length > 0 && (
-                      <div className="space-y-2">
-                        {membership.benefits.map((benefit, index) => (
-                          <div key={index} className="flex items-center text-gray-600">
-                            <FontAwesomeIcon icon={faCheck} className="text-green-500 mr-2" />
-                            <span>{benefit}</span>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-
-                  <button 
-                    className="w-full bg-primary-500 text-white px-4 py-2 rounded-full hover:bg-primary-600 transition-colors"
-                    onClick={() => handleSelectMembership(membership)}
-                  >
-                    Đăng ký ngay
-                  </button>
-                </div>
-              ))}
+          {gym.description && (
+            <div className="prose max-w-none">
+              <h2 className="text-xl font-semibold mb-2">Description</h2>
+              <p>{gym.description}</p>
             </div>
           )}
         </div>
       </div>
 
+      {/* Membership Packages */}
+      <div className="mb-12">
+        <h2 className="text-2xl font-bold mb-6 text-center">Membership Packages</h2>
+        
+        {memberships.length === 0 ? (
+          <div className="text-center text-gray-500 p-8 border border-gray-200 rounded-lg">
+            No membership packages available for this gym.
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {memberships.map(membership => (
+              <div 
+                key={membership.membership_id}
+                className="bg-white rounded-lg shadow-lg overflow-hidden border border-gray-200 hover:shadow-xl transition-shadow duration-300"
+              >
+                <div className="p-6">
+                  <div className="flex justify-between items-start mb-4">
+                    <h3 className="text-xl font-bold text-gray-800">{membership.membership_name}</h3>
+                    <div className="px-3 py-1 bg-primary-50 text-primary-600 rounded-full text-sm font-medium">
+                      {formatDuration(membership.duration)}
+                    </div>
+                  </div>
+                  
+                  <div className="text-3xl font-bold text-primary-500 mb-4">
+                    {new Intl.NumberFormat('en-US', {
+                      style: 'currency',
+                      currency: 'VND',
+                      maximumFractionDigits: 0
+                    }).format(membership.price)}
+                  </div>
+                  
+                  <div className="text-gray-600 mb-6">
+                    {membership.description || 'No description provided.'}
+                  </div>
+                  
+                  <button
+                    onClick={() => handleSelectMembership(membership)}
+                    className="w-full bg-primary-500 text-white py-2 rounded-lg hover:bg-primary-600 transition-colors flex items-center justify-center"
+                  >
+                    <FontAwesomeIcon icon={faDumbbell} className="mr-2" />
+                    Join now
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
       {/* Payment Modal */}
       {showPaymentModal && selectedMembership && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
-            <h3 className="text-xl font-bold mb-4">Xác nhận thanh toán</h3>
+          <div className="bg-white p-6 rounded-lg shadow-xl max-w-md w-full">
+            <h2 className="text-2xl font-bold mb-4">Confirm Payment</h2>
+            
             <div className="mb-4">
-              <p className="font-semibold">Gói membership:</p>
-              <p>{selectedMembership.name}</p>
+              <h3 className="text-lg font-semibold text-gray-800">
+                {selectedMembership.membership_name}
+              </h3>
+              <div className="text-sm text-gray-500 mt-1">
+                Duration: {formatDuration(selectedMembership.duration)}
+              </div>
+              <div className="text-2xl font-bold text-primary-500 mt-2">
+                {new Intl.NumberFormat('en-US', {
+                  style: 'currency',
+                  currency: 'VND',
+                  maximumFractionDigits: 0
+                }).format(selectedMembership.price)}
+              </div>
             </div>
-            <div className="mb-4">
-              <p className="font-semibold">Thời hạn:</p>
-              <p>{formatDuration(selectedMembership.duration)}</p>
+            
+            <div className="bg-gray-50 p-4 rounded-lg mb-4">
+              {selectedMembership.description ? (
+                <div className="text-gray-700">
+                  <p>{selectedMembership.description}</p>
+                </div>
+              ) : (
+                <div className="text-gray-500 italic">
+                  <p>No description available for this membership package.</p>
+                </div>
+              )}
             </div>
-            <div className="mb-4">
-              <p className="font-semibold">Giá:</p>
-              <p className="text-2xl font-bold text-primary-500">
-                {selectedMembership.price.toLocaleString('vi-VN')}đ
-              </p>
-            </div>
-            <div className="flex justify-end space-x-4">
+            
+            <div className="flex justify-end space-x-3">
               <button
-                className="px-4 py-2 text-gray-600 hover:text-gray-800"
                 onClick={() => setShowPaymentModal(false)}
+                className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
               >
-                Hủy
+                Cancel
               </button>
               <button
-                className="px-4 py-2 bg-primary-500 text-white rounded-full hover:bg-primary-600"
                 onClick={handlePayment}
+                className="px-4 py-2 bg-primary-500 text-white rounded-lg hover:bg-primary-600"
               >
-                Xác nhận
+                Proceed to Payment
               </button>
             </div>
           </div>

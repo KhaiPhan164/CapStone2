@@ -26,12 +26,12 @@ class PlanService {
     axios.interceptors.response.use(
       response => response,
       error => {
-        // Logout nếu 401 Unauthorized
+        // Chỉ xóa token và thông tin người dùng, không chuyển hướng
         if (error.response && error.response.status === 401) {
+          console.warn('Phiên đăng nhập hết hạn hoặc không hợp lệ');
           localStorage.removeItem('token');
           localStorage.removeItem('user');
           localStorage.removeItem('profile');
-          window.location.href = '/sign-in';
         }
         
         return Promise.reject(error);
@@ -171,8 +171,12 @@ class PlanService {
     this.loggedPlans.clear();
     this.loggedPlanSlots.clear();
     
-    // Chuyển hướng về trang chủ sau khi đăng xuất
-    window.location.href = '/';
+    // Không tự động chuyển hướng về trang chủ sau khi đăng xuất
+    // window.location.href = '/';
+    
+    // Thông báo rằng đã logout thành công
+    console.log("Người dùng đã đăng xuất thành công");
+    return Promise.resolve();
   }
 
   /* PLANS */

@@ -53,7 +53,6 @@ const UserMemberships = () => {
 
       // 1. Lấy tất cả payment
       const payments = await PaymentService.getMyPaymentHistory();
-      console.log('Raw payments:', payments);
 
       // 2. Lọc payment thành công và nhóm theo membership_id
       const groupedPayments = {};
@@ -70,7 +69,6 @@ const UserMemberships = () => {
         try {
           // Lấy thông tin membership
           const membershipInfo = await getMembershipById(membershipId);
-          console.log(`Membership info for ${membershipId}:`, membershipInfo);
 
           // Lấy data từ response
           const membershipData = membershipInfo.data;
@@ -110,16 +108,14 @@ const UserMemberships = () => {
             className: 'bg-green-500'
           });
         } catch (err) {
-          console.error(`Lỗi lấy thông tin membership ${membershipId}:`, err);
+          // Keep error message but remove console.log
         }
       }
 
-      console.log('Final result:', result);
       setMemberships(result);
 
     } catch (err) {
-      console.error('Error details:', err);
-      setError(err.message || 'Không thể tải dữ liệu membership');
+      setError(err.message || 'Unable to load membership data');
     } finally {
       setLoading(false);
     }
@@ -134,28 +130,28 @@ const UserMemberships = () => {
   </div>;
 
   if (error) return <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
-    <p className="font-medium">Lỗi:</p>
+    <p className="font-medium">Error:</p>
     <p className="text-sm">{error}</p>
     <button onClick={fetchMemberships} className="mt-2 px-4 py-2 bg-red-600 text-white rounded">
-      Thử lại
+      Try again
     </button>
   </div>;
 
   if (!memberships.length) return <div className="text-center p-4 bg-gray-50 rounded-lg">
-    <p className="text-gray-600">Chưa có membership nào được thanh toán thành công.</p>
+    <p className="text-gray-600">No successfully paid memberships yet.</p>
     <button onClick={() => window.location.href = '/gyms'} 
       className="mt-3 px-4 py-2 bg-primary-500 text-white rounded">
-      Tìm phòng tập
+      Find a gym
     </button>
   </div>;
 
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
-        <h2 className="text-xl font-semibold">Membership đã thanh toán</h2>
+        <h2 className="text-xl font-semibold">Paid Memberships</h2>
         <button onClick={fetchMemberships} 
           className="px-3 py-1 bg-primary-500 text-white rounded">
-          Tải lại
+          Reload
         </button>
       </div>
 
@@ -173,29 +169,29 @@ const UserMemberships = () => {
             <div className="p-3 space-y-2">
               <div className="flex items-center">
                 <FontAwesomeIcon icon={faClock} className="mr-2 text-primary-500" />
-                <span>Tổng thời hạn: <strong>{item.total_duration} ngày</strong></span>
+                <span>Total duration: <strong>{item.total_duration} days</strong></span>
               </div>
 
               <div className="flex items-center">
                 <FontAwesomeIcon icon={faCalendarAlt} className="mr-2 text-primary-500" />
-                <span>Còn lại: <strong>{item.remaining_days} ngày</strong></span>
+                <span>Remaining: <strong>{item.remaining_days} days</strong></span>
               </div>
               
               <div className="flex items-center">
                 <FontAwesomeIcon icon={faDumbbell} className="mr-2 text-primary-500" />
-                <span>Tổng tiền: <strong>{item.total_amount.toLocaleString('vi-VN')}đ</strong></span>
+                <span>Total amount: <strong>${item.total_amount.toLocaleString('en-US')}</strong></span>
               </div>
 
               <div className="mt-3 pt-2 border-t border-gray-200">
                 <p className="text-sm font-medium text-gray-700 mb-2">
                   {item.total_payments > 2 
-                    ? `2 giao dịch gần nhất (tổng ${item.total_payments} giao dịch):`
-                    : 'Các giao dịch:'}
+                    ? `2 most recent transactions (total of ${item.total_payments} transactions):`
+                    : 'Transactions:'}
                 </p>
                 <ul className="space-y-1 text-sm">
                   {item.payments.map((payment, idx) => (
                     <li key={idx} className="text-gray-600 py-1">
-                      {new Date(payment.payment_date).toLocaleDateString('vi-VN')} - {payment.duration} ngày - {payment.amount_paid.toLocaleString('vi-VN')}đ
+                      {new Date(payment.payment_date).toLocaleDateString('en-US')} - {payment.duration} days - ${payment.amount_paid.toLocaleString('en-US')}
                     </li>
                   ))}
                 </ul>

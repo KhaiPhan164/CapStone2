@@ -1,11 +1,10 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { SectionTitle } from '../../components/Title/SectionTitle';
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faEdit } from "@fortawesome/free-solid-svg-icons";
+import { faEdit, faUpload } from "@fortawesome/free-solid-svg-icons";
 import Header from '../../layout/Header';
 import AuthService from '../../services/auth.service';
 import { useNavigate } from 'react-router-dom';
-import BMICalculator from './BMICalculator';
 
 const UserInformation = () => {
   const [userData, setUserData] = useState({
@@ -13,9 +12,10 @@ const UserInformation = () => {
     email: '',
     phoneNum: '',
     imgUrl: '',
-    name: ''
+    name: '',
+    introduction: '',
+    role_id: null
   });
-  const [activeTab, setActiveTab] = useState('profile'); // 'profile' or 'bmi'
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [isEditingPersonal, setIsEditingPersonal] = useState(false);
   const [editData, setEditData] = useState({});
@@ -29,45 +29,24 @@ const UserInformation = () => {
       setIsLoading(true);
       setError(null);
 
-      // Kiểm tra đăng nhập
+      // Check login status
       const currentUser = AuthService.getCurrentUser();
       if (!currentUser) {
-        setError('Vui lòng đăng nhập để xem thông tin cá nhân');
+        setError('Please login to view your personal information');
         setTimeout(() => {
           navigate('/sign-in');
         }, 2000);
         return;
       }
 
-      console.log('Đang tải thông tin cá nhân cho người dùng:', currentUser);
-      // Log thông tin ID của người dùng
-      if (currentUser.user_id) {
-        console.log('ID (user_id) từ currentUser:', currentUser.user_id);
-      } else if (currentUser.id) {
-        console.log('ID (id) từ currentUser:', currentUser.id);
-      } else {
-        console.log('Không tìm thấy ID trong currentUser:', Object.keys(currentUser));
-      }
-
-      // Gọi API để lấy profile từ AuthService
+      // Call API to get profile from AuthService
       const profile = await AuthService.getProfile();
       
       if (profile) {
-        console.log('Thông tin cá nhân đã tải:', profile);
-        
-        // Log thông tin ID từ profile
-        if (profile.user_id) {
-          console.log('ID (user_id) từ profile:', profile.user_id);
-        } else if (profile.id) {
-          console.log('ID (id) từ profile:', profile.id);
-        } else {
-          console.log('Không tìm thấy ID trong profile:', Object.keys(profile));
-        }
-        
-        // Xác định ID người dùng từ nhiều nguồn
+        // Determine user ID from multiple sources
         const userId = profile?.user_id || profile?.id || currentUser?.user_id || currentUser?.id;
         
-        // Đảm bảo ID được Save vào profile
+        // Ensure ID is saved in profile
         if (userId) {
           const updatedProfile = {
             ...profile,
@@ -75,35 +54,36 @@ const UserInformation = () => {
             id: userId
           };
           
-          // Cập nhật vào localStorage
+          // Update localStorage
           localStorage.setItem('profile', JSON.stringify(updatedProfile));
           
-          // Cập nhật userData với toàn bộ dữ liệu đã có ID
+          // Update userData with all data including ID
           setUserData(updatedProfile);
           
-          // Cập nhật editData với các trường cần thiết
+          // Update editData with necessary fields
           setEditData({
             username: updatedProfile.username || '',
             email: updatedProfile.email || '',
             phoneNum: updatedProfile.phoneNum || '',
             name: updatedProfile.name || '',
+            introduction: updatedProfile.introduction || ''
           });
         } else {
-          // Nếu không tìm thấy ID, vẫn cập nhật dữ liệu
+          // If ID not found, still update data
           setUserData(profile);
           setEditData({
             username: profile.username || '',
             email: profile.email || '',
             phoneNum: profile.phoneNum || '',
             name: profile.name || '',
+            introduction: profile.introduction || ''
           });
         }
       } else {
-        setError('Không thể tải thông tin cá nhân. Vui lòng thử lại sau.');
+        setError('Unable to load personal information. Please try again later.');
       }
     } catch (error) {
-      console.error('Lỗi khi tải thông tin cá nhân:', error);
-      setError('Không thể tải thông tin cá nhân: ' + (error.message || 'Lỗi không xác định'));
+      setError('Unable to load personal information: ' + (error.message || 'Unknown error'));
     } finally {
       setIsLoading(false);
     }
@@ -119,67 +99,64 @@ const UserInformation = () => {
         setIsLoading(true);
         setError(null);
         
-        // Lấy thông tin người dùng hiện tại
+        // Get current user information
         const currentUser = AuthService.getCurrentUser();
-        console.log('CurrentUser trong handleEditProfile:', currentUser);
         
-        // Lấy profile từ AuthService
+        // Get profile from AuthService
         const profile = await AuthService.getProfile();
-        console.log('Profile từ AuthService.getProfile():', profile);
         
-        // Xác định ID người dùng từ nhiều nguồn
+        // Determine user ID from multiple sources
         const userId = profile?.user_id || profile?.id || currentUser?.user_id || currentUser?.id;
-        console.log('UserID được xác định:', userId);
         
-        // Kiểm tra userId
+        // Check userId
         if (!userId) {
-          throw new Error('Không thể xác định ID người dùng. Vui lòng đăng nhập lại.');
+          throw new Error('Unable to identify user ID. Please login again.');
         }
         
-        // Tạo dữ liệu cập nhật - chỉ cập nhật tên
+        // Create update data
         const updateData = {
           name: editData.name
         };
         
-        // Kiểm tra trường name
-        if (!updateData.name) {
-          throw new Error('Tên không được để trống');
+        // Add introduction if PT or Gym Owner
+        if (currentUser.role_id === 3 || currentUser.role_id === 4) {
+          updateData.introduction = editData.introduction || '';
         }
         
-        console.log(`Cập nhật hồ sơ người dùng với ID: ${userId}, dữ liệu:`, updateData);
+        // Check name field
+        if (!updateData.name) {
+          throw new Error('Name cannot be empty');
+        }
         
-        // Gọi phương thức updateProfile từ AuthService
+        // Call updateProfile method from AuthService
         const result = await AuthService.updateProfile(userId, updateData);
-        console.log('Kết quả cập nhật:', result);
         
-        // Save thông tin mới vào localStorage để đảm bảo dữ liệu được cập nhật
+        // Save new information to localStorage to ensure data is updated
         if (result) {
-          // Cập nhật profile trong localStorage
+          // Update profile in localStorage
           const updatedProfile = {
             ...profile,
             ...updateData,
-            // Đảm bảo ID được Save trong profile
+            // Ensure ID is saved in profile
             user_id: userId,
             id: userId
           };
           
           localStorage.setItem('profile', JSON.stringify(updatedProfile));
-          console.log('Đã cập nhật profile trong localStorage:', updatedProfile);
           
-          // Hiển thị thông báo thành công
-          alert('Cập nhật hồ sơ thành công! Trang sẽ được tải lại để áp dụng các thay đổi.');
+          // Show success message
+          alert('Profile updated successfully! The page will reload to apply changes.');
           
-          // Tải lại trang để hiển thị thông tin mới nhất
+          // Reload page to display the latest information
           window.location.reload();
         }
       } catch (error) {
-        console.error('Lỗi cập nhật hồ sơ:', error);
-        setError(error.message || 'Có lỗi xảy ra khi cập nhật hồ sơ');
+        setError(error.message || 'An error occurred while updating profile');
       } finally {
         setIsLoading(false);
       }
     } else {
-      // Nếu chưa đang chỉnh Edit, bắt đầu chỉnh Edit
+      // If not currently editing, start editing
       setIsEditingProfile(true);
     }
   };
@@ -190,27 +167,24 @@ const UserInformation = () => {
         setIsLoading(true);
         setError(null);
         
-        // Lấy thông tin người dùng hiện tại
+        // Get current user information
         const currentUser = AuthService.getCurrentUser();
-        console.log('CurrentUser trong handleEditPersonal:', currentUser);
         
-        // Lấy profile từ AuthService
+        // Get profile from AuthService
         const profile = await AuthService.getProfile();
-        console.log('Profile từ AuthService.getProfile():', profile);
         
-        // Xác định ID người dùng từ nhiều nguồn
+        // Determine user ID from multiple sources
         const userId = profile?.user_id || profile?.id || currentUser?.user_id || currentUser?.id;
-        console.log('UserID được xác định:', userId);
         
-        // Kiểm tra userId
+        // Check userId
         if (!userId) {
-          throw new Error('Không thể xác định ID người dùng. Vui lòng đăng nhập lại.');
+          throw new Error('Unable to identify user ID. Please login again.');
         }
 
-        // Tạo dữ liệu cập nhật
+        // Create update data
         const updateData = {};
         
-        // Thêm vào các trường thông tin cần cập nhật
+        // Add fields to be updated
         if (editData.email !== undefined) {
           updateData.email = editData.email?.trim() || null;
         }
@@ -223,42 +197,37 @@ const UserInformation = () => {
           updateData.username = editData.username.trim();
         }
         
-        // Kiểm tra xem có dữ liệu để cập nhật không
+        // Check if there's data to update
         if (Object.keys(updateData).length === 0) {
           setIsEditingPersonal(false);
-          setError('Không có thông tin nào được thay đổi');
+          setError('No information has been changed');
           setIsLoading(false);
           return;
         }
 
-        console.log(`Cập nhật thông tin cá nhân với ID: ${userId}, dữ liệu:`, updateData);
-        
-        // Gọi phương thức updateProfile từ AuthService
+        // Call updateProfile method from AuthService
         const updatedUser = await AuthService.updateProfile(userId, updateData);
-        console.log('Kết quả cập nhật:', updatedUser);
         
         if (updatedUser) {
-          // Cập nhật profile trong localStorage
+          // Update profile in localStorage
           const updatedProfile = {
             ...profile,
             ...updateData,
-            // Đảm bảo ID được Save trong profile
+            // Ensure ID is saved in profile
             user_id: userId,
             id: userId
           };
           
           localStorage.setItem('profile', JSON.stringify(updatedProfile));
-          console.log('Đã cập nhật profile trong localStorage:', updatedProfile);
           
-          // Hiển thị thông báo thành công
-          alert('Cập nhật thông tin cá nhân thành công! Trang sẽ được tải lại để áp dụng các thay đổi.');
+          // Show success message
+          alert('Personal information updated successfully! The page will reload to apply changes.');
           
-          // Tải lại trang để hiển thị thông tin mới nhất
+          // Reload page to display the latest information
           window.location.reload();
         }
       } catch (error) {
-        console.error('Lỗi cập nhật thông tin:', error);
-        setError(error.message || 'Không thể cập nhật thông tin. Vui lòng thử lại.');
+        setError(error.message || 'Unable to update information. Please try again.');
       } finally {
         setIsLoading(false);
       }
@@ -286,66 +255,59 @@ const UserInformation = () => {
         setIsLoading(true);
         setError(null);
         
-        // Lấy thông tin người dùng hiện tại
+        // Get current user information
         const currentUser = AuthService.getCurrentUser();
-        console.log('CurrentUser trong handleAvatarChange:', currentUser);
         
-        // Lấy profile từ AuthService
+        // Get profile from AuthService
         const profile = await AuthService.getProfile();
-        console.log('Profile từ AuthService.getProfile():', profile);
         
-        // Xác định ID người dùng từ nhiều nguồn
+        // Determine user ID from multiple sources
         const userId = profile?.user_id || profile?.id || currentUser?.user_id || currentUser?.id;
-        console.log('UserID được xác định:', userId);
         
-        // Kiểm tra userId
+        // Check userId
         if (!userId) {
-          throw new Error('Không thể xác định ID người dùng. Vui lòng đăng nhập lại.');
+          throw new Error('Unable to identify user ID. Please login again.');
         }
 
         const formData = new FormData();
-        formData.append('image', file);  // Đổi key thành 'image' cho phù hợp với API
-        // Thêm content-type để đảm bảo API hiểu đây là multipart/form-data
+        formData.append('image', file);  // Change key to 'image' to match API
+        // Add content-type to ensure API understands this is multipart/form-data
         
-        console.log(`Cập nhật ảnh đại diện với ID: ${userId}, file:`, file.name);
-        
-        // Gọi phương thức updateProfile từ AuthService để cập nhật ảnh đại diện
+        // Call updateProfile method from AuthService to update profile picture
         const updatedUser = await AuthService.updateProfile(userId, formData);
-        console.log('Kết quả cập nhật ảnh đại diện:', updatedUser);
         
         if (updatedUser) {
-          // Cập nhật cả userData và editData với dữ liệu mới từ API
-          setUserData(updatedUser); // Cập nhật userData trực tiếp với dữ liệu mới
+          // Update both userData and editData with new data from API
+          setUserData(updatedUser); // Update userData directly with new data
           
-          // Cập nhật profile trong localStorage
-          // Đảm bảo giữ nguyên các trường có sẵn trong profile
+          // Update profile in localStorage
+          // Ensure existing fields in profile are preserved
           const updatedProfile = {
             ...profile,
             imgUrl: updatedUser.imgUrl,
-            // Đảm bảo ID được Save trong profile
+            // Ensure ID is saved in profile
             user_id: userId,
             id: userId
           };
           
           localStorage.setItem('profile', JSON.stringify(updatedProfile));
-          console.log('Đã cập nhật profile trong localStorage:', updatedProfile);
           
           setEditData({
             username: updatedUser.username || '',
             email: updatedUser.email || '',
             phoneNum: updatedUser.phoneNum || '',
             name: updatedUser.name || '',
+            introduction: updatedUser.introduction || ''
           });
           
-          // Hiển thị thông báo thành công
-          alert('Cập nhật ảnh đại diện thành công! Trang sẽ được tải lại để hiển thị ảnh mới.');
+          // Show success message
+          alert('Profile picture updated successfully! The page will reload to display the new image.');
           
-          // Tải lại trang sau khi cập nhật thành công
+          // Reload page after successful update
           window.location.reload();
         }
       } catch (error) {
-        console.error('Lỗi cập nhật ảnh đại diện:', error);
-        setError(error.message || 'Không thể cập nhật ảnh đại diện');
+        setError(error.message || 'Unable to update profile picture');
       } finally {
         setIsLoading(false);
       }
@@ -364,182 +326,195 @@ const UserInformation = () => {
     <div>
       <div className='flex h-full bg-gray-100'>
         <div className="w-full">
-          {/* Tab Navigation */}
-          <div className="flex mb-6 border-b">
-            <button
-              className={`py-2 px-4 mr-4 font-medium ${
-                activeTab === 'profile'
-                  ? 'text-primary-500 border-b-2 border-primary-500'
-                  : 'text-gray-500 hover:text-gray-700'
-              }`}
-              onClick={() => setActiveTab('profile')}
-            >
-              Thông tin cá nhân
-            </button>
-            <button
-              className={`py-2 px-4 font-medium ${
-                activeTab === 'bmi'
-                  ? 'text-primary-500 border-b-2 border-primary-500'
-                  : 'text-gray-500 hover:text-gray-700'
-              }`}
-              onClick={() => setActiveTab('bmi')}
-            >
-              Tính BMI
-            </button>
-          </div>
-
-          {/* Tab Content */}
-          {activeTab === 'profile' ? (
-            <>
-              {error && (
-                <div className="mb-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded">
-                  {error}
-                </div>
-              )}
-              
-              <h1 className="text-2xl font-semibold mb-3 text-gray-700">
-                Personal Information
-              </h1>
-              
-              <div className="bg-white p-6 rounded-lg shadow-md mb-6">
-                <div className="flex items-start justify-between">
-                  <div className="flex items-start">
-                    <div className="relative group">
-                      <input
-                        type="file"
-                        ref={fileInputRef}
-                        className="hidden"
-                        accept="image/*"
-                        onChange={handleAvatarChange}
-                      />
-                      <img 
-                        alt={`Ảnh đại diện của ${userData.name || 'Người dùng'}`} 
-                        className="w-16 h-16 rounded-full mr-4 object-cover cursor-pointer"
-                        src={userData.imgUrl || "https://storage.googleapis.com/a1aa/image/cD-sKP-sj6D5N0EfMvBgXVgHCnSaBHEl4rdOuhfaNkQ.jpg"} 
-                        onClick={handleAvatarClick}
-                      />
-                      <div 
-                        className="absolute inset-0 flex items-center justify-center rounded-full mr-4 bg-black bg-opacity-50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 cursor-pointer"
-                        onClick={handleAvatarClick}
-                      >
-                        <div className="text-white text-center">
-                          <FontAwesomeIcon icon={faEdit} className="text-xl mb-1" />
-                          <div className="text-xs">Đổi ảnh</div>
-                        </div>
-                      </div>
-                    </div>
-                    <div>
-                      <h2 className="text-xl font-semibold text-primary-500">
-                        {isEditingProfile ? (
-                          <input
-                            type="text"
-                            value={editData.name || userData.name || ''}
-                            onChange={(e) => handleInputChange('name', e.target.value)}
-                            className="border-b-2 border-gray-300 focus:border-orange-400 outline-none px-2 py-1"
-                            placeholder="Nhập tên của bạn"
-                          />
-                        ) : (
-                          userData.name || 'Chưa có tên'
-                        )}
-                      </h2>
-                    </div>
-                  </div>
-                  <button 
-                    className={`text-text py-1 px-3 rounded text-xs border-2 border-gray-200 flex items-center justify-center gap-1 hover:bg-slate-300 ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
-                    onClick={handleEditProfile}
-                    disabled={isLoading}
-                  >
-                    <FontAwesomeIcon icon={faEdit} className="w-3 h-3" />
-                    {isEditingProfile ? 'Save' : 'Edit'}
-                  </button>
-                </div>
-              </div>
-              
-              <div className="bg-white p-6 rounded-lg shadow-md">
-                <div className="flex items-center justify-between mb-6">
-                  <SectionTitle title="Detailed information" />
-                  <button 
-                    className={`text-text py-1 px-3 rounded text-xs border-2 border-gray-200 flex items-center justify-center gap-1 hover:bg-slate-300 ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
-                    onClick={handleEditPersonal}
-                    disabled={isLoading}
-                  >
-                    <FontAwesomeIcon icon={faEdit} className="w-3 h-3" />
-                    {isEditingPersonal ? 'Save' : 'Edit'}
-                  </button>
-                </div>
-                
-                <div className="grid grid-cols-2 gap-6">
-                  <div>
-                    <label className="block text-gray-700 mb-2">
-                      Username
-                    </label>
-                    <div className="font-semibold text-text">
-                      {isEditingPersonal ? (
-                        <input
-                          type="text"
-                          value={editData.username || userData.username || ''}
-                          onChange={(e) => handleInputChange('username', e.target.value)}
-                          className="w-full border-b-2 border-gray-300 focus:border-orange-400 outline-none px-2 py-1"
-                          placeholder="Nhập tên đăng nhập"
-                        />
-                      ) : (
-                        userData.username || 'Chưa có'
-                      )}
-                    </div>
-                  </div>
-                  
-                  <div>
-                    <label className="block text-gray-700 mb-2">
-                      Password
-                    </label>
-                    <div className="font-semibold text-text">
-                      ********
-                    </div>
-                  </div>
-                  
-                  <div>
-                    <label className="block text-gray-700 mb-2">
-                      Email
-                    </label>
-                    <div className="font-semibold text-text">
-                      {isEditingPersonal ? (
-                        <input
-                          type="email"
-                          value={editData.email || userData.email || ''}
-                          onChange={(e) => handleInputChange('email', e.target.value)}
-                          className="w-full border-b-2 border-gray-300 focus:border-orange-400 outline-none px-2 py-1"
-                          placeholder="Nhập địa chỉ email"
-                        />
-                      ) : (
-                        userData.email || 'Chưa có'
-                      )}
-                    </div>
-                  </div>
-                  
-                  <div>
-                    <label className="block text-gray-700 mb-2">
-                      Phone
-                    </label>
-                    <div className="font-semibold text-text">
-                      {isEditingPersonal ? (
-                        <input
-                          type="tel"
-                          value={editData.phoneNum === undefined ? userData.phoneNum || '' : editData.phoneNum}
-                          onChange={(e) => handleInputChange('phoneNum', e.target.value)}
-                          className="w-full border-b-2 border-gray-300 focus:border-orange-400 outline-none px-2 py-1"
-                          placeholder="Nhập số điện thoại"
-                        />
-                      ) : (
-                        userData.phoneNum || 'Chưa có'
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </>
-          ) : (
-            <BMICalculator />
+          {error && (
+            <div className="mb-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded">
+              {error}
+            </div>
           )}
+          
+          <h1 className="text-2xl font-semibold mb-3 text-gray-700">
+            Personal Information
+          </h1>
+          
+          <div className="bg-white p-6 rounded-lg shadow-md mb-6">
+            <div className="flex items-start justify-between">
+              <div className="flex items-start">
+                <div className="relative group">
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    className="hidden"
+                    accept="image/*"
+                    onChange={handleAvatarChange}
+                  />
+                  <img 
+                    alt={`Profile picture of ${userData.name || 'User'}`} 
+                    className="w-16 h-16 rounded-full mr-4 object-cover cursor-pointer"
+                    src={userData.imgUrl || "https://storage.googleapis.com/a1aa/image/cD-sKP-sj6D5N0EfMvBgXVgHCnSaBHEl4rdOuhfaNkQ.jpg"} 
+                    onClick={handleAvatarClick}
+                  />
+                  <div 
+                    className="absolute inset-0 flex items-center justify-center rounded-full mr-4 bg-black bg-opacity-50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 cursor-pointer"
+                    onClick={handleAvatarClick}
+                  >
+                    <div className="text-white text-center">
+                      <FontAwesomeIcon icon={faEdit} className="text-xl mb-1" />
+                      <div className="text-xs">Change</div>
+                    </div>
+                  </div>
+                </div>
+                <div>
+                  <h2 className="text-xl font-semibold text-primary-500">
+                    {isEditingProfile ? (
+                      <input
+                        type="text"
+                        value={editData.name || userData.name || ''}
+                        onChange={(e) => handleInputChange('name', e.target.value)}
+                        className="border-b-2 border-gray-300 focus:border-orange-400 outline-none px-2 py-1"
+                        placeholder="Enter your name"
+                      />
+                    ) : (
+                      userData.name || 'No name'
+                    )}
+                  </h2>
+                </div>
+              </div>
+              <button 
+                className={`text-text py-1 px-3 rounded text-xs border-2 border-gray-200 flex items-center justify-center gap-1 hover:bg-slate-300 ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                onClick={handleEditProfile}
+                disabled={isLoading}
+              >
+                <FontAwesomeIcon icon={faEdit} className="w-3 h-3" />
+                {isEditingProfile ? 'Save' : 'Edit'}
+              </button>
+            </div>
+            
+            {/* Add Introduction field for PT in profile section */}
+            {userData.role_id === 3 && (
+              <div className="mt-4 border-t pt-4">
+                <label className="block text-gray-700 mb-2 font-medium">
+                  PT Introduction
+                </label>
+                <div className="font-normal text-text">
+                  {isEditingProfile ? (
+                    <textarea
+                      value={editData.introduction || ''}
+                      onChange={(e) => handleInputChange('introduction', e.target.value)}
+                      className="w-full border border-gray-300 rounded p-2 focus:border-orange-400 outline-none"
+                      placeholder="Introduce yourself to your clients"
+                      rows="4"
+                    />
+                  ) : (
+                    userData.introduction || 'No introduction provided'
+                  )}
+                </div>
+              </div>
+            )}
+            
+            {/* Add Introduction field for Gym Owner in profile section */}
+            {userData.role_id === 4 && (
+              <div className="mt-4 border-t pt-4">
+                <label className="block text-gray-700 mb-2 font-medium">
+                  Gym Introduction
+                </label>
+                <div className="font-normal text-text">
+                  {isEditingProfile ? (
+                    <textarea
+                      value={editData.introduction || ''}
+                      onChange={(e) => handleInputChange('introduction', e.target.value)}
+                      className="w-full border border-gray-300 rounded p-2 focus:border-orange-400 outline-none"
+                      placeholder="Introduce your gym to potential customers"
+                      rows="4"
+                    />
+                  ) : (
+                    userData.introduction || 'No introduction provided'
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+          
+          <div className="bg-white p-6 rounded-lg shadow-md">
+            <div className="flex items-center justify-between mb-6">
+              <SectionTitle title="Detailed information" />
+              <button 
+                className={`text-text py-1 px-3 rounded text-xs border-2 border-gray-200 flex items-center justify-center gap-1 hover:bg-slate-300 ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                onClick={handleEditPersonal}
+                disabled={isLoading}
+              >
+                <FontAwesomeIcon icon={faEdit} className="w-3 h-3" />
+                {isEditingPersonal ? 'Save' : 'Edit'}
+              </button>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-6">
+              <div>
+                <label className="block text-gray-700 mb-2">
+                  Username
+                </label>
+                <div className="font-semibold text-text">
+                  {isEditingPersonal ? (
+                    <input
+                      type="text"
+                      value={editData.username || userData.username || ''}
+                      onChange={(e) => handleInputChange('username', e.target.value)}
+                      className="w-full border-b-2 border-gray-300 focus:border-orange-400 outline-none px-2 py-1"
+                      placeholder="Enter username"
+                    />
+                  ) : (
+                    userData.username || 'Not available'
+                  )}
+                </div>
+              </div>
+              
+              <div>
+                <label className="block text-gray-700 mb-2">
+                  Password
+                </label>
+                <div className="font-semibold text-text">
+                  ********
+                </div>
+              </div>
+              
+              <div>
+                <label className="block text-gray-700 mb-2">
+                  Email
+                </label>
+                <div className="font-semibold text-text">
+                  {isEditingPersonal ? (
+                    <input
+                      type="email"
+                      value={editData.email || userData.email || ''}
+                      onChange={(e) => handleInputChange('email', e.target.value)}
+                      className="w-full border-b-2 border-gray-300 focus:border-orange-400 outline-none px-2 py-1"
+                      placeholder="Enter email address"
+                    />
+                  ) : (
+                    userData.email || 'Not available'
+                  )}
+                </div>
+              </div>
+              
+              <div>
+                <label className="block text-gray-700 mb-2">
+                  Phone
+                </label>
+                <div className="font-semibold text-text">
+                  {isEditingPersonal ? (
+                    <input
+                      type="tel"
+                      value={editData.phoneNum === undefined ? userData.phoneNum || '' : editData.phoneNum}
+                      onChange={(e) => handleInputChange('phoneNum', e.target.value)}
+                      className="w-full border-b-2 border-gray-300 focus:border-orange-400 outline-none px-2 py-1"
+                      placeholder="Enter phone number"
+                    />
+                  ) : (
+                    userData.phoneNum || 'Not available'
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>

@@ -488,11 +488,11 @@ const Chatbox = () => {
     yesterday.setDate(yesterday.getDate() - 1);
 
     if (date.toDateString() === today.toDateString()) {
-      return 'Hôm nay';
+      return 'Today';
     } else if (date.toDateString() === yesterday.toDateString()) {
-      return 'Hôm qua';
+      return 'Yesterday';
     } else {
-      return date.toLocaleDateString('vi-VN');
+      return date.toLocaleDateString('en-US');
     }
   };
 
@@ -537,14 +537,14 @@ const Chatbox = () => {
         
         return (
           <div className="message-plan">
-            <div className="plan-title">Kế hoạch tập luyện được chia sẻ</div>
+            <div className="plan-title">A new plan has been share</div>
             <a
               href={fullUrl}
               target="_blank"
               rel="noopener noreferrer"
               className="plan-link"
             >
-              Xem chi tiết kế hoạch
+              Click here
             </a>
           </div>
         );
@@ -622,7 +622,7 @@ const Chatbox = () => {
                   />
                   {selectedUser.name}
                 </>
-              ) : 'Chọn người dùng'}
+              ) : 'Pick a user to start chat'}
             </span>
             <FontAwesomeIcon 
               icon={faTimes} 
@@ -683,7 +683,7 @@ const Chatbox = () => {
                   type="text"
                   value={inputMessage}
                   onChange={(e) => setInputMessage(e.target.value)}
-                  placeholder="Nhập tin nhắn..."
+                  placeholder="Type a message..."
                 />
                 <button type="submit">
                   <FontAwesomeIcon icon={faPaperPlane} />

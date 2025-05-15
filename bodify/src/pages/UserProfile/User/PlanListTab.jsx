@@ -25,45 +25,45 @@ const PlanListTab = () => {
 
   const fetchPlans = async (checkAutoOpen = true) => {
     try {
-      if (redirecting) return; // Không làm gì nếu đang chuyển hướng
+      if (redirecting) return; // Do nothing if redirecting
       
       setLoading(true);
       setError(null);
 
-      // Kiểm tra xem user đã đăng nhập chưa
+      // Check if user is logged in
       if (!AuthService.isLoggedIn()) {
-        setError('Vui lòng đăng nhập để xem danh sách kế hoạch');
+        setError('Please login to view your plan list');
         setLoading(false);
         return;
       }
 
-      console.log('Đang tải danh sách kế hoạch...');
+      console.log('Loading plan list...');
       
-      // Lấy danh sách plans từ API
+      // Get plans list from API
       const plansData = await PlanService.getUserPlans();
       
       if (Array.isArray(plansData)) {
-        // Đảm bảo mỗi plan có ID là số
+        // Ensure each plan has a numeric ID
         const formattedPlans = plansData.map(plan => ({
           ...plan,
           plan_id: plan.plan_id ? Number(plan.plan_id) : (plan.id ? Number(plan.id) : null),
-          // Đảm bảo các trường khác
-          plan_name: plan.plan_name || plan.name || 'Kế hoạch không tên',
+          // Ensure other fields
+          plan_name: plan.plan_name || plan.name || 'Unnamed Plan',
           Description: plan.Description || plan.description || '',
           total_duration: Number(plan.total_duration) || 0
         }));
         
-        console.log(`Đã tải ${formattedPlans.length} kế hoạch`);
+        console.log(`Loaded ${formattedPlans.length} plans`);
         setPlans(formattedPlans);
 
-        // Kiểm tra xem có tham số autoOpen không và chưa được xử lý
+        // Check if there's an autoOpen parameter and it hasn't been processed
         if (checkAutoOpen && !autoOpenProcessed.current) {
           const queryParams = new URLSearchParams(location.search);
           const autoOpenPlanId = queryParams.get('autoOpen');
           
-          // Nếu có tham số autoOpen và giá trị hợp lệ, tự động mở kế hoạch tương ứng
+          // If there's a valid autoOpen parameter, automatically open the corresponding plan
           if (autoOpenPlanId && !isNaN(Number(autoOpenPlanId))) {
-            // Xóa timer cũ nếu có
+            // Clear old timer if it exists
             if (autoOpenTimer.current) {
               clearTimeout(autoOpenTimer.current);
             }
@@ -73,34 +73,34 @@ const PlanListTab = () => {
             );
             
             if (planToOpen) {
-              // Đánh dấu là đã xử lý autoOpen để không lặp lại
+              // Mark as processed to avoid repetition
               autoOpenProcessed.current = true;
               
-              // Hiển thị thông báo chuyển hướng
+              // Display redirect message
               setRedirecting(true);
-              setRedirectMessage(`Đang mở kế hoạch: ${planToOpen.plan_name || planToOpen.name}`);
+              setRedirectMessage(`Opening plan: ${planToOpen.plan_name || planToOpen.name}`);
               
-              console.log(`Đang chuẩn bị mở kế hoạch ID: ${autoOpenPlanId}`);
+              console.log(`Preparing to open plan ID: ${autoOpenPlanId}`);
               
-              // Sử dụng window.location.href thay vì navigate để đảm bảo trang được tải lại hoàn toàn
+              // Use window.location.href instead of navigate to ensure the page is fully reloaded
               autoOpenTimer.current = setTimeout(() => {
-                console.log(`Chuyển hướng đến /plan?id=${autoOpenPlanId}`);
+                console.log(`Redirecting to /plan?id=${autoOpenPlanId}`);
                 window.location.href = `/plan?id=${autoOpenPlanId}`;
               }, 1500);
               
-              return; // Thoát sớm để không thiết lập loading = false
+              return; // Exit early to avoid setting loading = false
             } else {
-              console.log(`Không tìm thấy kế hoạch với ID: ${autoOpenPlanId}`);
+              console.log(`Plan with ID: ${autoOpenPlanId} not found`);
             }
           }
         }
       } else {
-        console.log('Không có kế hoạch nào');
+        console.log('No plans found');
         setPlans([]);
       }
     } catch (error) {
-      console.error('Lỗi khi lấy danh sách kế hoạch:', error);
-      setError('Không thể tải danh sách kế hoạch. Vui lòng thử lại sau.');
+      console.error('Error fetching plans:', error);
+      setError('Unable to load plan list. Please try again later.');
     } finally {
       if (!redirecting) {
         setLoading(false);
@@ -108,7 +108,7 @@ const PlanListTab = () => {
     }
   };
 
-  // Cleanup khi component unmount
+  // Cleanup when component unmounts
   useEffect(() => {
     return () => {
       if (autoOpenTimer.current) {
@@ -117,28 +117,28 @@ const PlanListTab = () => {
     };
   }, []);
 
-  // Reset flag autoOpenProcessed khi location.search thay đổi
+  // Reset autoOpenProcessed flag when location.search changes
   useEffect(() => {
-    // Reset flag để có thể xử lý lại nếu URL thay đổi
+    // Reset flag to allow processing again if URL changes
     autoOpenProcessed.current = false;
     
-    // Xóa timer cũ nếu có
+    // Clear old timer if it exists
     if (autoOpenTimer.current) {
       clearTimeout(autoOpenTimer.current);
       autoOpenTimer.current = null;
     }
     
-    // Reset trạng thái chuyển hướng
+    // Reset redirect state
     setRedirecting(false);
     setRedirectMessage('');
   }, [location.search]);
 
-  // Fetch plans khi component được tải hoặc khi location.search thay đổi
+  // Fetch plans when component loads or when location.search changes
   useEffect(() => {
     fetchPlans();
   }, [location.search]);
 
-  // Thêm useEffect để kết nối socket khi component mount
+  // Add useEffect to connect socket when component mounts
   useEffect(() => {
     const currentUser = AuthService.getCurrentUser();
     if (currentUser?.id) {
@@ -149,7 +149,7 @@ const PlanListTab = () => {
     };
   }, []);
 
-  // Thêm hàm xử lý chia sẻ
+  // Add share handling function
   const handleShare = async (plan) => {
     setSelectedPlan(plan);
     setShowOptionsPopup(null);
@@ -164,38 +164,38 @@ const PlanListTab = () => {
         console.log('Fetching chat users for user ID:', currentUser.id);
         const response = await ChatService.getAllChatUsers(currentUser.id);
         console.log('Received chat users:', response);
-        // Lấy mảng users từ response.data
+        // Get users array from response.data
         const users = response?.data || [];
         setChatUsers(users);
       } else {
         console.log('No user ID found in currentUser:', currentUser);
       }
     } catch (error) {
-      console.error('Lỗi khi lấy danh sách người dùng:', error);
+      console.error('Error fetching user list:', error);
     } finally {
       setLoadingUsers(false);
     }
   };
 
-  // Sửa lại hàm handleShareWithUser để thêm retry logic
+  // Modify handleShareWithUser to add retry logic
   const handleShareWithUser = async (user) => {
     try {
       const currentUser = AuthService.getCurrentUser();
       if (currentUser?.id) {
-        // Đảm bảo socket được kết nối
+        // Ensure socket is connected
         ChatService.connect(currentUser.id);
         
-        // Đợi một chút để socket kết nối
+        // Wait a bit for socket to connect
         await new Promise(resolve => setTimeout(resolve, 1000));
         
         const shareUrl = `${window.location.host}/plan-detail?id=${selectedPlan.plan_id}`;
-        const message = `Chia sẻ kế hoạch tập luyện: ${selectedPlan.plan_name}\n[Click vào đây để xem](${shareUrl})`;
+        const message = `Shared workout plan: ${selectedPlan.plan_name}\n[Click here to view](${shareUrl})`;
         
-        // Thử gửi tin nhắn tối đa 3 lần
+        // Try sending message up to 3 times
         let attempts = 0;
         while (attempts < 3) {
           try {
-            // Sử dụng user.user_id thay vì user.id
+            // Use user.user_id instead of user.id
             await ChatService.sendMessage(user.user_id, message);
             setShowSharePopup(false);
             return;
@@ -207,17 +207,17 @@ const PlanListTab = () => {
         }
       }
     } catch (error) {
-      console.error('Lỗi khi gửi tin nhắn:', error);
+      console.error('Error sending message:', error);
     }
   };
 
-  // Hiển thị thông báo chuyển hướng
+  // Display redirect message
   if (redirecting) {
     return (
       <div className="flex flex-col items-center justify-center py-12">
         <FontAwesomeIcon icon={faSpinner} spin className="text-primary-500 text-4xl mb-4" />
         <p className="text-lg font-medium text-gray-700 mb-2">{redirectMessage}</p>
-        <p className="text-sm text-gray-500">Vui lòng đợi trong giây lát...</p>
+        <p className="text-sm text-gray-500">Please wait a moment...</p>
       </div>
     );
   }
@@ -238,7 +238,7 @@ const PlanListTab = () => {
           className="mt-2 bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600"
           onClick={() => fetchPlans()}
         >
-          Thử lại
+          Try again
         </button>
       </div>
     );
@@ -280,7 +280,7 @@ const PlanListTab = () => {
                     onClick={() => handleShare(plan)}
                   >
                     <FontAwesomeIcon icon={faShare} className="mr-2" />
-                    Chia sẻ
+                    Share
                   </button>
                 </div>
               )}
@@ -295,11 +295,11 @@ const PlanListTab = () => {
               >
                 <h3 className="text-lg font-semibold mb-2">{plan.plan_name || plan.name}</h3>
                 <p className="text-gray-600 mb-3 text-sm line-clamp-2">
-                  {plan.Description || plan.description || 'Không có mô tả'}
+                  {plan.Description || plan.description || 'No description'}
                 </p>
                 <div className="flex items-center text-gray-500 text-sm">
                   <FontAwesomeIcon icon={faClock} className="mr-1" />
-                  <span>{plan.total_duration || 0} phút</span>
+                  <span>{plan.total_duration || 0} minutes</span>
                 </div>
               </Link>
             </div>
@@ -312,7 +312,7 @@ const PlanListTab = () => {
             to="/plan" 
             className="bg-gray-400 text-white px-4 py-2 rounded-md hover:bg-primary-500 transition inline-flex items-center"
             onClick={(e) => {
-              // Sử dụng window.location.href để đảm bảo trang được tải lại hoàn toàn
+              // Use window.location.href to ensure the page is fully reloaded
               e.preventDefault();
               window.location.href = '/plan';
             }}
@@ -328,7 +328,7 @@ const PlanListTab = () => {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-4 w-full max-w-md">
             <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-semibold">Chia sẻ kế hoạch</h3>
+              <h3 className="text-lg font-semibold">Share Plan</h3>
               <button
                 className="text-gray-500 hover:text-gray-700"
                 onClick={() => setShowSharePopup(false)}
@@ -362,13 +362,13 @@ const PlanListTab = () => {
                         </div>
                       )}
                     </div>
-                    <span>{user.name || user.username || 'Người dùng'}</span>
+                    <span>{user.name || user.username || 'User'}</span>
                   </button>
                 ))}
               </div>
             ) : (
               <p className="text-center text-gray-500 py-4">
-                Bạn chưa có cuộc trò chuyện nào
+                You don't have any conversations yet
               </p>
             )}
           </div>

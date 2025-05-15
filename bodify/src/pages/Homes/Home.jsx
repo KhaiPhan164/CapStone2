@@ -1,5 +1,6 @@
 import React from 'react'
 import Chatbox from '../../components/Chatbox/Chatbox'
+import { Link } from 'react-router-dom'
 
 const Home = () => {
   return (
@@ -14,16 +15,20 @@ const Home = () => {
         Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed diam nonummy nibh euismod tincidunt ut laoreet dolore magna aliquam erat volutpat. Ut
         </p>
         <div className="flex space-x-4">
-        <button className="bg-black text-white px-6 py-2 rounded-full">
-          Get Started Now
-        </button>
-        <button className="border-2 border-black text-black px-6 py-2 rounded-full">
-          Explore Classes
-        </button>
+        <Link to="/exercise">
+          <button className="bg-black text-white px-6 py-2 rounded-full">
+            Get Started Now
+          </button>
+        </Link>
+        <Link to="/gyms">
+          <button className="border-2 border-black text-black px-6 py-2 rounded-full">
+            Explore Classes
+          </button>
+        </Link>
         </div>
       </div>
       <img src="./images/gym-nu.jpg" 
-  alt="Mô tả ảnh" 
+  alt="Female fitness model" 
   className="w-full md:w-[400px] h-[500px] rounded-lg lg:absolute md:right-20 md:-bottom-10 object-cover object-[50%_20%]" />
 
 

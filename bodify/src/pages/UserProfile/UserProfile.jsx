@@ -26,7 +26,6 @@ const UserProfile = () => {
 
         const currentTime = Date.now() / 1000;
         if (decodedToken.exp < currentTime) {
-          console.log('Access token đã hết hạn, đang làm mới...');
           const refreshResponse = await axios.post(
             'http://localhost:3000/auth/refresh',
             {},
@@ -37,7 +36,6 @@ const UserProfile = () => {
           setRole(jwtDecode(accessToken).role);
         }
       } catch (error) {
-        console.error('Token không hợp lệ:', error);
         localStorage.removeItem('accessToken');
         navigate('/sign-in');
       }

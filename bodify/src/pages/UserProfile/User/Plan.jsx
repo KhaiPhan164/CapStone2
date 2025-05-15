@@ -23,6 +23,7 @@ const Plan = () => {
   const [exercisePosts, setExercisePosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [searchKeyword, setSearchKeyword] = useState('');
 
   // State cho plan slots
   const [planSlots, setPlanSlots] = useState([]);
@@ -37,6 +38,11 @@ const Plan = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [saveComplete, setSaveComplete] = useState(false);
   const [savingMessage, setSavingMessage] = useState('');
+
+  // Lọc các bài tập dựa trên từ khóa tìm kiếm
+  const filteredExercises = exercisePosts.filter(exercise => 
+    exercise.name.toLowerCase().includes(searchKeyword.toLowerCase())
+  );
 
   // Tính tổng thời gian
   const totalDuration = planSlots.reduce((total, slot) => total + (parseInt(slot.duration) || 0), 0);
@@ -742,6 +748,11 @@ const Plan = () => {
     }
   };
 
+  // Hàm xử lý thay đổi từ khóa tìm kiếm
+  const handleSearchChange = (e) => {
+    setSearchKeyword(e.target.value);
+  };
+
   if (loading && !isSaving) {
     return (
       <div className="container mx-auto px-4 py-8 flex justify-center items-center h-64">
@@ -806,16 +817,16 @@ const Plan = () => {
             value={planName}
             onChange={(e) => setPlanName(e.target.value)}
             className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-            placeholder="Nhập tên kế hoạch tập luyện..."
+            placeholder="Enter workout plan name..."
           />
         </div>
         <div>
-          <label className="block text-gray-700 font-bold mb-2">Mô tả</label>
+          <label className="block text-gray-700 font-bold mb-2">Description</label>
           <textarea
             value={planDescription}
             onChange={(e) => setPlanDescription(e.target.value)}
             className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-            placeholder="Nhập mô tả cho kế hoạch tập luyện này..."
+            placeholder="Enter description for this workout plan..."
             rows="2"
           ></textarea>
         </div>
@@ -824,33 +835,50 @@ const Plan = () => {
       <div className="flex flex-col md:flex-row gap-6">
         {/* Danh sách exercise post */}
         <div className="w-full md:w-1/4 bg-white shadow-md rounded-lg p-4">
-          <h2 className="font-bold text-lg mb-4 border-b pb-2">Danh sách bài tập</h2>
+          <h2 className="font-bold text-lg mb-4 border-b pb-2">Exercise List</h2>
           
-          {exercisePosts.length > 0 ? (
-            exercisePosts.map(exercise => (
-              <div 
-                key={exercise.exercisepost_id || exercise.id}
-                className="border rounded-md p-3 mb-3 bg-gray-50 cursor-move hover:bg-gray-100 transition"
-                draggable="true"
-                onDragStart={() => handleDragStart(exercise)}
-              >
-                <p className="font-medium">{exercise.name}</p>
-              </div>
-            ))
+          {/* Thêm thanh tìm kiếm */}
+          <div className="mb-4">
+            <input
+              type="text"
+              value={searchKeyword}
+              onChange={handleSearchChange}
+              className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="Search exercises..."
+            />
+          </div>
+          
+          {filteredExercises.length > 0 ? (
+            <div className="max-h-[calc(100vh-300px)] overflow-y-auto">
+              {filteredExercises.map(exercise => (
+                <div 
+                  key={exercise.exercisepost_id || exercise.id}
+                  className="border rounded-md p-3 mb-3 bg-gray-50 cursor-move hover:bg-gray-100 transition"
+                  draggable="true"
+                  onDragStart={() => handleDragStart(exercise)}
+                >
+                  <p className="font-medium">{exercise.name}</p>
+                </div>
+              ))}
+            </div>
           ) : (
             <div className="text-center py-4 text-gray-500">
-              <p>Không có bài tập nào.</p>
+              {searchKeyword ? (
+                <p>No exercises found matching "{searchKeyword}".</p>
+              ) : (
+                <p>No exercises available.</p>
+              )}
             </div>
           )}
           
           <div className="mt-4 text-sm text-gray-500">
-            <p>Kéo thả bài tập vào vị trí plan slot để tạo kế hoạch tập luyện.</p>
+            <p>Drag and drop exercises to plan slots to create your workout routine.</p>
           </div>
         </div>
         
         {/* Plan detail */}
         <div className="w-full md:w-3/4 bg-white shadow-md rounded-lg p-4">
-          <h2 className="font-bold text-lg mb-4 border-b pb-2">Chi tiết kế hoạch</h2>
+          <h2 className="font-bold text-lg mb-4 border-b pb-2">Plan Details</h2>
           
           {planSlots.length > 0 ? (
             planSlots.map(slot => (
@@ -878,7 +906,7 @@ const Plan = () => {
                       className="w-16 border rounded p-1 text-center"
                       min="1"
                     />
-                    <span className="ml-1 text-gray-500">phút</span>
+                    <span className="ml-1 text-gray-500">minutes</span>
                   </div>
                 </div>
                 
@@ -901,25 +929,25 @@ const Plan = () => {
                        })?.name || 'Unknown exercise'}
                     </h4>
                     <p className="text-sm text-gray-500 mt-1">
-                      Bài tập được gán cho slot này (ID: {slot.exercisePostId})
+                      Exercise assigned to this slot (ID: {slot.exercisePostId})
                     </p>
                     {!slot.exercise_post_id && slot.exerciseInfo && (
                       <p className="text-xs text-orange-500 mt-1">
                         <FontAwesomeIcon icon={faExclamationTriangle} className="mr-1" />
-                        Bài tập này chỉ được lưu cục bộ, có thể mất khi tải lại trang
+                        This exercise is only saved locally and may be lost when reloading the page
                       </p>
                     )}
                   </div>
                 ) : (
                   <div className="bg-gray-50 p-3 rounded-md flex justify-center items-center">
-                    <p className="text-gray-500">Kéo thả bài tập vào đây</p>
+                    <p className="text-gray-500">Drag and drop an exercise here</p>
                   </div>
                 )}
               </div>
             ))
           ) : (
             <div className="text-center py-8 text-gray-500">
-              <p>Chưa có slot nào. Hãy thêm slot mới để bắt đầu.</p>
+              <p>No slots available. Add a new slot to get started.</p>
             </div>
           )}
           
@@ -928,14 +956,14 @@ const Plan = () => {
             onClick={addNewSlot}
           >
             <FontAwesomeIcon icon={faPlus} className="mr-2" />
-            Thêm slot mới
+            Add new slot
           </button>
           
           <div className="mt-6 border-t pt-4">
             <div className="flex flex-col md:flex-row justify-between items-center">
               <div className="font-medium mb-4 md:mb-0">
-                <span>Tổng thời gian: </span>
-                <span className="font-bold">{totalDuration} phút</span>
+                <span>Total duration: </span>
+                <span className="font-bold">{totalDuration} minutes</span>
               </div>
               <div className="flex space-x-3">
                 <button 
@@ -944,7 +972,7 @@ const Plan = () => {
                   disabled={loading}
                 >
                   <FontAwesomeIcon icon={faSave} className="mr-2" />
-                  Lưu
+                  Save
                 </button>
                 {planId && (
                   <button 
@@ -953,7 +981,7 @@ const Plan = () => {
                     disabled={loading}
                   >
                     <FontAwesomeIcon icon={faTrash} className="mr-2" />
-                    Xóa
+                    Delete
                   </button>
                 )}
               </div>

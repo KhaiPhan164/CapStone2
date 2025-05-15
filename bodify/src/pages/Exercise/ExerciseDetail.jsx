@@ -29,28 +29,25 @@ export const ExerciseDetail = () => {
             setLoading(true);
             setError(null);
             
-            // Lấy thông tin chi tiết bài tập
+            // Get exercise details
             const exerciseResponse = await ExerciseService.getById(id);
             const exerciseData = exerciseResponse.data.data || exerciseResponse.data;
             
-            // Chỉ log này để kiểm tra dữ liệu
-            console.log('EXERCISE DETAIL DATA:', exerciseData);
-            
             setExercise(exerciseData);
             
-            // Kiểm tra và sử dụng step từ response (không phải steps)
+            // Check and use steps from response
             if (exerciseData.step && Array.isArray(exerciseData.step)) {
                 setSteps(exerciseData.step);
             } else {
                 setSteps([]);
             }
             
-            // Lấy các bài tập liên quan (chỉ lấy 3 bài tập)
+            // Get related exercises (only 3)
             const allExercisesResponse = await ExerciseService.getAll();
             const allExercises = allExercisesResponse.data.data || allExercisesResponse.data;
             
             if (Array.isArray(allExercises)) {
-                // Lọc ra các bài tập khác với bài tập hiện tại và lấy tối đa 3 bài
+                // Filter exercises different from current one and take max 3
                 const related = allExercises
                     .filter(ex => ex.exercisepost_id !== parseInt(id))
                     .slice(0, 3);
@@ -58,7 +55,7 @@ export const ExerciseDetail = () => {
             }
         } catch (error) {
             console.error('Error fetching exercise details:', error);
-            setError('Không thể tải chi tiết bài tập. Vui lòng thử lại sau.');
+            setError('Unable to load exercise details. Please try again later.');
         } finally {
             setLoading(false);
         }
@@ -79,7 +76,7 @@ export const ExerciseDetail = () => {
             <div>
                 <div className="container mx-auto px-4 xl:max-w-[1067px] flex items-center justify-center min-h-[400px]">
                     <div className="text-red-500 text-center">
-                        {error || 'Không tìm thấy bài tập này'}
+                        {error || 'Exercise not found'}
                     </div>
                 </div>
             </div>
@@ -90,7 +87,7 @@ export const ExerciseDetail = () => {
         <div>
             <div className="container mx-auto px-4 py-8">
                 <div className="flex flex-col md:flex-row gap-8 mt-10">
-                    {/* Bên trái: Video + Thông tin */}
+                    {/* Left: Video + Information */}
                     <div className="w-full md:w-3/5 mb-10">
                         <SectionTitle title={exercise.name} />
                         <img 
@@ -124,7 +121,7 @@ export const ExerciseDetail = () => {
                             </div>
                         )}
                         
-                        {/* -------Thực hiện---------- */}
+                        {/* -------Performance Steps---------- */}
                         {steps.length > 0 && (
                             <div className="text-sm text-gray-700 leading-relaxed mt-2">
                                 <p className='text-text text-lg font-bold mb-3'>Perform</p>
@@ -138,7 +135,7 @@ export const ExerciseDetail = () => {
                                                 : "border-gray-300 hover:bg-gray-100"
                                         } rounded-md mb-2`}
                                     >
-                                        <h3 className="font-semibold text-lg">Bước {step.step_number || index + 1}</h3>
+                                        <h3 className="font-semibold text-lg">Step {step.step_number || index + 1}</h3>
                                         <p className="text-gray-700">{step.instruction}</p>
                                     </div>
                                 ))}
@@ -146,7 +143,7 @@ export const ExerciseDetail = () => {
                         )}
                     </div>
 
-                    {/* Bên phải: Các bài tập liên quan */}
+                    {/* Right: Related exercises */}
                     <div className="w-full md:w-2/5">
                         <div className="mb-4">
                             <h2 className="text-xl font-bold text-secondary border-b-2 border-secondary inline-block pb-1">
@@ -175,12 +172,12 @@ export const ExerciseDetail = () => {
                                     </Link>
                                 ))
                             ) : (
-                                <div className="text-center text-gray-500">Không có bài tập liên quan</div>
+                                <div className="text-center text-gray-500">No related exercises</div>
                             )}
                             <div className='w-full flex justify-end'>
                                 <Link to="/exercise">
                                     <Button>
-                                        Xem thêm
+                                        View more
                                     </Button>
                                 </Link>
                             </div>
@@ -189,7 +186,7 @@ export const ExerciseDetail = () => {
                 </div>
             </div>
 
-            {/* Modal mở video */}
+            {/* Video modal */}
             <Modal
                 isOpen={isOpen}
                 onRequestClose={() => setIsOpen(false)}
@@ -198,16 +195,24 @@ export const ExerciseDetail = () => {
                 overlayClassName="fixed inset-0 flex items-center justify-center bg-black bg-opacity-75 z-[50]"
             >
                 <div className="relative w-full h-[80vh] md:h-[90vh]">
+                    <button
+                        onClick={() => setIsOpen(false)}
+                        className="absolute -right-3 -top-3 bg-white p-2 rounded-full shadow-lg z-10"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
                     <iframe
                         className="w-full h-full"
                         src={embedUrl}
                         title="YouTube video player"
+                        frameBorder="0"
                         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                        referrerPolicy="strict-origin-when-cross-origin"
                         allowFullScreen
                     ></iframe>
                 </div>
             </Modal>
         </div>
-    );
+    )
 }

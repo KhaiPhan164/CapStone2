@@ -41,7 +41,7 @@ const PTProfile = () => {
 
         const response = await fetch(`/api/users/pt/${currentUser.id}`);
         if (!response.ok) {
-          throw new Error('Không thể tải thông tin PT');
+          throw new Error('Unable to load PT information');
         }
         const profile = await response.json();
         
@@ -56,8 +56,7 @@ const PTProfile = () => {
           });
         }
       } catch (error) {
-        console.error('Lỗi khi tải thông tin:', error);
-        setError('Không thể tải thông tin. Vui lòng thử lại.');
+        setError('Unable to load information. Please try again.');
       } finally {
         setIsLoading(false);
       }
@@ -74,11 +73,11 @@ const PTProfile = () => {
         const currentUser = AuthService.getCurrentUser();
         
         if (!currentUser?.id) {
-          throw new Error('Vui lòng đăng nhập lại');
+          throw new Error('Please login again');
         }
 
         if (!editData.name?.trim()) {
-          throw new Error('Tên không được để trống');
+          throw new Error('Name cannot be empty');
         }
 
         const updateData = {
@@ -95,7 +94,7 @@ const PTProfile = () => {
         });
 
         if (!response.ok) {
-          throw new Error('Không thể cập nhật thông tin');
+          throw new Error('Unable to update information');
         }
 
         const updatedUser = await response.json();
@@ -108,11 +107,10 @@ const PTProfile = () => {
             name: updatedUser.name || '',
             introduction: updatedUser.introduction || ''
           });
-          setError('Cập nhật thành công');
+          setError('Update successful');
         }
       } catch (error) {
-        console.error('Lỗi cập nhật hồ sơ:', error);
-        setError(error.message || 'Không thể cập nhật thông tin');
+        setError(error.message || 'Unable to update information');
       } finally {
         setIsLoading(false);
       }
@@ -141,7 +139,7 @@ const PTProfile = () => {
         const currentUser = AuthService.getCurrentUser();
         
         if (!currentUser?.id) {
-          throw new Error('Vui lòng đăng nhập lại');
+          throw new Error('Please login again');
         }
 
         const formData = new FormData();
@@ -153,17 +151,16 @@ const PTProfile = () => {
         });
 
         if (!response.ok) {
-          throw new Error('Không thể cập nhật ảnh đại diện');
+          throw new Error('Unable to update profile picture');
         }
 
         const updatedUser = await response.json();
         if (updatedUser) {
           setUserData(updatedUser);
-          setError('Cập nhật ảnh đại diện thành công');
+          setError('Profile picture updated successfully');
         }
       } catch (error) {
-        console.error('Lỗi cập nhật ảnh đại diện:', error);
-        setError(error.message || 'Không thể cập nhật ảnh đại diện');
+        setError(error.message || 'Unable to update profile picture');
       } finally {
         setIsLoading(false);
       }
@@ -182,24 +179,24 @@ const PTProfile = () => {
     return (
       <div className="bg-white p-6 rounded-lg shadow-md">
         <div className="flex items-center justify-between mb-6">
-          <SectionTitle title="Thông tin cá nhân" />
+          <SectionTitle title="Personal Information" />
           <button 
             className={`text-text py-1 px-3 rounded text-xs border-2 border-gray-200 flex items-center justify-center gap-1 hover:bg-slate-300 ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
             onClick={handleEditProfile}
             disabled={isLoading}
           >
             <FontAwesomeIcon icon={faEdit} className="w-3 h-3" />
-            {isEditingProfile ? 'Lưu' : 'Sửa'}
+            {isEditingProfile ? 'Save' : 'Edit'}
           </button>
         </div>
         
         <div className="grid grid-cols-2 gap-6">
           <div>
             <label className="block text-gray-700 mb-2">
-              Tên đăng nhập
+              Username
             </label>
             <div className="font-semibold text-text">
-              {userData.username || 'Chưa có'}
+              {userData.username || 'Not available'}
             </div>
           </div>
           
@@ -214,17 +211,17 @@ const PTProfile = () => {
                   value={editData.email || userData.email || ''}
                   onChange={(e) => handleInputChange('email', e.target.value)}
                   className="w-full border-b-2 border-gray-300 focus:border-orange-400 outline-none px-2 py-1"
-                  placeholder="Nhập địa chỉ email"
+                  placeholder="Enter email address"
                 />
               ) : (
-                userData.email || 'Chưa có'
+                userData.email || 'Not available'
               )}
             </div>
           </div>
           
           <div>
             <label className="block text-gray-700 mb-2">
-              Số điện thoại
+              Phone Number
             </label>
             <div className="font-semibold text-text">
               {isEditingProfile ? (
@@ -233,26 +230,26 @@ const PTProfile = () => {
                   value={editData.phoneNum === undefined ? userData.phoneNum || '' : editData.phoneNum}
                   onChange={(e) => handleInputChange('phoneNum', e.target.value)}
                   className="w-full border-b-2 border-gray-300 focus:border-orange-400 outline-none px-2 py-1"
-                  placeholder="Nhập số điện thoại"
+                  placeholder="Enter phone number"
                 />
               ) : (
-                userData.phoneNum || 'Chưa có'
+                userData.phoneNum || 'Not available'
               )}
             </div>
           </div>
 
           <div>
             <label className="block text-gray-700 mb-2">
-              Phòng tập
+              Gym
             </label>
             <div className="font-semibold text-text">
-              {userData.gym?.name || 'Chưa có'}
+              {userData.gym?.name || 'Not available'}
             </div>
           </div>
 
           <div className="col-span-2">
             <label className="block text-gray-700 mb-2">
-              Giới thiệu
+              Introduction
             </label>
             <div className="font-semibold text-text">
               {isEditingProfile ? (
@@ -260,36 +257,36 @@ const PTProfile = () => {
                   value={editData.introduction || userData.introduction || ''}
                   onChange={(e) => handleInputChange('introduction', e.target.value)}
                   className="w-full border-b-2 border-gray-300 focus:border-orange-400 outline-none px-2 py-1"
-                  placeholder="Nhập giới thiệu về bản thân"
+                  placeholder="Enter introduction about yourself"
                   rows="4"
                 />
               ) : (
-                userData.introduction || 'Chưa có'
+                userData.introduction || 'Not available'
               )}
             </div>
           </div>
 
           <div className="col-span-2">
             <label className="block text-gray-700 mb-2">
-              Bằng cấp
+              Certificates
             </label>
             <div className="mt-2">
               {userData.certificate?.imgurl ? (
                 <div className="relative group">
                   <img 
                     src={userData.certificate.imgurl} 
-                    alt="Bằng cấp" 
+                    alt="Certificate" 
                     className="max-w-md rounded-lg shadow-md"
                   />
                   <div className="absolute inset-0 flex items-center justify-center rounded-lg bg-black bg-opacity-50 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                     <div className="text-white text-center">
                       <FontAwesomeIcon icon={faCertificate} className="text-xl mb-1" />
-                      <div className="text-xs">Xem bằng cấp</div>
+                      <div className="text-xs">View Certificate</div>
                     </div>
                   </div>
                 </div>
               ) : (
-                <div className="text-gray-500">Chưa có bằng cấp</div>
+                <div className="text-gray-500">No certificates available</div>
               )}
             </div>
           </div>
@@ -308,10 +305,10 @@ const PTProfile = () => {
               <div className="flex items-center font-bold text-white">
                 <img
                   src="./images/pt.png" 
-                  alt="Ảnh đại diện"
+                  alt="Profile Picture"
                   className="mr-3 ml-2 w-6 h-6 filter invert" 
                 />
-                Thông tin PT
+                PT Information
               </div>
             </li>
           </ul>
@@ -325,7 +322,7 @@ const PTProfile = () => {
           )}
           
           <h1 className="text-2xl font-semibold mb-6 text-gray-700">
-            Thông tin Personal Trainer
+            Personal Trainer Information
           </h1>
           
           <div className="bg-white p-6 rounded-lg shadow-md mb-6">
@@ -340,7 +337,7 @@ const PTProfile = () => {
                     onChange={handleAvatarChange}
                   />
                   <img 
-                    alt={`Ảnh đại diện của ${userData.name || 'PT'}`} 
+                    alt={`Profile picture of ${userData.name || 'PT'}`} 
                     className="w-16 h-16 rounded-full mr-4 object-cover cursor-pointer"
                     src={userData.imgUrl || "https://storage.googleapis.com/a1aa/image/cD-sKP-sj6D5N0EfMvBgXVgHCnSaBHEl4rdOuhfaNkQ.jpg"} 
                     onClick={handleAvatarClick}
@@ -351,7 +348,7 @@ const PTProfile = () => {
                   >
                     <div className="text-white text-center">
                       <FontAwesomeIcon icon={faEdit} className="text-xl mb-1" />
-                      <div className="text-xs">Đổi ảnh</div>
+                      <div className="text-xs">Change</div>
                     </div>
                   </div>
                 </div>
@@ -363,10 +360,10 @@ const PTProfile = () => {
                         value={editData.name || userData.name || ''}
                         onChange={(e) => handleInputChange('name', e.target.value)}
                         className="border-b-2 border-gray-300 focus:border-orange-400 outline-none px-2 py-1"
-                        placeholder="Nhập tên của bạn"
+                        placeholder="Enter your name"
                       />
                     ) : (
-                      userData.name || 'Chưa có tên'
+                      userData.name || 'No name available'
                     )}
                   </h2>
                 </div>

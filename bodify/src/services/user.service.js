@@ -164,7 +164,7 @@ class UserService {
 
   async approvePT(ptId) {
     try {
-      const response = await axios.patch(`${API_URL}/pt/approve/${ptId}`, {
+      const response = await axios.put(`${API_URL}/pts/approve/${ptId}`, {
         status_id: 2
       }, {
         headers: this.getAuthHeader()
@@ -183,7 +183,7 @@ class UserService {
 
   async rejectPT(ptId) {
     try {
-      const response = await axios.delete(`${API_URL}/pt/reject/${ptId}`, {
+      const response = await axios.delete(`${API_URL}/pts/reject/${ptId}`, {
         headers: this.getAuthHeader()
       });
       

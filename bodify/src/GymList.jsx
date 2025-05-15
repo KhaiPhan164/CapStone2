@@ -7,6 +7,11 @@ import { Link } from 'react-router-dom';
 import { Pagination } from './components/Table/Pagination';
 import { SectionTitle } from './components/Title/SectionTitle';
 
+// Tạo instance axios mới không có interceptor chuyển hướng
+const publicAxios = axios.create({
+  baseURL: 'http://localhost:3000'
+});
+
 const GymList = () => {
   const [gyms, setGyms] = useState([]);
   const [filteredGyms, setFilteredGyms] = useState([]);
@@ -21,7 +26,8 @@ const GymList = () => {
   useEffect(() => {
     const fetchGyms = async () => {
       try {
-        const response = await axios.get('http://localhost:3000/users/gym');
+        // Sử dụng publicAxios thay vì axios để tránh bị interceptor chuyển hướng
+        const response = await publicAxios.get('/users/gym');
         if (response.data && Array.isArray(response.data)) {
           setGyms(response.data);
           setFilteredGyms(response.data);
@@ -82,7 +88,7 @@ const GymList = () => {
               <div className="flex items-center max-w-[300px] sm:max-w-xl mx-auto rounded-full border border-gray-400 overflow-hidden shadow-sm">
                 <input
                   type="text"
-                  placeholder="Tìm kiếm phòng gym..."
+                  placeholder="Search for gyms..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="flex-1 text-xs w-[300px] sm:text-base py-0 sm:py-2 pl-6 md:pl-8 text-gray-600 italic outline-none"
@@ -112,7 +118,7 @@ const GymList = () => {
               <div className="text-red-500 text-center py-4">{error}</div>
             ) : filteredGyms.length === 0 ? (
               <div className="text-center py-8">
-                <p className="text-gray-600 italic">Không tìm thấy phòng gym nào phù hợp.</p>
+                <p className="text-gray-600 italic">No matching gyms found.</p>
               </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -148,13 +154,13 @@ const GymList = () => {
                         </div>
                       )}
                       <p className="text-sm text-gray-600 mt-2 mb-4 line-clamp-2">
-                        {gym.introduction || 'Chưa có mô tả'}
+                        {gym.introduction || 'No description available'}
                       </p>
                       <button 
                         onClick={() => handleViewDetails(gym.user_id)}
                         className="w-full bg-gradient-to-r from-[#ffd26a] to-primary-500 text-white px-4 py-2 rounded-full hover:opacity-90 transition-opacity text-sm font-medium"
                       >
-                        Xem chi tiết
+                        View details
                       </button>
                     </div>
                   </div>

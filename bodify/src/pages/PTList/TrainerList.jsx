@@ -33,16 +33,16 @@ export default function TrainerList() {
           setTrainers(trainersData);
           setTotalPages(Math.ceil(trainersData.length / ITEMS_PER_PAGE));
         } else {
-          setError('Dữ liệu không đúng định dạng');
+          setError('Data format is incorrect');
         }
         setLoading(false);
       } catch (err) {
-        console.error('Lỗi khi tải danh sách PT:', err);
+        console.error('Error loading PT list:', err);
         if (err.response?.status === 401) {
-          setError('Vui lòng đăng nhập để xem danh sách PT');
+          setError('Please log in to view the PT list');
           navigate('/sign-in');
         } else {
-          setError('Không thể tải danh sách PT. Vui lòng thử lại sau.');
+          setError('Unable to load PT list. Please try again later.');
         }
         setLoading(false);
       }
@@ -102,10 +102,10 @@ export default function TrainerList() {
   return (
     <div className="flex flex-col">
       {/* Banner section */}
-      <div className="mt-14 flex flex-col gap-y-6 items-center justify-start px-4 md:px-0">
-        <div className="flex flex-col items-center gap-y-4 text-center">
-          <h1 className="flex text-[#00000096] text-4xl md:text-6xl space-x-3 items-center font-medium">
-            <p>Danh sách Huấn Luyện Viên</p>
+      <div className="mt-6 flex flex-col gap-y-4 items-center justify-start px-4 md:px-0">
+        <div className="flex flex-col items-center gap-y-3 text-center">
+          <h1 className="flex text-[#00000096] text-4xl md:text-5xl space-x-3 items-center font-medium">
+            <p>Personal Trainer List</p>
           </h1>
         </div>
         {/* Search box */}
@@ -113,7 +113,7 @@ export default function TrainerList() {
           <div className="flex items-center max-w-[300px] sm:max-w-xl mx-auto rounded-full border border-gray-400 overflow-hidden shadow-sm">
             <input
               type="text"
-              placeholder="Tìm kiếm huấn luyện viên..."
+              placeholder="Search for trainers..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="flex-1 text-xs w-[300px] sm:text-base py-0 sm:py-2 pl-6 md:pl-8 text-gray-600 italic outline-none"
@@ -130,7 +130,7 @@ export default function TrainerList() {
         <div className="flex items-center justify-between">
           <div className="flex flex-1 w-full items-center overflow-hidden">
             <div className="min-w-fit">
-              <h2 className="text-2xl font-bold">Danh sách PT</h2>
+              <h2 className="text-2xl font-bold">Personal Trainers</h2>
             </div>
           </div>
         </div>
@@ -160,11 +160,11 @@ export default function TrainerList() {
                 <h2 className="text-xl font-semibold">{trainer.name}</h2>
                 <div className="flex items-center text-gray-600 text-sm">
                   <FontAwesomeIcon icon={faEnvelope} className="mr-2" />
-                  {trainer.email || 'Chưa cập nhật email'}
+                  {trainer.email || 'Email not updated'}
                 </div>
                 <div className="flex items-center text-gray-600 text-sm">
                   <FontAwesomeIcon icon={faPhone} className="mr-2" />
-                  {trainer.phoneNum || 'Chưa cập nhật SĐT'}
+                  {trainer.phoneNum || 'Phone not updated'}
                 </div>
               </div>
               <div className="flex gap-2 mt-4 w-full">
@@ -172,7 +172,7 @@ export default function TrainerList() {
                   onClick={() => handleViewDetails(trainer.user_id)}
                   className="flex-1 px-4 py-2 bg-primary-500 text-white hover:bg-[#ffbc74] transition font-semibold rounded"
                 >
-                  Xem chi tiết
+                  View details
                 </button>
                 <button 
                   className="flex-1 px-4 py-2 bg-gray-500 text-white hover:bg-gray-600 transition font-semibold rounded"
@@ -182,14 +182,14 @@ export default function TrainerList() {
                       navigate('/sign-in');
                       return;
                     }
-                    // Thêm PT vào danh sách liên hệ và mở chat
+                    // Add PT to contact list and open chat
                     ChatService.connect(currentUser.user_id);
                     const contact = {
                       id: trainer.user_id,
                       name: trainer.name,
                       avatar: trainer.avatar_url
                     };
-                    // Mở chat box
+                    // Open chat box
                     const chatboxContainer = document.querySelector('.chatbox-container');
                     if (chatboxContainer) {
                       const chatToggle = chatboxContainer.querySelector('.chat-toggle');
@@ -197,13 +197,13 @@ export default function TrainerList() {
                       if (!chatWindow || chatWindow.style.display === 'none') {
                         chatToggle.click();
                       }
-                      // Chọn user để chat
+                      // Select user to chat with
                       const selectUserEvent = new CustomEvent('selectUser', { detail: contact });
                       chatboxContainer.dispatchEvent(selectUserEvent);
                     }
                   }}
                 >
-                  Liên hệ
+                  Contact
                 </button>
               </div>
             </div>

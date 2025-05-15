@@ -58,12 +58,44 @@ const HealthInformation = () => {
     
     try {
       const data = {};
-    const lines = healthInfo.split('\n');
-    
-    lines.forEach(line => {
+      const lines = healthInfo.split('\n');
+      
+      lines.forEach(line => {
         const [key, value] = line.split(':').map(str => str.trim());
         if (key && value) {
-          data[key.toLowerCase().replace(/\s+/g, '')] = value;
+          // Loại bỏ các đơn vị đo lường và chỉ lấy giá trị số
+          let cleanValue = value;
+          
+          // Loại bỏ "kg" cho cân nặng
+          if (key.toLowerCase() === 'weight') {
+            cleanValue = value.replace(/\s*kg\s*/g, '').trim();
+          }
+          // Loại bỏ "cm" cho chiều cao
+          else if (key.toLowerCase() === 'height') {
+            cleanValue = value.replace(/\s*cm\s*/g, '').trim();
+          }
+          // Loại bỏ "BPM" cho nhịp tim
+          else if (key.toLowerCase().includes('heart rate')) {
+            cleanValue = value.replace(/\s*BPM\s*/gi, '').trim();
+          }
+          // Loại bỏ "%" cho phần trăm mỡ
+          else if (key.toLowerCase() === 'fat percentage') {
+            cleanValue = value.replace(/\s*%\s*/g, '').trim();
+          }
+          // Loại bỏ "L" cho lượng nước
+          else if (key.toLowerCase() === 'water intake') {
+            cleanValue = value.replace(/\s*L\s*/gi, '').trim();
+          }
+          // Loại bỏ "hours" cho thời gian tập
+          else if (key.toLowerCase() === 'session duration') {
+            cleanValue = value.replace(/\s*hours\s*/gi, '').trim();
+          }
+          // Loại bỏ "times per week" cho tần suất tập luyện
+          else if (key.toLowerCase() === 'workout frequency') {
+            cleanValue = value.replace(/\s*times\s*per\s*week\s*/gi, '').trim();
+          }
+          
+          data[key.toLowerCase().replace(/\s+/g, '')] = cleanValue;
         }
       });
       
@@ -114,26 +146,59 @@ const HealthInformation = () => {
 
   const handleSubmit = async () => {
     try {
+      // Chuẩn hóa dữ liệu - loại bỏ đơn vị đo lường để tránh lặp lại
+      // Xử lý chiều cao
+      let height = formData.height.toString();
+      height = height.replace(/\s*cm\s*/g, ''); // Loại bỏ "cm" nếu có
+      
+      // Xử lý cân nặng
+      let weight = formData.weight.toString();
+      weight = weight.replace(/\s*kg\s*/g, ''); // Loại bỏ "kg" nếu có
+      
+      // Xử lý nhịp tim
+      let maxHeartRate = formData.maxHeartRate.toString();
+      let avgHeartRate = formData.avgHeartRate.toString();
+      let restingHeartRate = formData.restingHeartRate.toString();
+      maxHeartRate = maxHeartRate.replace(/\s*BPM\s*/gi, ''); // Loại bỏ "BPM" nếu có
+      avgHeartRate = avgHeartRate.replace(/\s*BPM\s*/gi, ''); // Loại bỏ "BPM" nếu có
+      restingHeartRate = restingHeartRate.replace(/\s*BPM\s*/gi, ''); // Loại bỏ "BPM" nếu có
+      
+      // Xử lý tần suất tập luyện
+      let workoutFrequency = formData.workoutFrequency.toString();
+      workoutFrequency = workoutFrequency.replace(/\s*times\s*per\s*week\s*/gi, ''); // Loại bỏ "times per week" nếu có
+      
+      // Xử lý thời gian tập
+      let sessionDuration = formData.sessionDuration.toString();
+      sessionDuration = sessionDuration.replace(/\s*hours\s*/gi, ''); // Loại bỏ "hours" nếu có
+      
+      // Xử lý phần trăm mỡ
+      let fatPercentage = formData.fatPercentage.toString();
+      fatPercentage = fatPercentage.replace(/\s*%\s*/g, ''); // Loại bỏ "%" nếu có
+      
+      // Xử lý lượng nước
+      let waterIntake = formData.waterIntake.toString();
+      waterIntake = waterIntake.replace(/\s*L\s*/gi, ''); // Loại bỏ "L" nếu có
+      
       // Calculate BMI
-        const height = parseFloat(formData.height);
-        const weight = parseFloat(formData.weight);
-      const bmi = height && weight ? (weight / ((height / 100) * (height / 100))).toFixed(1) : '';
+      const heightValue = parseFloat(height);
+      const weightValue = parseFloat(weight);
+      const bmi = heightValue && weightValue ? (weightValue / ((heightValue / 100) * (heightValue / 100))).toFixed(1) : '';
 
       // Format health information string
       const healthInfo = `
 Age: ${formData.age}
 Gender: ${formData.gender}
-Weight: ${formData.weight} kg
-Height: ${formData.height} cm
-Max Heart Rate: ${formData.maxHeartRate} BPM
-Average Heart Rate: ${formData.avgHeartRate} BPM
-Resting Heart Rate: ${formData.restingHeartRate} BPM
-Session Duration: ${formData.sessionDuration} hours
+Weight: ${weight} kg
+Height: ${height} cm
+Max Heart Rate: ${maxHeartRate} BPM
+Average Heart Rate: ${avgHeartRate} BPM
+Resting Heart Rate: ${restingHeartRate} BPM
+Session Duration: ${sessionDuration} hours
 Calories Burned: ${formData.caloriesBurned}
 Experience Level: ${formData.experienceLevel}
-Fat Percentage: ${formData.fatPercentage}%
-Water Intake: ${formData.waterIntake} L
-Workout Frequency: ${formData.workoutFrequency}
+Fat Percentage: ${fatPercentage}%
+Water Intake: ${waterIntake} L
+Workout Frequency: ${workoutFrequency} times per week
 BMI: ${bmi}`.trim();
 
       const updateData = {
@@ -149,7 +214,6 @@ BMI: ${bmi}`.trim();
       setIsEditing(false);
       fetchUserData();
     } catch (error) {
-      console.error('Error updating data:', error);
       alert('Could not update information. Please try again later.');
     }
   };

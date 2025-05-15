@@ -27,8 +27,7 @@ const Calendar = () => {
       const response = await PlanService.getUserPlans();
       setPlans(response);
     } catch (err) {
-      console.error('Error fetching plans:', err);
-      toast.error('Không thể tải danh sách kế hoạch');
+      toast.error('Unable to load plan list');
     }
   };
 
@@ -36,16 +35,13 @@ const Calendar = () => {
     try {
       setLoading(true);
       const schedules = await ScheduleService.getSchedules();
-      console.log('Fetched schedules:', schedules);
       
-      // Lọc bỏ các event null
+      // Filter out null events
       const formattedEvents = schedules.filter(event => event !== null);
       
-      console.log('Formatted events:', formattedEvents);
       setEvents(formattedEvents);
     } catch (error) {
-      console.error('Error fetching schedules:', error);
-      toast.error('Không thể tải lịch tập');
+      toast.error('Unable to load schedule');
     } finally {
       setLoading(false);
     }
@@ -62,11 +58,11 @@ const Calendar = () => {
   const handleEventClick = (clickInfo) => {
     const event = clickInfo.event;
     const confirmDelete = window.confirm(
-      `Bạn có muốn xóa lịch tập này?\n\n` +
-      `Kế hoạch: ${event.extendedProps.planName}\n` +
-      `Ghi chú: ${event.extendedProps.note || 'Không có ghi chú'}\n` +
-      `Ngày: ${event.extendedProps.startDate}\n` +
-      `Thời gian: ${event.extendedProps.startTime} - ${event.extendedProps.endTime}`
+      `Do you want to delete this schedule?\n\n` +
+      `Plan: ${event.extendedProps.planName}\n` +
+      `Note: ${event.extendedProps.note || 'No notes'}\n` +
+      `Date: ${event.extendedProps.startDate}\n` +
+      `Time: ${event.extendedProps.startTime} - ${event.extendedProps.endTime}`
     );
 
     if (confirmDelete) {
@@ -78,10 +74,9 @@ const Calendar = () => {
     try {
       await ScheduleService.deleteSchedule(id);
       setEvents(prevEvents => prevEvents.filter(event => event.id !== id));
-      toast.success('Xóa lịch tập thành công');
+      toast.success('Schedule deleted successfully');
     } catch (err) {
-      console.error('Error deleting schedule:', err);
-      toast.error('Không thể xóa lịch tập. Vui lòng thử lại.');
+      toast.error('Unable to delete schedule. Please try again.');
     }
   };
 
@@ -89,7 +84,7 @@ const Calendar = () => {
     await fetchSchedules();
     setIsCreateModalOpen(false);
     setSelectedTime(null);
-    toast.success('Tạo lịch thành công');
+    toast.success('Schedule created successfully');
   };
 
   const handleModalClose = () => {
@@ -101,13 +96,13 @@ const Calendar = () => {
     return (
       <div className="p-1">
         <div className="font-semibold">{eventInfo.event.title}</div>
-        <div className="text-sm">{eventInfo.event.extendedProps.note || 'Không có ghi chú'}</div>
+        <div className="text-sm">{eventInfo.event.extendedProps.note || 'No notes'}</div>
         <div className="text-xs mt-1">
-          {new Date(eventInfo.event.start).toLocaleTimeString('vi-VN', {
+          {new Date(eventInfo.event.start).toLocaleTimeString('en-US', {
             hour: '2-digit',
             minute: '2-digit',
             hour12: false
-          })} - {new Date(eventInfo.event.end).toLocaleTimeString('vi-VN', {
+          })} - {new Date(eventInfo.event.end).toLocaleTimeString('en-US', {
             hour: '2-digit',
             minute: '2-digit',
             hour12: false
@@ -123,7 +118,7 @@ const Calendar = () => {
     const newEnd = event.end;
 
     try {
-      // Format thời gian theo yêu cầu của server
+      // Format time according to server requirements
       const formatTimeToISO = (date) => {
         const hours = date.getHours().toString().padStart(2, '0');
         const minutes = date.getMinutes().toString().padStart(2, '0');
@@ -131,14 +126,14 @@ const Calendar = () => {
         return `${day}T${hours}:${minutes}:00.000Z`;
       };
 
-      // Cập nhật lịch với thời gian mới
+      // Update schedule with new time
       await ScheduleService.updateSchedule(event.id, {
         day: newStart.toISOString(),
         start_hour: formatTimeToISO(newStart),
         end_hour: formatTimeToISO(newEnd)
       });
 
-      // Cập nhật state để hiển thị ngay lập tức
+      // Update state to display immediately
       setEvents(prevEvents => {
         return prevEvents.map(e => {
           if (e.id === event.id) {
@@ -152,10 +147,9 @@ const Calendar = () => {
         });
       });
 
-      toast.success('Cập nhật lịch thành công');
+      toast.success('Schedule updated successfully');
     } catch (error) {
-      console.error('Error updating schedule:', error);
-      toast.error('Không thể cập nhật lịch. Vui lòng thử lại.');
+      toast.error('Unable to update schedule. Please try again.');
       dropInfo.revert();
     }
   };
@@ -163,7 +157,7 @@ const Calendar = () => {
   return (
     <div className="p-4">
       <div className="flex justify-between items-center mb-4">
-        <h2 className="text-2xl font-bold text-gray-800">Lịch Tập</h2>
+        <h2 className="text-2xl font-bold text-gray-800">Workout Schedule</h2>
         <button
           onClick={() => {
             setSelectedTime(null);
@@ -171,7 +165,7 @@ const Calendar = () => {
           }}
           className="px-4 py-2 bg-primary-500 text-white rounded-md hover:bg-primary-600 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
         >
-          Tạo Lịch Mới
+          Create New Schedule
         </button>
       </div>
 

@@ -13,11 +13,18 @@ const Header = () => {
   const navigate = useNavigate();
 
   const checkLoginStatus = () => {
-    const user = JSON.parse(localStorage.getItem('user'));
-    if (user) {
-      setCurrentUser(user);
-      setShowAccount(true);
-    } else {
+    try {
+      // Sử dụng AuthService để lấy thông tin người dùng
+      const user = AuthService.getCurrentUser();
+      if (user) {
+        setCurrentUser(user);
+        setShowAccount(true);
+      } else {
+        setCurrentUser(null);
+        setShowAccount(false);
+      }
+    } catch (error) {
+      console.error('Error checking login status:', error);
       setCurrentUser(null);
       setShowAccount(false);
     }
@@ -131,6 +138,16 @@ const Header = () => {
 
             {showDropdown && (
               <div className="absolute right-0 mt-2 w-36 bg-white border rounded-lg shadow-lg z-50">
+                {/* Hiển thị Dashboard đầu tiên cho Gym Owner */}
+                {currentUser && currentUser.role_id === 4 && (
+                  <Link
+                    to="/"
+                    className="block px-4 py-2 text-black hover:rounded-md hover:bg-gray-200"
+                  >
+                    DashBoard
+                  </Link>
+                )}
+                
                 <Link
                   to="/userprofile"
                   className="block px-4 py-2 text-black hover:rounded-md hover:bg-gray-200"
@@ -139,12 +156,21 @@ const Header = () => {
                 </Link>
                 
                 {currentUser && currentUser.role_id === 3 && (
-                  <Link
-                    to="/pt/exercises"
-                    className="block px-4 py-2 text-black hover:rounded-md hover:bg-gray-200"
-                  >
-                    Create Exercies
-                  </Link>
+                  <>
+                    <Link
+                      to="/pt/exercises"
+                      className="block px-4 py-2 text-black hover:rounded-md hover:bg-gray-200"
+                    >
+                      Create Exercies
+                    </Link>
+                    {/* Ẩn Dashboard theo yêu cầu */}
+                    {/* <Link
+                      to="/"
+                      className="block px-4 py-2 text-black hover:rounded-md hover:bg-gray-200"
+                    >
+                      DashBoard
+                    </Link> */}
+                  </>
                 )}
                 
                 {currentUser && currentUser.role_id === 4 && (
