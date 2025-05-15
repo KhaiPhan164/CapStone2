@@ -215,7 +215,7 @@ const CreateScheduleModal = ({ isOpen, onClose, onScheduleCreated, selectedTime 
                         <option value="">Select a plan</option>
                         {plans && plans.map((plan) => (
                           <option key={plan.id} value={plan.id}>
-                            {plan.plan_name} (ID: {plan.id})
+                            {plan.plan_name}
                           </option>
                         ))}
                       </select>
