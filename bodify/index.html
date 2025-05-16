@@ -5,6 +5,21 @@
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Bodify</title>
+    <script>
+      // Force English locale for all date-related operations
+      document.documentElement.lang = 'en';
+      // Override navigator language for date and time pickers
+      Object.defineProperty(navigator, 'language', {
+        get: function() { return 'en-US'; }
+      });
+      Object.defineProperty(navigator, 'languages', {
+        get: function() { return ['en-US', 'en']; }
+      });
+      // Set locale for Intl object
+      if (window.Intl && Intl.DateTimeFormat) {
+        Intl.DateTimeFormat().resolvedOptions().locale = 'en-US';
+      }
+    </script>
   </head>
   <body>
     <div id="root"></div>

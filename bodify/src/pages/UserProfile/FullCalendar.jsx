@@ -203,7 +203,7 @@ const Calendar = () => {
             eventClick={handleEventClick}
             eventContent={renderEventContent}
             height="auto"
-            locale="vi"
+            locale="en"
             slotMinTime="05:00:00"
             slotMaxTime="22:00:00"
             allDaySlot={false}

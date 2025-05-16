@@ -18,6 +18,8 @@ const CreateScheduleModal = ({ isOpen, onClose, onScheduleCreated, selectedTime 
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [timeError, setTimeError] = useState(null);
+  const [dateError, setDateError] = useState(null);
 
   const weekDays = [
     { id: 1, name: 'Monday' },
@@ -89,13 +91,93 @@ const CreateScheduleModal = ({ isOpen, onClose, onScheduleCreated, selectedTime 
     }));
   };
 
+  const validateDates = () => {
+    setDateError(null);
+    
+    if (!formData.startDate || !formData.endDate) {
+      return false;
+    }
+    
+    const startDate = new Date(formData.startDate);
+    const endDate = new Date(formData.endDate);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Set to start of day for comparison
+    
+    // Check if start date is in the past
+    if (startDate < today) {
+      setDateError("Start date cannot be in the past");
+      return false;
+    }
+    
+    // Check if end date is before start date
+    if (endDate < startDate) {
+      setDateError("End date cannot be before start date");
+      return false;
+    }
+    
+    return true;
+  };
+  
+  const validateTimes = () => {
+    setTimeError(null);
+    
+    if (!formData.startHour || !formData.endHour) {
+      return false;
+    }
+    
+    // Always validate that end time is after start time (regardless of dates)
+    const [startHour, startMinute] = formData.startHour.split(':').map(Number);
+    const [endHour, endMinute] = formData.endHour.split(':').map(Number);
+    
+    // Convert to minutes for easier comparison
+    const startTotalMinutes = startHour * 60 + startMinute;
+    const endTotalMinutes = endHour * 60 + endMinute;
+    
+    if (endTotalMinutes <= startTotalMinutes) {
+      setTimeError("End time must be after start time");
+      return false;
+    }
+    
+    // Check if selected time is in the past
+    if (formData.startDate === new Date().toISOString().split('T')[0]) {
+      const now = new Date();
+      
+      // Current hour and minute
+      const currentHour = now.getHours();
+      const currentMinute = now.getMinutes();
+      
+      // Convert to minutes for easier comparison
+      const currentTotalMinutes = currentHour * 60 + currentMinute;
+      
+      if (startTotalMinutes < currentTotalMinutes) {
+        setTimeError("Start time cannot be in the past");
+        return false;
+      }
+    }
+    
+    return true;
+  };
+
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
+    
+    // Clear errors when input changes
+    if (name === 'startDate' || name === 'endDate') {
+      setDateError(null);
+    }
+    if (name === 'startHour' || name === 'endHour') {
+      setTimeError(null);
+    }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setError(null);
+    setDateError(null);
+    setTimeError(null);
+    
+    // Validate form inputs
     if (formData.selectedDays.length === 0) {
       setError('Please select at least one day of the week');
       return;
@@ -115,9 +197,13 @@ const CreateScheduleModal = ({ isOpen, onClose, onScheduleCreated, selectedTime 
       setError('Please select a plan');
       return;
     }
+    
+    // Validate dates and times
+    if (!validateDates() || !validateTimes()) {
+      return;
+    }
 
     setLoading(true);
-    setError(null);
 
     try {
       const startDate = new Date(formData.startDate);
@@ -139,20 +225,45 @@ const CreateScheduleModal = ({ isOpen, onClose, onScheduleCreated, selectedTime 
           
           const endDateTime = new Date(scheduleDate);
           endDateTime.setHours(parseInt(endHour), parseInt(endMinute), 0);
+          
+          // Skip if the datetime is in the past
+          const now = new Date();
+          if (startDateTime < now) {
+            continue; // Skip this date and continue with the next one
+          }
+
+          // Find the selected plan object to include complete plan data
+          const selectedPlanObj = plans.find(p => p.id === parseInt(formData.plan_id));
+          console.log('Selected plan object:', selectedPlanObj);
 
           const scheduleData = {
             note: formData.note || '',
             plan_id: parseInt(formData.plan_id),
             day: scheduleDate,
             start_hour: startDateTime.toISOString(),
-            end_hour: endDateTime.toISOString()
+            end_hour: endDateTime.toISOString(),
+            // Include the plan object to ensure complete plan data
+            plan: selectedPlanObj ? {
+              name: selectedPlanObj.plan_name,
+              plan_name: selectedPlanObj.plan_name,
+              plan_id: selectedPlanObj.id
+            } : undefined
           };
 
+          console.log('Sending schedule data with plan info:', scheduleData);
           const schedule = await ScheduleService.createSchedule(scheduleData);
           schedules.push(schedule);
         }
       }
+      
+      if (schedules.length === 0) {
+        setError('No valid schedules could be created. All selected times are in the past.');
+        setLoading(false);
+        return;
+      }
 
+      // Truyền mảng lịch trình mới tạo để cập nhật UI tức thì
+      console.log('Sending newly created schedules to parent component:', schedules);
       onScheduleCreated(schedules);
       onClose();
     } catch (err) {
@@ -236,32 +347,6 @@ const CreateScheduleModal = ({ isOpen, onClose, onScheduleCreated, selectedTime 
                     />
                   </div>
 
-                  {/* Time */}
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700">
-                        Start Time
-                      </label>
-                      <input
-                        type="time"
-                        value={formData.startHour}
-                        onChange={(e) => setFormData(prev => ({ ...prev, startHour: e.target.value }))}
-                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700">
-                        End Time
-                      </label>
-                      <input
-                        type="time"
-                        value={formData.endHour}
-                        onChange={(e) => setFormData(prev => ({ ...prev, endHour: e.target.value }))}
-                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500"
-                      />
-                    </div>
-                  </div>
-
                   {/* Start and End Dates */}
                   <div className="grid grid-cols-2 gap-4">
                     <div>
@@ -270,9 +355,13 @@ const CreateScheduleModal = ({ isOpen, onClose, onScheduleCreated, selectedTime 
                       </label>
                       <input
                         type="date"
+                        lang="en"
+                        name="startDate"
                         value={formData.startDate}
-                        onChange={(e) => setFormData(prev => ({ ...prev, startDate: e.target.value }))}
-                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500"
+                        min={new Date().toISOString().split('T')[0]} // Set min to today
+                        onChange={handleInputChange}
+                        onBlur={validateDates}
+                        className={`mt-1 block w-full rounded-md ${dateError ? 'border-red-500' : 'border-gray-300'} shadow-sm focus:border-primary-500 focus:ring-primary-500`}
                       />
                     </div>
                     <div>
@@ -281,11 +370,57 @@ const CreateScheduleModal = ({ isOpen, onClose, onScheduleCreated, selectedTime 
                       </label>
                       <input
                         type="date"
+                        lang="en"
+                        name="endDate"
                         value={formData.endDate}
-                        onChange={(e) => setFormData(prev => ({ ...prev, endDate: e.target.value }))}
-                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500"
+                        min={formData.startDate || new Date().toISOString().split('T')[0]} // Set min to startDate or today
+                        onChange={handleInputChange}
+                        onBlur={validateDates}
+                        className={`mt-1 block w-full rounded-md ${dateError ? 'border-red-500' : 'border-gray-300'} shadow-sm focus:border-primary-500 focus:ring-primary-500`}
                       />
                     </div>
+                    {dateError && (
+                      <div className="col-span-2 text-red-600 text-sm mt-1">
+                        {dateError}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Time */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">
+                        Start Time
+                      </label>
+                      <input
+                        type="time"
+                        lang="en"
+                        name="startHour"
+                        value={formData.startHour}
+                        onChange={handleInputChange}
+                        onBlur={validateTimes}
+                        className={`mt-1 block w-full rounded-md ${timeError ? 'border-red-500' : 'border-gray-300'} shadow-sm focus:border-primary-500 focus:ring-primary-500`}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">
+                        End Time
+                      </label>
+                      <input
+                        type="time"
+                        lang="en"
+                        name="endHour"
+                        value={formData.endHour}
+                        onChange={handleInputChange}
+                        onBlur={validateTimes}
+                        className={`mt-1 block w-full rounded-md ${timeError ? 'border-red-500' : 'border-gray-300'} shadow-sm focus:border-primary-500 focus:ring-primary-500`}
+                      />
+                    </div>
+                    {timeError && (
+                      <div className="col-span-2 text-red-600 text-sm mt-1">
+                        {timeError}
+                      </div>
+                    )}
                   </div>
 
                   {/* Select days of the week */}
@@ -327,7 +462,7 @@ const CreateScheduleModal = ({ isOpen, onClose, onScheduleCreated, selectedTime 
                     </button>
                     <button
                       type="submit"
-                      disabled={loading}
+                      disabled={loading || dateError || timeError}
                       className="px-4 py-2 text-sm font-medium text-white bg-primary-500 rounded-md hover:bg-primary-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 disabled:opacity-50"
                     >
                       {loading ? 'Creating...' : 'Create Schedule'}

@@ -8,63 +8,63 @@ import ExerciseService from '../../../services/exercise.service';
 import AuthService from '../../../services/auth.service';
 import axios from 'axios';
 
-// Lấy API_URL từ PlanService
+// Get API_URL from PlanService
 const API_URL = 'http://localhost:3000';
 
 const Plan = () => {
   const navigate = useNavigate();
   const location = useLocation();
   
-  // Lấy planId từ query param nếu có
+  // Get planId from query param if available
   const queryParams = new URLSearchParams(location.search);
   const planIdFromQuery = queryParams.get('id');
   
-  // State cho danh sách exercise posts
+  // State for exercise posts list
   const [exercisePosts, setExercisePosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [searchKeyword, setSearchKeyword] = useState('');
 
-  // State cho plan slots
+  // State for plan slots
   const [planSlots, setPlanSlots] = useState([]);
   const [planId, setPlanId] = useState(planIdFromQuery);
-  const [planName, setPlanName] = useState("Kế hoạch tập luyện mới");
+  const [planName, setPlanName] = useState("New Workout Plan");
   const [planDescription, setPlanDescription] = useState("");
 
-  // State cho drag & drop
+  // State for drag & drop
   const [draggedExercise, setDraggedExercise] = useState(null);
 
-  // Thêm state để kiểm soát quá trình lưu/xóa
+  // State to control saving/deleting process
   const [isSaving, setIsSaving] = useState(false);
   const [saveComplete, setSaveComplete] = useState(false);
   const [savingMessage, setSavingMessage] = useState('');
 
-  // Lọc các bài tập dựa trên từ khóa tìm kiếm
+  // Filter exercises based on search keyword
   const filteredExercises = exercisePosts.filter(exercise => 
     exercise.name.toLowerCase().includes(searchKeyword.toLowerCase())
   );
 
-  // Tính tổng thời gian
+  // Calculate total duration
   const totalDuration = planSlots.reduce((total, slot) => total + (parseInt(slot.duration) || 0), 0);
 
-  // Thêm hàm để kiểm tra có phải số hay không
+  // Function to check if a value is a number
   const isNumeric = (value) => {
     return !isNaN(parseFloat(value)) && isFinite(value);
   };
 
-  // Lấy dữ liệu từ API
+  // Fetch data from API
   const fetchData = async (forceRefresh = false) => {
     try {
       setLoading(true);
       setError(null);
 
-      // Kiểm tra xem user đã đăng nhập chưa
+      // Check if user is logged in
       if (!AuthService.isLoggedIn()) {
         navigate('/signin');
         return;
       }
 
-      // Lấy danh sách exercises từ API
+      // Get exercise list from API
       const exercisesResponse = await ExerciseService.getAll();
       let exercisesData = [];
       
@@ -76,16 +76,16 @@ const Plan = () => {
       
       setExercisePosts(exercisesData);
 
-      // Nếu có planId, lấy thông tin chi tiết plan
+      // If planId exists, get plan details
       if (planId) {
         try {
-          // Chuyển đổi planId thành số
+          // Convert planId to number
           const numericPlanId = Number(planId);
           
           if (!isNumeric(planId)) {
-            console.error(`planId không hợp lệ: ${planId}`);
-            alert(`ID kế hoạch không hợp lệ: ${planId}`);
-            setError('ID kế hoạch không hợp lệ');
+            console.error(`planId is not valid: ${planId}`);
+            alert(`ID of the plan is not valid: ${planId}`);
+            setError('ID of the plan is not valid');
             setLoading(false);
             return;
           }
@@ -93,25 +93,25 @@ const Plan = () => {
           const planResponse = await PlanService.getPlanById(numericPlanId);
           
           if (planResponse) {
-            setPlanName(planResponse.plan_name || planResponse.name || "Kế hoạch tập luyện");
+            setPlanName(planResponse.plan_name || planResponse.name || "Workout Plan");
             setPlanDescription(planResponse.Description || planResponse.description || "");
             
-            // Lấy slots của plan
+            // Get slots of plan
             const slotsResponse = await PlanService.getPlanSlots(numericPlanId);
             
             if (Array.isArray(slotsResponse) && slotsResponse.length > 0) {
-              // Đảm bảo các slot có đúng định dạng
+              // Ensure slots are in correct format
               const formattedSlots = slotsResponse.map(slot => {
-                // Xử lý exercisePostId từ nhiều nguồn có thể có
+                // Process exercisePostId from multiple possible sources
                 let exercisePostId = null;
                 
-                // Ưu tiên theo thứ tự: exercise_post_id > exercisePostId > exercisepost
+                // Prefer in order: exercise_post_id > exercisePostId > exercisepost
                 if (slot.exercise_post_id !== undefined && slot.exercise_post_id !== null) {
                   exercisePostId = Number(slot.exercise_post_id);
                 } else if (slot.exercisePostId !== undefined && slot.exercisePostId !== null) {
                   exercisePostId = Number(slot.exercisePostId);
                 } else if (slot.exercisepost !== undefined && slot.exercisepost !== null) {
-                  // Nếu exercisepost là object (quan hệ)
+                  // If exercisepost is object (relationship)
                   if (typeof slot.exercisepost === 'object' && slot.exercisepost.id) {
                     exercisePostId = Number(slot.exercisepost.id);
                   } else if (typeof slot.exercisepost === 'number') {
@@ -119,7 +119,7 @@ const Plan = () => {
                   }
                 }
                 
-                // Tìm thông tin chi tiết về bài tập từ các bài tập đã có
+                // Find detailed information about the exercise from existing exercises
                 let exerciseInfo = null;
                 if (exercisePostId) {
                   const exerciseMatch = exercisesData.find(ex => {
@@ -142,131 +142,131 @@ const Plan = () => {
                   no: parseInt(slot.no) || 0,
                   duration: parseInt(slot.duration) || 0,
                   exercisePostId: exercisePostId,
-                  exercise_post_id: exercisePostId, // Thêm cả 2 định dạng
-                  exerciseInfo: exerciseInfo // Thêm thông tin chi tiết về bài tập
+                  exercise_post_id: exercisePostId, // Add both formats
+                  exerciseInfo: exerciseInfo // Add exercise detailed information
                 };
               });
               
               setPlanSlots(formattedSlots);
             } else {
-              // Nếu không có slot, tạo một slot khởi động mặc định
+              // If no slots, create a default starting slot
               setPlanSlots([
                 { id: Date.now(), no: 1, exercisePostId: null, exercise_post_id: null, duration: 5 }
               ]);
             }
           }
         } catch (error) {
-          console.error('Lỗi khi lấy thông tin kế hoạch:', error);
-          setError('Không thể tải thông tin kế hoạch: ' + (error.message || 'Lỗi không xác định'));
+          console.error('Error getting plan details:', error);
+          setError('Cannot load plan details: ' + (error.message || 'Unknown error'));
         }
       } else {
-        // Nếu đang tạo plan mới, tạo một slot khởi động mặc định
+        // If creating a new plan, create a default starting slot
         setPlanSlots([
           { id: Date.now(), no: 1, exercisePostId: null, exercise_post_id: null, duration: 5 }
         ]);
       }
     } catch (error) {
-      console.error('Lỗi khi tải dữ liệu:', error);
-      setError('Không thể tải dữ liệu: ' + (error.message || 'Lỗi không xác định'));
+      console.error('Error loading data:', error);
+      setError('Cannot load data: ' + (error.message || 'Unknown error'));
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    // Nếu planIdFromQuery tồn tại, convert thành số
+    // If planIdFromQuery exists, convert to number
     if (planIdFromQuery) {
       const numericId = Number(planIdFromQuery);
       if (!isNaN(numericId)) {
         setPlanId(numericId);
       } else {
-        console.error('planId từ URL không hợp lệ:', planIdFromQuery);
-        setError(`planId "${planIdFromQuery}" không phải là số hợp lệ`);
+        console.error('planId from URL is not valid:', planIdFromQuery);
+        setError(`planId "${planIdFromQuery}" is not a valid number`);
         setPlanId(null);
       }
     } else {
-      // Gọi fetchData ngay lập tức nếu không có planIdFromQuery
+      // Call fetchData immediately if no planIdFromQuery
       fetchData();
     }
-  }, []); // Chỉ chạy một lần khi component mount
+  }, []); // Run only once when component mounts
 
-  // Gọi fetchData riêng biệt khi planId thay đổi
+  // Call fetchData separately when planId changes
   useEffect(() => {
-    // Chỉ gọi khi planId đã được thiết lập từ useEffect đầu tiên
+    // Call only when planId is set from the first useEffect
     if (planId !== undefined) {
-      // Tải dữ liệu full bao gồm thông tin plan và slots
+      // Load full data including plan and slots
       fetchData();
     }
-  }, [planId]); // Phụ thuộc vào planId
+  }, [planId]); // Depends on planId
 
-  // Hàm xử lý kéo bắt đầu
+  // Handle drag start
   const handleDragStart = (exercisePost) => {
     setDraggedExercise(exercisePost);
   };
 
-  // Hàm xử lý khi kéo qua slot
+  // Handle drag over slot
   const handleDragOver = (e) => {
     e.preventDefault();
-    e.target.classList.add('bg-blue-50'); // Tạo hiệu ứng cho người dùng
+    e.target.classList.add('bg-blue-50'); // Create visual effect for user
   };
 
-  // Hàm xử lý khi rời khỏi vùng kéo thả
+  // Handle drag leave
   const handleDragLeave = (e) => {
     e.target.classList.remove('bg-blue-50');
   };
 
-  // Hàm xử lý khi thả vào slot
+  // Handle drop into slot
   const handleDrop = (e, slotId) => {
     e.preventDefault();
-    e.stopPropagation(); // Ngăn sự kiện lan tỏa
+    e.stopPropagation(); // Prevent event propagation
     e.currentTarget.classList.remove('bg-blue-50');
     
     if (!draggedExercise) {
-      console.error('Không có bài tập nào đang được kéo');
+      console.error('No exercise is being dragged');
       return;
     }
     
-    // Lấy exercise ID từ bài tập đang kéo
+    // Get exercise ID from dragged exercise
     let exerciseId = null;
-    let idSource = "không tìm thấy";
+    let idSource = "not found";
     
-    // Ưu tiên exercisepost_id (snake_case từ API)
+    // Prefer exercisepost_id (snake_case from API)
     if (draggedExercise.exercisepost_id !== undefined && draggedExercise.exercisepost_id !== null) {
       exerciseId = Number(draggedExercise.exercisepost_id);
       idSource = "exercisepost_id";
     } 
-    // Sau đó mới tới id 
+    // Then try id 
     else if (draggedExercise.id !== undefined && draggedExercise.id !== null) {
       exerciseId = Number(draggedExercise.id);
       idSource = "id";
     }
     
     if (!exerciseId || isNaN(exerciseId)) {
-      console.error('Không tìm thấy ID hợp lệ của bài tập đang kéo');
-      alert('Không thể xác định ID của bài tập này. Vui lòng thử lại.');
+      console.error('No valid ID found for the dragged exercise');
+      alert('Cannot determine ID of this exercise. Please try again.');
       return;
     }
     
-    // Lấy slot hiện tại
+    // Get current slot
     const currentSlot = planSlots.find(slot => slot.id === slotId);
     
-    // Thêm thông tin bổ sung về bài tập để hiển thị trong UI
+    // Add detailed information about the exercise for display in UI
     const exerciseInfo = {
       id: exerciseId,
       name: draggedExercise.name,
       description: draggedExercise.description || '',
-      // Lưu thông tin bài tập đầy đủ để dùng khi hiển thị
+      // Save full exercise information for use when displaying
       fullExercise: draggedExercise
     };
     
-    // Cập nhật slot với exercise mới
+    // Update slot with new exercise
     const updatedSlots = planSlots.map(slot => {
       if (slot.id === slotId) {
         return { 
           ...slot, 
           exercisePostId: exerciseId,
-          exercise_post_id: exerciseId, // Đảm bảo cả hai định dạng đều được dùng
-          exerciseInfo: exerciseInfo // Lưu thông tin bài tập đầy đủ
+          exercise_post_id: exerciseId, // Ensure both formats are used
+          exerciseInfo: exerciseInfo // Save full exercise information
         };
       }
       return slot;
@@ -275,11 +275,11 @@ const Plan = () => {
     setPlanSlots(updatedSlots);
   };
 
-  // Hàm thêm slot mới
+  // Add new slot
   const addNewSlot = () => {
     const newNo = planSlots.length > 0 ? Math.max(...planSlots.map(slot => slot.no)) + 1 : 1;
     const newSlot = {
-      id: Date.now(), // sử dụng timestamp làm id tạm thời
+      id: Date.now(), // Use timestamp as temporary id
       no: newNo,
       exercisePostId: null,
       duration: 5
@@ -287,7 +287,7 @@ const Plan = () => {
     setPlanSlots([...planSlots, newSlot]);
   };
 
-  // Hàm thay đổi thời gian cho slot
+  // Handle change duration for slot
   const handleDurationChange = (slotId, newDuration) => {
     const updatedSlots = planSlots.map(slot => {
       if (slot.id === slotId) {
@@ -298,15 +298,15 @@ const Plan = () => {
     setPlanSlots(updatedSlots);
   };
 
-  // Hàm xóa exercise khỏi slot
+  // Remove exercise from slot
   const removeExerciseFromSlot = (slotId) => {
     const updatedSlots = planSlots.map(slot => {
       if (slot.id === slotId) {
         return { 
           ...slot, 
           exercisePostId: null,
-          exercise_post_id: null,  // Đảm bảo cả hai trường đều được xóa
-          exerciseInfo: null       // Xóa cả thông tin chi tiết
+          exercise_post_id: null,  // Ensure both fields are removed
+          exerciseInfo: null       // Remove all detailed information
         };
       }
       return slot;
@@ -314,118 +314,118 @@ const Plan = () => {
     setPlanSlots(updatedSlots);
   };
 
-  // Cập nhật phương thức saveSlotsSeparately để đảm bảo mỗi slot lưu đúng exercise_post_id
+  // Update saveSlotsSeparately method to ensure each slot saves the correct exercise_post_id
   const saveSlotsSeparately = async (targetPlanId) => {
     try {
-      // Kiểm tra planId
+      // Check planId
       if (!targetPlanId) {
-        console.error("Thiếu planId khi lưu slots");
-        setSavingMessage("Không thể lưu: Thiếu ID kế hoạch");
+        console.error("Missing planId when saving slots");
+        setSavingMessage("Cannot save: Missing plan ID");
         return false;
       }
       
-      // Chuẩn hóa slots để đảm bảo số thứ tự liên tục và giữ thông tin gốc
+      // Normalize slots to ensure continuous order and keep original information
       const formattedSlots = planSlots.map((slot, index) => {
-        // Lấy ID của bài tập (nếu có)
+        // Get exercise ID (if any)
         const exerciseId = slot.exercisePostId || slot.exercise_post_id || 
                          (slot.exerciseInfo ? slot.exerciseInfo.id : null);
         
         return {
           ...slot,
-          index: index, // Lưu lại vị trí ban đầu
-          no: index + 1, // Đảm bảo số thứ tự liên tục bắt đầu từ 1
+          index: index, // Save original position
+          no: index + 1, // Ensure continuous order starting from 1
           exercisePostId: exerciseId,
           exercise_post_id: exerciseId,
           planId: targetPlanId
         };
       });
       
-      setSavingMessage("Đang lưu các slot bài tập...");
+      setSavingMessage("Saving exercise slots...");
       
       try {
-        // Bắt đầu lưu slots
+        // Start saving slots
         const saveResult = await PlanService.savePlanSlots(targetPlanId, formattedSlots);
         
         if (saveResult) {
-          setSavingMessage("Các slot đã được lưu thành công!");
+          setSavingMessage("Exercise slots saved successfully!");
           return true;
         } else {
-          throw new Error("API trả về kết quả không hợp lệ");
+          throw new Error("API returned invalid result");
         }
       } catch (error) {
-        console.error(`Lỗi khi lưu slots: ${error.message}`);
-        setSavingMessage(`Đang xử lý lỗi khi lưu slots: ${error.message}`);
+        console.error(`Error saving slots: ${error.message}`);
+        setSavingMessage(`Handling slot saving error: ${error.message}`);
         
-        // Thử tải lại dữ liệu để xem các slots đã được lưu thế nào
+        // Try to load data again to see if slots were saved correctly
         try {
           const loadedSlots = await PlanService.getPlanSlots(targetPlanId);
           
           if (Array.isArray(loadedSlots) && loadedSlots.length > 0) {
-            // Nếu có dữ liệu trả về, xem như việc lưu đã thành công một phần
-            console.log(`Đã lưu được ${loadedSlots.length} slots trên server`);
+            // If data returned, consider saving as partially successful
+            console.log(`Saved ${loadedSlots.length} slots on server`);
             
-            // So sánh số lượng slots có bài tập thực tế và đã lưu
+            // Compare actual exercise slots and saved slots
             const slotsWithExercises = formattedSlots.filter(s => s.exercise_post_id !== null).length;
             const savedSlotsWithExercises = loadedSlots.filter(s => s.exercise_post_id !== null).length;
             
             if (savedSlotsWithExercises < slotsWithExercises) {
-              // Cập nhật thông báo
-              setSavingMessage(`Đã lưu được ${savedSlotsWithExercises}/${slotsWithExercises} bài tập. Đang thử lại...`);
+              // Update notification
+              setSavingMessage(`Saved ${savedSlotsWithExercises}/${slotsWithExercises} exercises. Retrying...`);
             }
             
             return true;
           }
         } catch (loadError) {
-          console.error(`Lỗi khi kiểm tra kết quả lưu: ${loadError.message}`);
+          console.error(`Error checking save result: ${loadError.message}`);
         }
         
-        // Cập nhật thông báo lỗi
-        setSavingMessage(`Lỗi khi lưu slots: ${error.message}. Đang thử phương án khác...`);
+        // Update error notification
+        setSavingMessage(`Error saving slots: ${error.message}. Retrying alternative approach...`);
         return false;
       }
     } catch (error) {
-      console.error("Lỗi tổng quát:", error.message);
-      setSavingMessage(`Lỗi khi lưu kế hoạch: ${error.message}`);
+      console.error("General error:", error.message);
+      setSavingMessage(`Error saving plan: ${error.message}`);
       return false;
     }
   };
 
-  // Hàm lưu plan đơn giản hóa
+  // Save plan simply
   const savePlan = async () => {
     try {
-      // Vô hiệu hóa giao diện người dùng
+      // Disable user interface
       setIsSaving(true);
       setSaveComplete(false);
-      setSavingMessage("Đang chuẩn bị lưu kế hoạch...");
+      setSavingMessage("Preparing to save plan...");
       setLoading(true);
       setError(null);
       
-      // Kiểm tra các trường bắt buộc
+      // Check required fields
       if (!planName.trim()) {
-        setError('Vui lòng nhập tên kế hoạch');
-        setSavingMessage("Lỗi: Chưa nhập tên kế hoạch");
+        setError('Please enter plan name');
+        setSavingMessage("Error: Plan name not entered");
         setIsSaving(false);
         setLoading(false);
         return;
       }
       
-      // Chuẩn bị dữ liệu cho plan theo đúng format API
+      // Prepare data for plan according to correct API format
       const planData = {
         name: planName.trim(),
         description: planDescription.trim(),
         totalDuration: totalDuration
       };
       
-      // Nếu là tạo mới
+      // If creating new
       if (!planId) {
         try {
-          setSavingMessage("Đang tạo kế hoạch mới...");
+          setSavingMessage("Creating new plan...");
           
           const savedPlan = await PlanService.createPlan(planData);
           
           if (!savedPlan) {
-            console.error('Không nhận được phản hồi khi tạo kế hoạch');
-            setSavingMessage("Lỗi: Không nhận được phản hồi từ server");
+            console.error('Did not receive response when creating plan');
+            setSavingMessage("Error: Did not receive response from server");
             setIsSaving(false);
             setLoading(false);
             return;
@@ -433,57 +433,57 @@ const Plan = () => {
           
           const savedPlanId = savedPlan.plan_id || savedPlan.id;
           if (!savedPlanId) {
-            console.error('Không tìm thấy ID của kế hoạch vừa tạo');
-            setSavingMessage("Lỗi: Không tìm thấy ID kế hoạch vừa tạo");
+            console.error('Did not find ID of newly created plan');
+            setSavingMessage("Error: Did not find ID of newly created plan");
             setIsSaving(false);
             setLoading(false);
             return;
           }
           
-          // Chuyển đổi savedPlanId thành số
+          // Convert savedPlanId to number
           const numericPlanId = Number(savedPlanId);
           if (isNaN(numericPlanId)) {
-            console.error('ID kế hoạch không hợp lệ');
-            setSavingMessage("Lỗi: ID kế hoạch không hợp lệ");
+            console.error('Plan ID is not valid');
+            setSavingMessage("Error: Plan ID is not valid");
             setIsSaving(false);
             setLoading(false);
             return;
           }
           
-          // Cập nhật planId trong state và URL
+          // Update planId in state and URL
           setPlanId(numericPlanId);
           
-          // Tiếp tục lưu slots
-          setSavingMessage("Kế hoạch đã được tạo. Đang lưu các slot bài tập...");
+          // Continue saving slots
+          setSavingMessage("Plan created. Saving exercise slots...");
           const saveResult = await saveSlotsSeparately(numericPlanId);
 
-          // Đánh dấu việc lưu đã hoàn tất
+          // Mark saving as complete
           setSaveComplete(true);
-          setSavingMessage("Lưu thành công! Đang chuyển hướng đến danh sách kế hoạch...");
+          setSavingMessage("Saved successfully! Redirecting to plan list...");
           
-          // Đảm bảo toàn bộ dữ liệu đã được lưu trước khi chuyển trang
-          // Sử dụng setTimeout dài hơn để đảm bảo server đã xử lý xong
+          // Ensure all data is saved before redirecting
+          // Use setTimeout longer than necessary to ensure server has finished processing
           setTimeout(() => {
-            // Chuyển hướng đến tab kế hoạch tập luyện (không mở lại chi tiết kế hoạch)
+            // Redirect to workout plan tab (do not reopen plan details)
             window.location.href = `/plans?activeTab=plans`;
           }, 2000);
           
         } catch (error) {
-          console.error('Lỗi khi tạo kế hoạch:', error.message);
-          setSavingMessage(`Lỗi khi tạo kế hoạch: ${error.message || 'Lỗi không xác định'}`);
-          setError('Không thể tạo kế hoạch: ' + (error.message || 'Lỗi không xác định'));
+          console.error('Error creating plan:', error.message);
+          setSavingMessage(`Error creating plan: ${error.message || 'Unknown error'}`);
+          setError('Cannot create plan: ' + (error.message || 'Unknown error'));
           setIsSaving(false);
         }
       } else {
-        // Nếu là cập nhật plan hiện có
+        // If updating existing plan
         try {
-          setSavingMessage("Đang cập nhật kế hoạch...");
+          setSavingMessage("Updating plan...");
 
-          // Chuyển đổi planId thành số
+          // Convert planId to number
           const numericPlanId = Number(planId);
           if (isNaN(numericPlanId)) {
-            console.error('ID kế hoạch không hợp lệ');
-            setSavingMessage("Lỗi: ID kế hoạch không hợp lệ");
+            console.error('Plan ID is not valid');
+            setSavingMessage("Error: Plan ID is not valid");
             setIsSaving(false);
             setLoading(false);
             return;
@@ -491,61 +491,61 @@ const Plan = () => {
           
           const updatedPlan = await PlanService.updatePlan(numericPlanId, planData);
           
-          // Tiếp tục lưu slots
-          setSavingMessage("Kế hoạch đã được cập nhật. Đang lưu các slot bài tập...");
+          // Continue saving slots
+          setSavingMessage("Plan updated. Saving exercise slots...");
           const saveResult = await saveSlotsSeparately(numericPlanId);
 
-          // Đánh dấu việc lưu đã hoàn tất
+          // Mark saving as complete
           setSaveComplete(true);
-          setSavingMessage("Lưu thành công! Đang chuyển hướng đến danh sách kế hoạch...");
+          setSavingMessage("Saved successfully! Redirecting to plan list...");
           
-          // Đảm bảo toàn bộ dữ liệu đã được lưu trước khi chuyển trang
+          // Ensure all data is saved before redirecting
           setTimeout(() => {
-            // Chuyển hướng đến tab kế hoạch tập luyện (không mở lại chi tiết kế hoạch)
+            // Redirect to workout plan tab (do not reopen plan details)
             window.location.href = `/plans?activeTab=plans`;
           }, 2000);
           
         } catch (error) {
-          console.error(`Lỗi khi cập nhật kế hoạch:`, error.message);
-          setSavingMessage(`Lỗi khi cập nhật kế hoạch: ${error.message || 'Lỗi không xác định'}`);
-          setError('Không thể cập nhật kế hoạch: ' + (error.message || 'Lỗi không xác định'));
+          console.error(`Error updating plan:`, error.message);
+          setSavingMessage(`Error updating plan: ${error.message || 'Unknown error'}`);
+          setError('Cannot update plan: ' + (error.message || 'Unknown error'));
           setIsSaving(false);
         }
       }
     } catch (error) {
-      console.error('Lỗi khi lưu kế hoạch:', error.message);
-      setSavingMessage(`Lỗi: ${error.message || 'Không thể lưu kế hoạch'}`);
-      setError(error.message || 'Không thể lưu kế hoạch. Vui lòng thử lại sau.');
+      console.error('Error saving plan:', error.message);
+      setSavingMessage(`Error: ${error.message || 'Cannot save plan'}`);
+      setError(error.message || 'Cannot save plan. Please try again later.');
       setIsSaving(false);
     } finally {
       setLoading(false);
     }
   };
 
-  // Hàm để tải lại dữ liệu slots từ API
+  // Function to load slots data from API
   const loadSlots = async (targetPlanId) => {
     try {
       if (!targetPlanId) {
-        console.error("Không có planId để tải dữ liệu");
+        console.error("No planId to load data");
         return false;
       }
       
-      // Tải dữ liệu slots mới từ API
+      // Load new slots data from API
       const updatedSlots = await PlanService.getPlanSlots(targetPlanId);
       
       if (Array.isArray(updatedSlots) && updatedSlots.length > 0) {
-        // Chuẩn hóa dữ liệu từ API
+        // Normalize data from API
         const formattedSlots = updatedSlots.map(slot => {
-          // Xử lý exercisePostId từ nhiều nguồn có thể có
+          // Process exercisePostId from multiple possible sources
           let exercisePostId = null;
           
-          // Ưu tiên theo thứ tự: exercise_post_id > exercisePostId > exercisepost
+          // Prefer in order: exercise_post_id > exercisePostId > exercisepost
           if (slot.exercise_post_id !== undefined && slot.exercise_post_id !== null) {
             exercisePostId = Number(slot.exercise_post_id);
           } else if (slot.exercisePostId !== undefined && slot.exercisePostId !== null) {
             exercisePostId = Number(slot.exercisePostId);
           } else if (slot.exercisepost !== undefined && slot.exercisepost !== null) {
-            // Nếu exercisepost là object (quan hệ)
+            // If exercisepost is object (relationship)
             if (typeof slot.exercisepost === 'object' && slot.exercisepost.id) {
               exercisePostId = Number(slot.exercisepost.id);
             } else if (typeof slot.exercisepost === 'number') {
@@ -553,7 +553,7 @@ const Plan = () => {
             }
           }
           
-          // Tìm thông tin chi tiết về bài tập từ các bài tập đã có
+          // Find detailed information about the exercise from existing exercises
           let exerciseInfo = null;
           if (exercisePostId) {
             const exerciseMatch = exercisePosts.find(ex => {
@@ -576,16 +576,16 @@ const Plan = () => {
             no: parseInt(slot.no) || 0,
             duration: parseInt(slot.duration) || 0,
             exercisePostId: exercisePostId,
-            exercise_post_id: exercisePostId, // Thêm cả 2 định dạng
-            exerciseInfo: exerciseInfo // Thêm thông tin chi tiết về bài tập
+            exercise_post_id: exercisePostId, // Add both formats
+            exerciseInfo: exerciseInfo // Add exercise detailed information
           };
         });
         
-        // Cập nhật state với dữ liệu mới từ API
+        // Update state with new data from API
         setPlanSlots(formattedSlots);
         return true;
       } else if (updatedSlots.length === 0) {
-        // Nếu không có slot, tạo một slot mặc định
+        // If no slots, create a default slot
         setPlanSlots([
           { id: Date.now(), no: 1, exercisePostId: null, exercise_post_id: null, duration: 5 }
         ]);
@@ -594,108 +594,108 @@ const Plan = () => {
       
       return false;
     } catch (error) {
-      console.error(`Lỗi khi tải dữ liệu slots: ${error.message}`);
+      console.error(`Error loading slots data: ${error.message}`);
       return false;
     }
   };
 
-  // Hàm xóa plan
+  // Delete plan
   const deletePlan = async () => {
     try {
       if (!planId) {
-        alert("Không có ID kế hoạch để xóa");
+        alert("No plan ID to delete");
         return;
       }
       
-      // Hiển thị xác nhận trước khi xóa
-      if (!window.confirm("Bạn có chắc chắn muốn xóa kế hoạch này không?")) {
+      // Show confirmation before deleting
+      if (!window.confirm("Are you sure you want to delete this plan?")) {
         return;
       }
       
-      // Vô hiệu hóa giao diện người dùng
+      // Disable user interface
       setIsSaving(true);
       setSaveComplete(false);
-      setSavingMessage("Đang xóa kế hoạch...");
+      setSavingMessage("Deleting plan...");
       setLoading(true);
       
-      // Chuyển đổi planId thành số
+      // Convert planId to number
       const numericPlanId = Number(planId);
       if (isNaN(numericPlanId)) {
-        throw new Error('ID kế hoạch không hợp lệ');
+        throw new Error('Plan ID is not valid');
       }
       
-      // Xóa kế hoạch
+      // Delete plan
       await PlanService.deletePlan(numericPlanId);
       
-      // Đánh dấu việc xóa đã hoàn tất
+      // Mark deleting as complete
       setSaveComplete(true);
-      setSavingMessage("Xóa thành công! Đang chuyển hướng đến danh sách kế hoạch...");
+      setSavingMessage("Deleted successfully! Redirecting to plan list...");
       
-      // Thêm delay để đảm bảo server đã xử lý xong yêu cầu xóa
+      // Add delay to ensure server has finished processing delete request
       setTimeout(() => {
-        // Chuyển hướng về trang danh sách kế hoạch với tham số tab kế hoạch tập luyện
+        // Redirect to plan list tab with activeTab parameter for workout plan
         window.location.href = '/plans?activeTab=plans';
       }, 2000);
       
     } catch (error) {
-      console.error('Lỗi khi xóa kế hoạch:', error);
-      setSavingMessage(`Lỗi khi xóa kế hoạch: ${error.message || 'Lỗi không xác định'}`);
-      alert('Không thể xóa kế hoạch: ' + (error.message || 'Lỗi không xác định'));
-      setError('Không thể xóa kế hoạch. Vui lòng thử lại sau.');
+      console.error('Error deleting plan:', error);
+      setSavingMessage(`Error deleting plan: ${error.message || 'Unknown error'}`);
+      alert('Cannot delete plan: ' + (error.message || 'Unknown error'));
+      setError('Cannot delete plan. Please try again later.');
       setIsSaving(false);
     } finally {
       setLoading(false);
     }
   };
 
-  // Hàm để tải lại toàn bộ dữ liệu của plan hiện tại
+  // Function to reload full data of current plan
   const refreshPlan = async () => {
     if (planId) {
       try {
         setLoading(true);
         
-        // Thêm delay nhỏ để đảm bảo API đã xử lý xong các thay đổi
+        // Add small delay to ensure API has finished processing changes
         await new Promise(resolve => setTimeout(resolve, 1000));
         
-        // Clear cache của các request axios
+        // Clear cache of all requests axios
         const headers = {
           'Cache-Control': 'no-cache',
           'Pragma': 'no-cache',
           'Expires': '0'
         };
         
-        // Tải lại thông tin plan từ API
+        // Load plan data from API
         const planResponse = await axios.get(`${API_URL}/plans/${planId}`, { 
           headers, 
-          params: { _: Date.now() } // Thêm timestamp để tránh cache
+          params: { _: Date.now() } // Add timestamp to prevent cache
         });
         
         if (planResponse.data) {
-          setPlanName(planResponse.data.plan_name || planResponse.data.name || "Kế hoạch tập luyện");
+          setPlanName(planResponse.data.plan_name || planResponse.data.name || "Workout Plan");
           setPlanDescription(planResponse.data.Description || planResponse.data.description || "");
           
-          // Tải lại slots của plan
+          // Load slots of plan
           const slotsResponse = await axios.get(`${API_URL}/plan-slots`, { 
             headers,
             params: { 
               planId: planId,
-              _: Date.now() // Thêm timestamp để tránh cache
+              _: Date.now() // Add timestamp to prevent cache
             } 
           });
           
           if (Array.isArray(slotsResponse.data) && slotsResponse.data.length > 0) {
-            // Xử lý dữ liệu slots
+            // Process slots data
             const formattedSlots = slotsResponse.data.map(slot => {
-              // Xử lý exercisePostId từ nhiều nguồn có thể có
+              // Process exercisePostId from multiple possible sources
               let exercisePostId = null;
               
-              // Ưu tiên theo thứ tự: exercise_post_id > exercisePostId > exercisepost
+              // Prefer in order: exercise_post_id > exercisePostId > exercisepost
               if (slot.exercise_post_id !== undefined && slot.exercise_post_id !== null) {
                 exercisePostId = Number(slot.exercise_post_id);
               } else if (slot.exercisePostId !== undefined && slot.exercisePostId !== null) {
                 exercisePostId = Number(slot.exercisePostId);
               } else if (slot.exercisepost !== undefined && slot.exercisepost !== null) {
-                // Nếu exercisepost là object (quan hệ)
+                // If exercisepost is object (relationship)
                 if (typeof slot.exercisepost === 'object' && slot.exercisepost.id) {
                   exercisePostId = Number(slot.exercisepost.id);
                 } else if (typeof slot.exercisepost === 'number') {
@@ -703,7 +703,7 @@ const Plan = () => {
                 }
               }
               
-              // Tìm thông tin chi tiết về bài tập từ các bài tập đã có
+              // Find detailed information about the exercise from existing exercises
               let exerciseInfo = null;
               if (exercisePostId) {
                 const exerciseMatch = exercisePosts.find(ex => {
@@ -726,29 +726,29 @@ const Plan = () => {
                 no: parseInt(slot.no) || 0,
                 duration: parseInt(slot.duration) || 0,
                 exercisePostId: exercisePostId,
-                exercise_post_id: exercisePostId, // Thêm cả 2 định dạng
-                exerciseInfo: exerciseInfo // Thêm thông tin chi tiết về bài tập
+                exercise_post_id: exercisePostId, // Add both formats
+                exerciseInfo: exerciseInfo // Add exercise detailed information
               };
             });
             
-            // Cập nhật state với dữ liệu mới
+            // Update state with new data
             setPlanSlots(formattedSlots);
           } else if (slotsResponse.data.length === 0) {
-            // Nếu không có slots, tạo một slot mặc định
+            // If no slots, create a default slot
             setPlanSlots([
               { id: Date.now(), no: 1, exercisePostId: null, exercise_post_id: null, duration: 5 }
             ]);
           }
         }
       } catch (error) {
-        console.error('Lỗi khi tải lại dữ liệu kế hoạch:', error);
+        console.error('Error reloading plan data:', error);
       } finally {
         setLoading(false);
       }
     }
   };
 
-  // Hàm xử lý thay đổi từ khóa tìm kiếm
+  // Handle change in search keyword
   const handleSearchChange = (e) => {
     setSearchKeyword(e.target.value);
   };
@@ -761,7 +761,7 @@ const Plan = () => {
     );
   }
 
-  // Hiển thị màn hình lưu/xóa đang xử lý
+  // Show saving/deleting process screen
   if (isSaving) {
     return (
       <div className="container mx-auto px-4 py-8 flex flex-col justify-center items-center h-screen">
@@ -773,13 +773,13 @@ const Plan = () => {
               <FontAwesomeIcon icon={faSpinner} spin className="text-primary-500 text-5xl mb-4" />
             )}
             <h2 className="text-xl font-bold mb-4">
-              {saveComplete ? "Hoàn tất!" : "Đang xử lý..."}
+              {saveComplete ? "Completed!" : "Processing..."}
             </h2>
             <p className="text-gray-700 mb-6">{savingMessage}</p>
             
             {saveComplete && (
               <p className="text-sm text-gray-500">
-                Sẽ tự động chuyển hướng trong giây lát...
+                Will redirect automatically in a moment...
               </p>
             )}
           </div>
@@ -797,7 +797,7 @@ const Plan = () => {
             className="mt-2 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600"
             onClick={fetchData}
           >
-            Thử lại
+            Try again
           </button>
         </div>
       </div>
@@ -811,7 +811,7 @@ const Plan = () => {
       {/* Plan header */}
       <div className="bg-white shadow-md rounded-lg p-4 mb-6">
         <div className="mb-4">
-          <label className="block text-gray-700 font-bold mb-2">Tên kế hoạch</label>
+          <label className="block text-gray-700 font-bold mb-2">Plan Name</label>
           <input
             type="text"
             value={planName}
@@ -833,11 +833,11 @@ const Plan = () => {
       </div>
       
       <div className="flex flex-col md:flex-row gap-6">
-        {/* Danh sách exercise post */}
+        {/* Exercise list */}
         <div className="w-full md:w-1/4 bg-white shadow-md rounded-lg p-4">
           <h2 className="font-bold text-lg mb-4 border-b pb-2">Exercise List</h2>
           
-          {/* Thêm thanh tìm kiếm */}
+          {/* Search bar */}
           <div className="mb-4">
             <input
               type="text"
@@ -923,7 +923,7 @@ const Plan = () => {
                     <h4 className="font-medium">
                       {slot.exerciseInfo?.name || 
                        exercisePosts.find(ex => {
-                         // Kiểm tra nhiều trường ID khác nhau có thể có
+                         // Check multiple possible ID fields
                          const exId = ex.exercisepost_id || ex.id;
                          return Number(exId) === Number(slot.exercisePostId);
                        })?.name || 'Unknown exercise'}

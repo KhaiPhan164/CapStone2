@@ -10,18 +10,27 @@ const getAuthHeader = () => {
     };
 };
 
-// Hàm format dữ liệu cho FullCalendar
+// Format data for FullCalendar
 const formatScheduleForCalendar = (schedule) => {
     try {
-        // Xác định title dựa trên note và plan
-        let title = 'Lịch tập';
-        if (schedule.note && schedule.note.trim()) {
-            title = schedule.note;
-        } else if (schedule.plan && schedule.plan.name) {
-            title = schedule.plan.name;
+        // Determine title based on note and plan
+        let title = 'Workout';
+        let planName = 'Unknown Plan';
+        
+        // Always extract plan name first if available
+        if (schedule.plan && schedule.plan.name) {
+            planName = schedule.plan.name;
+        } else if (schedule.plan && schedule.plan.plan_name) {
+            planName = schedule.plan.plan_name;
         }
+        
+        // Always use planName as title
+        if (planName && planName !== 'Unknown Plan') {
+            title = planName;
+        }
+        // Keep the note, but don't use it as title
 
-        // Lấy giờ từ chuỗi thời gian
+        // Get time from time string
         const getTimeFromString = (timeStr) => {
             const time = timeStr.split('T')[1].split('.')[0].split(':');
             return {
@@ -30,14 +39,14 @@ const formatScheduleForCalendar = (schedule) => {
             };
         };
 
-        // Lấy ngày từ day
+        // Get date from day
         const day = new Date(schedule.day);
         
-        // Lấy giờ từ start_hour và end_hour
+        // Get hours from start_hour and end_hour
         const startTime = getTimeFromString(schedule.start_hour);
         const endTime = getTimeFromString(schedule.end_hour);
 
-        // Tạo thời gian bắt đầu và kết thúc
+        // Create start and end times
         const start = new Date(day);
         start.setHours(startTime.hours);
         start.setMinutes(startTime.minutes);
@@ -47,6 +56,18 @@ const formatScheduleForCalendar = (schedule) => {
         end.setHours(endTime.hours);
         end.setMinutes(endTime.minutes);
         end.setSeconds(0);
+
+        // Format date for display
+        const formattedDate = day.toLocaleDateString('en-US', {
+            weekday: 'long',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+        });
+        
+        // Format times for display
+        const formattedStartTime = `${startTime.hours.toString().padStart(2, '0')}:${startTime.minutes.toString().padStart(2, '0')}`;
+        const formattedEndTime = `${endTime.hours.toString().padStart(2, '0')}:${endTime.minutes.toString().padStart(2, '0')}`;
 
         console.log('Original times:', {
             start_hour: schedule.start_hour,
@@ -67,7 +88,13 @@ const formatScheduleForCalendar = (schedule) => {
             extendedProps: {
                 plan_id: schedule.plan_id,
                 note: schedule.note,
-                plan: schedule.plan
+                plan: schedule.plan,
+                planName: planName,
+                startDate: formattedDate,
+                startTime: formattedStartTime,
+                endTime: formattedEndTime,
+                rawStartDate: day.toISOString().split('T')[0],
+                dayOfWeek: day.getDay()
             }
         };
     } catch (error) {
@@ -82,17 +109,41 @@ const ScheduleService = {
         try {
             const currentUser = await AuthService.getCurrentUser();
             if (!currentUser || !currentUser.user_id) {
-                throw new Error('Không tìm thấy thông tin người dùng');
+                throw new Error('User information not found');
             }
             const response = await axios.get(`${API_URL}`, {
                 headers: getAuthHeader()
             });
             console.log('Response from server:', response.data);
             
-            // Kiểm tra và lấy dữ liệu từ response.data.data
+            // Check and get data from response.data.data
             if (response.data && response.data.data) {
-                // Format dữ liệu cho FullCalendar
-                return response.data.data.map(formatScheduleForCalendar);
+                // Log detailed information about each schedule
+                response.data.data.forEach((schedule, index) => {
+                    console.log(`Schedule ${index} details:`, {
+                        id: schedule.schedule_id,
+                        note: schedule.note,
+                        plan: schedule.plan,
+                        plan_id: schedule.plan_id
+                    });
+                });
+                
+                // Format data for FullCalendar
+                const formattedSchedules = response.data.data.map(formatScheduleForCalendar);
+                
+                // Log the formatted schedules to check plan information
+                formattedSchedules.forEach((schedule, index) => {
+                    if (schedule) {
+                        console.log(`Formatted schedule ${index}:`, {
+                            id: schedule.id,
+                            title: schedule.title,
+                            planName: schedule.extendedProps.planName,
+                            plan: schedule.extendedProps.plan
+                        });
+                    }
+                });
+                
+                return formattedSchedules;
             } else {
                 console.error('Invalid response format:', response.data);
                 return [];
@@ -109,21 +160,21 @@ const ScheduleService = {
             console.log('Current user from token:', currentUser);
 
             if (!currentUser || !currentUser.user_id) {
-                throw new Error('Không tìm thấy thông tin người dùng');
+                throw new Error('User information not found');
             }
 
-            // Format thời gian sang ISO string và giữ nguyên giờ địa phương
+            // Format time to ISO string and keep local time
             const formatTimeToISO = (timeString, dayString) => {
                 const time = new Date(timeString);
                 const hours = time.getHours().toString().padStart(2, '0');
                 const minutes = time.getMinutes().toString().padStart(2, '0');
                 const day = new Date(dayString).toISOString().split('T')[0];
                 
-                // Tạo chuỗi ISO với giờ địa phương
+                // Create ISO string with local time
                 return `${day}T${hours}:${minutes}:00.000Z`;
             };
 
-            // Format dữ liệu theo yêu cầu của DTO
+            // Format data according to DTO requirements
             const dataToSend = {
                 user_id: Number(currentUser.user_id),
                 note: scheduleData.note || '',
@@ -137,7 +188,8 @@ const ScheduleService = {
                 original_start: scheduleData.start_hour,
                 original_end: scheduleData.end_hour,
                 formatted_start: dataToSend.start_hour,
-                formatted_end: dataToSend.end_hour
+                formatted_end: dataToSend.end_hour,
+                plan_id: dataToSend.plan_id
             });
 
             console.log('Data being sent to server:', JSON.stringify(dataToSend, null, 2));
@@ -146,9 +198,27 @@ const ScheduleService = {
                 headers: getAuthHeader()
             });
             
-            console.log('Server response:', response.data);
-            // Format dữ liệu trả về cho FullCalendar
-            return formatScheduleForCalendar(response.data);
+            // If the response doesn't include plan data but we know the plan_id,
+            // try to fetch plan details and add to response
+            let responseData = response.data;
+            if (responseData && dataToSend.plan_id && 
+                (!responseData.plan || 
+                (responseData.plan && !responseData.plan.name && !responseData.plan.plan_name))) {
+                
+                console.log('Plan data missing in response, attempting to add plan info');
+                try {
+                    // Try to get plan information from the scheduleData if it was provided
+                    if (scheduleData.plan && (scheduleData.plan.name || scheduleData.plan.plan_name)) {
+                        responseData.plan = scheduleData.plan;
+                    }
+                } catch (planError) {
+                    console.error('Error adding plan information:', planError);
+                }
+            }
+            
+            console.log('Server response with plan info:', responseData);
+            // Format returned data for FullCalendar
+            return formatScheduleForCalendar(responseData);
         } catch (error) {
             console.error('Error creating schedule:', error);
             if (error.response) {
@@ -163,12 +233,12 @@ const ScheduleService = {
         try {
             const currentUser = await AuthService.getCurrentUser();
             if (!currentUser || !currentUser.user_id) {
-                throw new Error('Không tìm thấy thông tin người dùng');
+                throw new Error('User information not found');
             }
             const response = await axios.patch(`${API_URL}/${id}`, scheduleData, {
                 headers: getAuthHeader()
             });
-            // Format dữ liệu trả về cho FullCalendar
+            // Format returned data for FullCalendar
             return formatScheduleForCalendar(response.data);
         } catch (error) {
             console.error('Error updating schedule:', error);
@@ -180,7 +250,7 @@ const ScheduleService = {
         try {
             const currentUser = await AuthService.getCurrentUser();
             if (!currentUser || !currentUser.user_id) {
-                throw new Error('Không tìm thấy thông tin người dùng');
+                throw new Error('User information not found');
             }
             const response = await axios.delete(`${API_URL}/${id}`, {
                 headers: getAuthHeader()
@@ -196,7 +266,7 @@ const ScheduleService = {
         try {
             const currentUser = await AuthService.getCurrentUser();
             if (!currentUser || !currentUser.user_id) {
-                throw new Error('Không tìm thấy thông tin người dùng');
+                throw new Error('User information not found');
             }
             const response = await axios.get(`${API_URL}/plans/user/${currentUser.user_id}`, {
                 headers: getAuthHeader()
