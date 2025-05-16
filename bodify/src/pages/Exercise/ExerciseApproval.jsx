@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { Table, Button, Space, Tag } from "antd";
-import { CheckOutlined, CloseOutlined } from "@ant-design/icons";
+import { Table, Button, Space, Tag, Modal, Avatar, Tooltip } from "antd";
+import { CheckOutlined, CloseOutlined, EyeOutlined, UserOutlined, ZoomInOutlined } from "@ant-design/icons";
 import ExerciseService from "../../services/exercise.service";
 import AuthService from "../../services/auth.service";
 import UserService from "../../services/user.service";
@@ -13,6 +13,9 @@ import { useNavigate } from "react-router-dom";
 const ExerciseApproval = () => {
   const [exercises, setExercises] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [viewingExercise, setViewingExercise] = useState(null);
+  const [isModalVisible, setIsModalVisible] = useState(false);
+  const [imageZoom, setImageZoom] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -128,33 +131,57 @@ const ExerciseApproval = () => {
     }
   };
 
+  const handleViewExercise = (exercise) => {
+    setViewingExercise(exercise);
+    setIsModalVisible(true);
+  };
+
+  const handleCloseModal = () => {
+    setIsModalVisible(false);
+    setViewingExercise(null);
+  };
+
+  const handleImageClick = () => {
+    setImageZoom(!imageZoom);
+  };
+
   const columns = [
     {
       title: "Exercise Name",
       dataIndex: "name",
       key: "name",
+      width: 140,
+      ellipsis: true,
     },
     {
       title: "Description",
       dataIndex: "description",
       key: "description",
+      width: 180,
       ellipsis: true,
     },
     {
       title: "Tags",
       dataIndex: "exerciseposttag",
       key: "tags",
+      width: 120,
+      ellipsis: true,
       render: (tags) => (
-        <Space>
-          {tags?.map((tag) => (
-            <Tag key={tag.tag_id}>{tag.tag.tag_name}</Tag>
+        <div className="flex flex-wrap gap-1 max-w-full overflow-hidden">
+          {tags?.slice(0, 3).map((tag) => (
+            <Tag key={tag.tag_id} className="truncate max-w-[80px]">
+              {tag.tag.tag_name}
+            </Tag>
           ))}
-        </Space>
+          {tags?.length > 3 && <Tag>...</Tag>}
+        </div>
       ),
     },
     {
       title: "Creator",
       key: "creator",
+      width: 120,
+      ellipsis: true,
       render: (_, record) => {
         const creator = record.ptInfo ? 
           (record.ptInfo.username || record.ptInfo.name || record.user?.fullname || "Unknown") : 
@@ -167,32 +194,52 @@ const ExerciseApproval = () => {
       title: "Status",
       dataIndex: "status_id",
       key: "status",
-      width: 150,
+      align: "center",
+      width: 100,
       render: (status_id) => (
-        <Tag
-          color={status_id === 1 ? "gold" : status_id === 2 ? "green" : "red"}
-          className="text-sm py-1"
-        >
-          {status_id === 1
-            ? "Pending Approval"
-            : status_id === 2
-            ? "Approved"
-            : "Rejected"}
-        </Tag>
+        <Tooltip title={
+          status_id === 1 
+            ? "Pending Approval" 
+            : status_id === 2 
+              ? "Approved" 
+              : "Rejected"
+        }>
+          <Tag
+            color={status_id === 1 ? "gold" : status_id === 2 ? "green" : "red"}
+            className="text-xs py-1 px-2"
+          >
+            {status_id === 1
+              ? "Pending"
+              : status_id === 2
+              ? "Approved"
+              : "Rejected"}
+          </Tag>
+        </Tooltip>
       ),
     },
     {
       title: "Actions",
       key: "action",
-      width: 230,
+      align: "center",
+      width: 240,
       render: (_, record) =>
         record.status_id === 1 ? (
-          <Space>
+          <div className="flex items-center justify-center space-x-4">
+            <Tooltip title="View details">
+              <Button
+                type="default"
+                icon={<EyeOutlined />}
+                onClick={() => handleViewExercise(record)}
+                className="eye-button border border-green-400 bg-green-100 text-green-500"
+                size="small"
+              />
+            </Tooltip>
             <Button
               type="default"
               icon={<CheckOutlined />}
               onClick={() => handleApprove(record.exercisepost_id)}
               className="border border-blue-400 bg-blue-100 text-blue-400"
+              size="small"
             >
               Approve
             </Button>
@@ -202,10 +249,11 @@ const ExerciseApproval = () => {
               icon={<CloseOutlined />}
               onClick={() => handleReject(record.exercisepost_id)}
               className="hover:!bg-red-100"
+              size="small"
             >
               Reject
             </Button>
-          </Space>
+          </div>
         ) : null,
     },
   ];
@@ -223,9 +271,143 @@ const ExerciseApproval = () => {
           loading={loading}
           rowKey="exercisepost_id"
           rowClassName={(_, index) =>
-            index % 2 === 0 ? "bg-gray-100" : "bg-white"
+            index % 2 === 0 ? "bg-gray-50" : "bg-white"
           }
+          pagination={{ 
+            pageSize: 10,
+            position: ["bottomCenter"],
+            showSizeChanger: false
+          }}
+          bordered
+          className="exercise-approval-table"
         />
+        
+        {/* Exercise Details Modal */}
+        <Modal
+          title={<div className="text-xl font-bold">{viewingExercise?.name || 'Exercise Details'}</div>}
+          open={isModalVisible}
+          onCancel={handleCloseModal}
+          footer={null}
+          width={800}
+          centered
+        >
+          {viewingExercise && (
+            <div className="p-4">
+              <div className="mb-6">
+                {viewingExercise.img_url && (
+                  <div className="mb-4">
+                    <div className="flex justify-center relative">
+                      <img 
+                        src={viewingExercise.img_url} 
+                        alt={viewingExercise.name} 
+                        className={`modal-image object-contain rounded-lg shadow-md cursor-pointer ${imageZoom ? 'max-h-[70vh] w-auto' : 'max-h-80'}`}
+                        onClick={handleImageClick}
+                      />
+                      <Tooltip title={imageZoom ? "Click to reduce" : "Click to enlarge"}>
+                        <ZoomInOutlined 
+                          className="absolute top-2 right-2 text-xl bg-white/70 p-1 rounded-full cursor-pointer hover:bg-white" 
+                          onClick={handleImageClick}
+                        />
+                      </Tooltip>
+                    </div>
+                  </div>
+                )}
+                
+                {/* Creator information */}
+                {viewingExercise.ptInfo && (
+                  <div className="mb-4 flex items-center gap-3 bg-gray-50 p-3 rounded-md">
+                    <Avatar 
+                      icon={<UserOutlined />} 
+                      src={viewingExercise.ptInfo.avatar} 
+                      size={40}
+                    />
+                    <div>
+                      <div className="font-medium">
+                        {viewingExercise.ptInfo.username || viewingExercise.ptInfo.name || "PT"}
+                      </div>
+                    </div>
+                  </div>
+                )}
+                
+                <div className="mb-4">
+                  <h3 className="text-lg font-semibold mb-2">Description</h3>
+                  <p className="text-gray-700">{viewingExercise.description}</p>
+                </div>
+                
+                {viewingExercise.video_rul && (
+                  <div className="mb-4">
+                    <h3 className="text-lg font-semibold mb-2">Video</h3>
+                    <div className="aspect-video">
+                      <iframe
+                        src={viewingExercise.video_rul}
+                        title={viewingExercise.name}
+                        className="w-full h-full rounded-lg"
+                        frameBorder="0"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowFullScreen
+                      ></iframe>
+                    </div>
+                  </div>
+                )}
+                
+                {viewingExercise.exerciseposttag && viewingExercise.exerciseposttag.length > 0 && (
+                  <div className="mb-4">
+                    <h3 className="text-lg font-semibold mb-2">Tags</h3>
+                    <div className="flex flex-wrap gap-2">
+                      {viewingExercise.exerciseposttag.map(tag => (
+                        <Tag key={tag.tag_id} className="px-3 py-1 text-sm">
+                          {tag.tag.tag_name}
+                        </Tag>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                
+                {viewingExercise.step && viewingExercise.step.length > 0 && (
+                  <div className="mb-4">
+                    <h3 className="text-lg font-semibold mb-2">Steps</h3>
+                    <ol className="list-decimal pl-5">
+                      {viewingExercise.step
+                        .sort((a, b) => a.step_number - b.step_number)
+                        .map(step => (
+                          <li key={`step-${step.step_number}`} className="mb-2 text-gray-700">
+                            {step.instruction}
+                          </li>
+                        ))}
+                    </ol>
+                  </div>
+                )}
+                
+                <div className="mt-6 flex justify-end gap-3">
+                  <Button
+                    type="default"
+                    icon={<CheckOutlined />}
+                    onClick={() => {
+                      handleApprove(viewingExercise.exercisepost_id);
+                      handleCloseModal();
+                    }}
+                    className="border border-blue-400 bg-blue-100 text-blue-400"
+                  >
+                    Approve
+                  </Button>
+                  <Button
+                    type="default"
+                    danger
+                    icon={<CloseOutlined />}
+                    onClick={() => {
+                      handleReject(viewingExercise.exercisepost_id);
+                      handleCloseModal();
+                    }}
+                    className="hover:!bg-red-100"
+                  >
+                    Reject
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
+        </Modal>
+        
         <ToastContainer
           position="top-right"
           autoClose={3000}

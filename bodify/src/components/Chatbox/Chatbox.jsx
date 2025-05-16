@@ -22,8 +22,8 @@ style.textContent = `
   color: white;
   border: none;
   border-radius: 50%;
-  width: 50px;
-  height: 50px;
+  width: 40px;
+  height: 40px;
   cursor: pointer;
   box-shadow: 0 2px 5px rgba(0,0,0,0.2);
 }
@@ -32,8 +32,8 @@ style.textContent = `
   position: absolute;
   bottom: 70px;
   right: 0;
-  width: 350px;
-  height: 500px;
+  width: 310px;
+  height: 400px;
   background: white;
   border-radius: 10px;
   box-shadow: 0 2px 10px rgba(0,0,0,0.1);
