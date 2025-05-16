@@ -32,75 +32,74 @@ export default function CreateMembership() {
   // const isFormComplete = Object.values(formData).every((v) => v.trim() !== "");
 
   return (
-<div className="font-sans">
-  <div className="flex items-start justify-center bg-gray-100 min-h-screen p-4">
-    <div className="w-full bg-gray-100 border-2 border-orange-400 p-6 rounded-md shadow-lg relative font-sans">
-      <h2 className="text-2xl font-bold mb-6 text-center text-orange-600 border-b-2 pb-2 border-orange-400">
-        Create Membership
-      </h2>
+    <div className="font-sans">
+      <div className="flex items-start justify-center bg-gray-100 min-h-screen p-4">
+        <div className="w-full bg-gray-100 border-2 border-orange-400 p-6 rounded-md shadow-lg relative font-sans">
+          <h2 className="text-2xl font-bold mb-6 text-center text-orange-600 border-b-2 pb-2 border-orange-400">
+            Create Membership
+          </h2>
 
-      <form onSubmit={handleSubmit} className="space-y-6">
-        <div>
-          <label className="block text-sm font-medium text-orange-600">
-            Membership Name
-          </label>
-          <input
-            name="membership_name"
-            value={formData.membership_name}
-            onChange={handleChange}
-            className="w-full border px-4 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
-            required
-          />
-        </div>
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div>
+              <label className="block text-sm font-medium text-orange-600">
+                Membership Name
+              </label>
+              <input
+                name="membership_name"
+                value={formData.membership_name}
+                onChange={handleChange}
+                className="w-full border px-4 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
+                required
+              />
+            </div>
 
-        <div>
-          <label className="block text-sm font-medium text-orange-600">
-            Description
-          </label>
-          <textarea
-            name="description"
-            value={formData.description}
-            onChange={handleChange}
-            className="w-full border px-4 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
-            required
-          />
-        </div>
+            <div>
+              <label className="block text-sm font-medium text-orange-600">
+                Description
+              </label>
+              <textarea
+                name="description"
+                value={formData.description}
+                onChange={handleChange}
+                className="w-full border px-4 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
+                required
+              />
+            </div>
 
-        <div className="flex space-x-4">
-  {/* Price */}
-  <div className="w-1/2">
-    <label className="block text-sm font-medium text-orange-600">
-      Price ($)
-    </label>
-    <input
-      name="price"
-      type="number"
-      step="0.01"
-      value={formData.price}
-      onChange={handleChange}
-      className="w-full border px-4 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
-      required
-    />
-  </div>
+            <div className="flex space-x-4">
+              {/* Price */}
+              <div className="w-1/2">
+                <label className="block text-sm font-medium text-orange-600">
+                  Price ($)
+                </label>
+                <input
+                  name="price"
+                  type="number"
+                  step="0.01"
+                  value={formData.price}
+                  onChange={handleChange}
+                  className="w-full border px-4 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
+                  required
+                />
+              </div>
 
-  {/* Duration */}
-  <div className="w-1/2">
-    <label className="block text-sm font-medium text-orange-600">
-      Duration (days)
-    </label>
-    <input
-      name="duration"
-      type="number"
-      value={formData.duration}
-      onChange={handleChange}
-      className="w-full border px-4 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
-      required
-    />
-  </div>
-</div>
+              {/* Duration */}
+              <div className="w-1/2">
+                <label className="block text-sm font-medium text-orange-600">
+                  Duration (days)
+                </label>
+                <input
+                  name="duration"
+                  type="number"
+                  value={formData.duration}
+                  onChange={handleChange}
+                  className="w-full border px-4 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
+                  required
+                />
+              </div>
+            </div>
 
-
-        {/* {isFormComplete && (
+            {/* {isFormComplete && (
           <div className="mt-6 border-t-2 pt-4 border-white">
             <h3 className="text-lg font-semibold mb-2 text-orange-600">
               Review and Submit
@@ -132,26 +131,28 @@ export default function CreateMembership() {
           </div>
         )} */}
 
-        <div className="flex justify-end">
-          <button
-            type="submit"
-            disabled={loading}
-            className={`px-6 py-2 text-white rounded-md flex items-center justify-center ${
-              loading
-                ? "bg-orange-400 cursor-not-allowed"
-                : "bg-orange-500 hover:bg-orange-600"
-            }`}
-          >
-            {loading && (
-              <FontAwesomeIcon icon={faSpinner} className="mr-2 animate-spin" />
-            )}
-            {loading ? "Submitting..." : "Submit"}
-          </button>
+            <div className="flex justify-end">
+              <button
+                type="submit"
+                disabled={loading}
+                className={`px-6 py-2 text-white rounded-md flex items-center justify-center ${
+                  loading
+                    ? "bg-orange-400 cursor-not-allowed"
+                    : "bg-orange-400 hover:bg-primary-500"
+                }`}
+              >
+                {loading && (
+                  <FontAwesomeIcon
+                    icon={faSpinner}
+                    className="mr-2 animate-spin"
+                  />
+                )}
+                {loading ? "Submitting..." : "Submit"}
+              </button>
+            </div>
+          </form>
         </div>
-      </form>
+      </div>
     </div>
-  </div>
-</div>
-
   );
 }

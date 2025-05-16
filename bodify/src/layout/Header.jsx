@@ -1,8 +1,12 @@
-import React, { useState, useEffect } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faUser, faSignOutAlt, faUserCircle } from '@fortawesome/free-solid-svg-icons';
-import AuthService from '../services/auth.service';
+import React, { useState, useEffect } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import {
+  faUser,
+  faSignOutAlt,
+  faUserCircle,
+} from "@fortawesome/free-solid-svg-icons";
+import AuthService from "../services/auth.service";
 
 const Header = () => {
   const [showMobileMenu, setShowMobileMenu] = useState(false);
@@ -24,7 +28,7 @@ const Header = () => {
         setShowAccount(false);
       }
     } catch (error) {
-      console.error('Error checking login status:', error);
+      console.error("Error checking login status:", error);
       setCurrentUser(null);
       setShowAccount(false);
     }
@@ -32,16 +36,16 @@ const Header = () => {
 
   useEffect(() => {
     checkLoginStatus();
-    
+
     // Thêm event listener để lắng nghe thay đổi localStorage
-    window.addEventListener('storage', checkLoginStatus);
-    
+    window.addEventListener("storage", checkLoginStatus);
+
     // Custom event để handle login
-    window.addEventListener('login', checkLoginStatus);
-    
+    window.addEventListener("login", checkLoginStatus);
+
     return () => {
-      window.removeEventListener('storage', checkLoginStatus);
-      window.removeEventListener('login', checkLoginStatus);
+      window.removeEventListener("storage", checkLoginStatus);
+      window.removeEventListener("login", checkLoginStatus);
     };
   }, []);
 
@@ -74,29 +78,39 @@ const Header = () => {
             className="h-10 w-auto ml-10 cursor-pointer"
           />
         </Link>
-        <ul className="hidden md:flex gap-7 text-black">
-          <Link to="/">
-            <a className="cursor-pointer hover:text-gray-400">Home</a>
-          </Link>
-
-          <Link to="/exercise">
-            <a className="cursor-pointer hover:text-gray-400">Exercise</a>
-          </Link>
-
-          <Link to="/gyms">
-            <a className="cursor-pointer hover:text-gray-400">Gyms</a>
-          </Link>
-
-          <Link to="/pt-list">
-            <a className="cursor-pointer hover:text-gray-400">PT List</a>
-          </Link>
-
-          <a href="#Programs" className="cursor-pointer hover:text-gray-400">
-            Programs
-          </a>
-          <a href="#Contact" className="cursor-pointer hover:text-gray-400">
-            Contact
-          </a>
+        <ul className="hidden md:flex gap-10 items-center text-lg font-semibold tracking-wide">
+          <li>
+            <Link
+              to="/"
+              className="text-gray-600 hover:text-orange-500 transition duration-300 ease-in-out"
+            >
+              Home
+            </Link>
+          </li>
+          <li>
+            <Link
+              to="/exercise"
+              className="text-gray-600 hover:text-orange-500 transition duration-300 ease-in-out"
+            >
+              Exercise
+            </Link>
+          </li>
+          <li>
+            <Link
+              to="/gyms"
+              className="text-gray-600 hover:text-orange-500 transition duration-300 ease-in-out"
+            >
+              Gyms
+            </Link>
+          </li>
+          <li>
+            <Link
+              to="/pt-list"
+              className="text-gray-600 hover:text-orange-500 transition duration-300 ease-in-out"
+            >
+              PT List
+            </Link>
+          </li>
         </ul>
 
         {/* Hiển thị nút Sign up nếu chưa đăng nhập */}
@@ -147,14 +161,14 @@ const Header = () => {
                     DashBoard
                   </Link>
                 )}
-                
+
                 <Link
                   to="/userprofile"
                   className="block px-4 py-2 text-black hover:rounded-md hover:bg-gray-200"
                 >
                   User Profile
                 </Link>
-                
+
                 {currentUser && currentUser.role_id === 3 && (
                   <>
                     <Link
@@ -172,7 +186,7 @@ const Header = () => {
                     </Link> */}
                   </>
                 )}
-                
+
                 {currentUser && currentUser.role_id === 4 && (
                   <Link
                     to="/gymowner/approve-exercises"
@@ -181,7 +195,7 @@ const Header = () => {
                     Approve
                   </Link>
                 )}
-                
+
                 <button
                   className="block w-full text-left px-4 py-2 text-black hover:rounded-md hover:bg-gray-200"
                   onClick={handleLogout}
