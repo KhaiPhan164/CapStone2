@@ -11,6 +11,7 @@ import {
   Tag,
   Space,
   Card,
+  Tooltip,
 } from "antd";
 import {
   PlusOutlined,
@@ -435,78 +436,103 @@ const ExerciseManagement = () => {
       title: "Exercise Name",
       dataIndex: "name",
       key: "name",
+      width: 140,
+      ellipsis: true,
     },
     {
       title: "Description",
       dataIndex: "description",
       key: "description",
+      width: 180,
       ellipsis: true,
     },
     {
       title: "Tags",
       dataIndex: "exerciseposttag",
       key: "tags",
-      width: 200,
+      width: 120,
+      ellipsis: true,
       render: (tags) => (
-        <Space>
-          {tags?.map((tag) => (
-            <Tag key={tag.tag_id}>{tag.tag.tag_name}</Tag>
+        <div className="flex flex-wrap gap-1 max-w-full overflow-hidden">
+          {tags?.slice(0, 3).map((tag) => (
+            <Tag key={tag.tag_id} className="truncate max-w-[80px]">
+              {tag.tag.tag_name}
+            </Tag>
           ))}
-        </Space>
+          {tags?.length > 3 && <Tag>...</Tag>}
+        </div>
       ),
     },
     {
       title: "Status",
       dataIndex: "status_id",
       key: "status",
-      width: 150,
+      width: 100,
+      align: "center",
       render: (status) => (
-        <Tag
-          color={
-            status === 1
-              ? "gold"
-              : status === 2
-              ? "green"
-              : status === 3
-              ? "red"
-              : "default"
-          }
-          className="text-sm py-1"
-        >
-          {status === 1
+        <Tooltip title={
+          status === 1
             ? "Pending Approval"
             : status === 2
             ? "Approved"
             : status === 3
             ? "Rejected"
-            : "Undefined"}
-        </Tag>
+            : "Undefined"
+        }>
+          <Tag
+            color={
+              status === 1
+                ? "gold"
+                : status === 2
+                ? "green"
+                : status === 3
+                ? "red"
+                : "default"
+            }
+            className="text-xs py-1 px-2"
+          >
+            {status === 1
+              ? "Pending"
+              : status === 2
+              ? "Approved"
+              : status === 3
+              ? "Rejected"
+              : "Undefined"}
+          </Tag>
+        </Tooltip>
       ),
     },
     {
       title: "Actions",
       key: "action",
-      width: 200,
+      width: 180,
+      align: "center",
       render: (_, record) => (
-        <Space>
-          <Button
-            type="default"
-            icon={<EditOutlined />}
-            onClick={() => handleEdit(record)}
-            className="border border-blue-400 bg-blue-100 text-blue-400"
-          >
-            Edit
-          </Button>
-          <Button
-            type="default"
-            danger
-            icon={<DeleteOutlined />}
-            onClick={() => handleDelete(record.exercisepost_id)}
-            className="hover:!bg-red-100"
-          >
-            Delete
-          </Button>
-        </Space>
+        <div className="flex items-center justify-center space-x-3">
+          <Tooltip title="Edit exercise">
+            <Button
+              type="default"
+              icon={<EditOutlined />}
+              onClick={() => handleEdit(record)}
+              className="border border-blue-400 bg-blue-100 text-blue-400"
+              size="small"
+            >
+              Edit
+            </Button>
+          </Tooltip>
+          <Tooltip title="Delete exercise">
+            <Button
+              type="default"
+              danger
+              icon={<DeleteOutlined />}
+              onClick={() => handleDelete(record.exercisepost_id)}
+              className="hover:!bg-red-100"
+              size="small"
+            >
+              Delete
+            </Button>
+          </Tooltip>
+        </div>
       ),
     },
   ];
@@ -525,7 +551,7 @@ const ExerciseManagement = () => {
               setSteps([]);
               setModalVisible(true);
             }}
-            className="bg-gray-400 text-white text-base px-4 py-5 border-none rounded-md hover:!bg-primary-500 hover:!text-white hover:!border-none transition flex items-center"
+            className="create-button border border-blue-500 bg-blue-100 text-blue-500 hover:!bg-blue-500 hover:!text-white"
           >
             Create New Exercise
           </Button>
@@ -537,8 +563,15 @@ const ExerciseManagement = () => {
           loading={loading}
           rowKey="exercisepost_id"
           rowClassName={(_, index) =>
-            index % 2 === 0 ? "bg-gray-100" : "bg-white"
+            index % 2 === 0 ? "bg-gray-50" : "bg-white"
           }
+          pagination={{ 
+            pageSize: 10,
+            position: ["bottomCenter"],
+            showSizeChanger: false
+          }}
+          bordered
+          className="exercise-approval-table"
         />
 
         <Modal

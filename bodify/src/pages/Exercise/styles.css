@@ -2,6 +2,7 @@
     background-color: #ffaf53 !important;
     color: white !important;
     text-transform: uppercase; 
+    padding: 10px 12px !important;
   }
   
   .ant-pagination-item {
@@ -10,4 +11,162 @@
   .ant-pagination-item-active a {
     color: #ffaf53!important;
   }
+
+/* Fix table layout */
+.ant-table-cell {
+  white-space: nowrap;
+  vertical-align: middle !important;
+  padding: 8px 12px !important;
+}
+
+.ant-table-cell .ant-space {
+  flex-wrap: nowrap !important;
+}
+
+/* Status tag styling */
+.ant-tag {
+  margin: 0 !important;
+  display: inline-block;
+  text-align: center;
+  min-width: 70px;
+}
+
+/* Actions button styling */
+.eye-button {
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s ease;
+  width: 32px !important;
+  height: 32px !important;
+  padding: 0 !important;
+  display: inline-flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+}
+
+.eye-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.eye-button .anticon {
+  font-size: 16px !important;
+  margin-right: 0 !important;
+}
+
+/* Fix button styles to match design */
+.ant-btn {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-size: 13px !important;
+  height: 28px !important;
+  border-radius: 4px !important;
+  padding: 0 8px !important;
+  margin: 0 3px !important;
+  min-width: 74px !important;
+}
+
+/* Button with icon only exception */
+.eye-button.ant-btn {
+  min-width: unset !important;
+}
+
+/* Specific button styles */
+.ant-btn-small {
+  font-size: 12px !important;
+  height: 26px !important;
+  padding: 0 6px !important;
+}
+
+.ant-btn .anticon {
+  font-size: 14px !important;
+  margin-right: 3px !important;
+}
+
+/* Tag ellipsis styling */
+.truncate {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Custom styling for table rows */
+.exercise-approval-table .ant-table-tbody > tr:nth-child(even) {
+  background-color: #f9f9f9;
+}
+
+.exercise-approval-table .ant-table-tbody > tr:nth-child(odd) {
+  background-color: #ffffff;
+}
+
+/* Make the Modal animation smooth */
+.ant-modal {
+  animation-duration: 0.3s !important;
+}
+
+.modal-image {
+  transition: transform 0.3s ease;
+}
+
+.modal-image:hover {
+  transform: scale(1.05);
+}
+
+/* Custom styling for exercise approval table */
+.exercise-approval-table {
+  margin-bottom: 2rem;
+}
+
+.exercise-approval-table .ant-table-container {
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.exercise-approval-table .ant-table-thead > tr > th {
+  font-weight: 600;
+  padding: 12px 16px;
+}
+
+.exercise-approval-table .ant-table-tbody > tr > td {
+  padding: 12px 16px;
+}
+
+.exercise-approval-table .ant-table-tbody > tr:hover > td {
+  background-color: #fff9f0 !important;
+}
+
+/* Make responsive */
+@media (max-width: 768px) {
+  .exercise-approval-table {
+    margin: 0 -8px 2rem -8px;
+  }
+  
+  .exercise-approval-table .ant-table-thead > tr > th,
+  .exercise-approval-table .ant-table-tbody > tr > td {
+    padding: 8px;
+  }
+}
+
+/* Create button styling */
+.create-button {
+  display: inline-flex !important;
+  align-items: center !important;
+  font-size: 14px !important;
+  height: 36px !important;
+  padding: 0 16px !important;
+  border-radius: 4px !important;
+  transition: all 0.3s ease !important;
+}
+
+.create-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.create-button .anticon {
+  font-size: 16px !important;
+  margin-right: 6px !important;
+}
 

@@ -28,21 +28,21 @@ const PTManagement = () => {
   const gymName = gymOwner.name || '';
 
   useEffect(() => {
-    // Kết nối socket chat khi component mount
+    // Connect socket chat when component mounts
     if (gymOwner && gymOwner.id) {
       ChatService.connect(gymOwner.id);
       
-      // Đảm bảo chat bubble được hiển thị
+      // Ensure chat bubble is displayed
       const chatboxContainer = document.querySelector('.chatbox-container');
       if (chatboxContainer) {
         chatboxContainer.style.display = 'block';
       } else {
-        console.log('Không tìm thấy chatbox-container');
+        console.log('Chatbox container not found');
       }
     }
 
     return () => {
-      // Ngắt kết nối socket khi component unmount
+      // Disconnect socket when component unmounts
       ChatService.disconnect();
     };
   }, [gymOwner]);
@@ -51,10 +51,10 @@ const PTManagement = () => {
     try {
       setLoading(true);
       
-      // Lấy token từ localStorage
+      // Get token from localStorage
       const token = localStorage.getItem('token');
       
-      // Gọi API để lấy danh sách PT của gym
+      // Call API to get gym's PT list
       const response = await fetch(`http://localhost:3000/users/gym/pts/filter?role_id=3&status_id=2`, {
         headers: {
           'Authorization': `Bearer ${token}`
@@ -68,7 +68,7 @@ const PTManagement = () => {
       const responseData = await response.json();
       console.log('PT data received:', responseData);
       
-      // Kiểm tra cấu trúc dữ liệu và lấy mảng data từ response
+      // Check data structure and get data array from response
       let ptData = [];
       if (responseData && responseData.status === 'success' && Array.isArray(responseData.data)) {
         ptData = responseData.data;
@@ -77,17 +77,17 @@ const PTManagement = () => {
         ptData = responseData;
       } else {
         console.error('Unexpected data structure:', responseData);
-        message.error('Dữ liệu PT không đúng định dạng');
+        message.error('PT data format is incorrect');
         setLoading(false);
         return;
       }
       
-      // Lấy tên gym hiện tại và chuyển thành chữ thường để so sánh
+      // Get current gym name and convert to lowercase for comparison
       const currentGymLower = (gymName || '').toLowerCase().trim();
       console.log('Current gym (lowercase):', currentGymLower);
       
-      // Lọc dữ liệu phía client để chỉ lấy PT thuộc gym hiện tại
-      // In ra thông tin chi tiết về mỗi PT để debug
+      // Filter data on client side to only get PTs belonging to current gym
+      // Print detailed information about each PT for debugging
       console.log('All PTs before filtering:');
       ptData.forEach((pt, index) => {
         const ptGym = pt.gym || '';
@@ -103,20 +103,20 @@ const PTManagement = () => {
       
       console.log('Filtered PT data:', filteredPTs);
       
-      // Nếu không tìm thấy PT nào sau khi lọc, thử hiển thị tất cả PT
+      // If no PTs found after filtering, consider showing all PTs
       if (filteredPTs.length === 0 && ptData.length > 0) {
         console.log('No matching PTs found. Consider showing all PTs or check gym name matching.');
-        // Có thể bỏ comment dòng dưới để hiển thị tất cả PT nếu không tìm thấy PT nào phù hợp
+        // Uncomment line below to show all PTs if no matching PTs found
         // filteredPTs = ptData;
       }
       
-      // Map dữ liệu để đảm bảo có đủ các trường cần thiết
+      // Map data to ensure all necessary fields
       const processedData = filteredPTs.map(item => {
         return {
           ...item,
           id: item.user_id || item.id,
-          username: item.username || item.name || 'Không có thông tin',
-          fullname: item.name || item.fullname || item.username || 'Không có thông tin',
+          username: item.username || item.name || 'No information',
+          fullname: item.name || item.fullname || item.username || 'No information',
           status_id: item.status_id || item.Status_id
         };
       });
@@ -127,10 +127,10 @@ const PTManagement = () => {
         setPTs(processedData);
       } else {
         setPTs([]);
-        message.info('Không có PT nào đang hoạt động trong phòng gym của bạn');
+        message.info('No active PTs in your gym');
       }
     } catch (error) {
-      message.error('Không thể tải danh sách PT');
+      message.error('Could not load PT list');
       console.error('Error fetching PTs:', error);
     } finally {
       setLoading(false);
@@ -177,34 +177,34 @@ const PTManagement = () => {
   const handleStartChat = async (pt) => {
     try {
       if (!gymOwner || !gymOwner.id) {
-        message.error('Bạn cần đăng nhập để sử dụng tính năng chat');
+        message.error('You need to log in to use the chat feature');
         return;
       }
 
       if (!pt || !pt.id) {
-        message.error('Không tìm thấy thông tin PT');
+        message.error('PT information not found');
         return;
       }
 
-      // Gửi tin nhắn đầu tiên để bắt đầu cuộc trò chuyện
-      await ChatService.sendMessage(pt.id, `Xin chào PT ${pt.fullname || pt.username}! Tôi là chủ phòng gym ${gymName}.`);
+      // Send first message to start conversation
+      await ChatService.sendMessage(pt.id, `Hello PT ${pt.fullname || pt.username}! I am the gym owner of ${gymName}.`);
       
-      message.success(`Đã bắt đầu cuộc trò chuyện với PT ${pt.fullname || pt.username}`);
+      message.success(`Started conversation with PT ${pt.fullname || pt.username}`);
       
-      // Kích hoạt hiển thị chat bubble
+      // Activate chat bubble display
       const chatToggle = document.querySelector('.chat-toggle');
       if (chatToggle) {
-        // Mở chatbox nếu nó đang đóng
+        // Open chatbox if it's closed
         const chatWindow = document.querySelector('.chat-window');
         if (chatWindow && window.getComputedStyle(chatWindow).display === 'none') {
           chatToggle.click();
         }
       } else {
-        console.log('Không tìm thấy nút chat-toggle');
+        console.log('Chat toggle button not found');
       }
     } catch (error) {
-      console.error('Lỗi khi bắt đầu cuộc trò chuyện:', error);
-      message.error('Không thể bắt đầu cuộc trò chuyện. Vui lòng thử lại sau.');
+      console.error('Error starting conversation:', error);
+      message.error('Could not start conversation. Please try again later.');
     }
   };
 
@@ -306,14 +306,14 @@ const PTManagement = () => {
         pagination={{ pageSize: 10 }}
       />
 
-      {/* Modal xem chi tiết PT */}
+      {/* PT Details Modal */}
       <Modal
-        title="Chi tiết thông tin PT"
+        title="PT Details"
         open={isViewModalVisible}
         onCancel={() => setIsViewModalVisible(false)}
         footer={[
           <Button key="close" onClick={() => setIsViewModalVisible(false)}>
-            Đóng
+            Close
           </Button>,
           <Button
             key="chat"
@@ -324,7 +324,7 @@ const PTManagement = () => {
               setIsViewModalVisible(false);
             }}
           >
-            Chat với PT
+            Chat with PT
           </Button>
         ]}
         width={800}
@@ -346,7 +346,7 @@ const PTManagement = () => {
             
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <h3 className="font-semibold">Thông tin cá nhân</h3>
+                <h3 className="font-semibold">Personal Information</h3>
                 <p><UserOutlined className="mr-2" /> Username: {selectedPT.username}</p>
                 <p><MailOutlined className="mr-2" /> Email: {selectedPT.email}</p>
                 <p><PhoneOutlined className="mr-2" /> Phone: {selectedPT.phone || 'Not updated'}</p>
@@ -421,7 +421,7 @@ const PTManagement = () => {
         )}
       </Modal>
       
-      {/* Thêm style để đảm bảo chatbox hiển thị */}
+      {/* Add style to ensure chatbox is displayed */}
       <style jsx>{`
         .chatbox-container {
           display: block !important;
