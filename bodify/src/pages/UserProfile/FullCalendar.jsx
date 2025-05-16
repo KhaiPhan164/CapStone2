@@ -6,7 +6,7 @@ import interactionPlugin from "@fullcalendar/interaction";
 import CreateScheduleModal from "../../components/CreateScheduleModal";
 import ScheduleService from "../../services/scheduleService";
 import PlanService from "../../services/plan.service";
-import { toast } from 'react-hot-toast';
+import { toast } from "react-hot-toast";
 import "./FullCalendar.css";
 
 const Calendar = () => {
@@ -27,7 +27,7 @@ const Calendar = () => {
       const response = await PlanService.getUserPlans();
       setPlans(response);
     } catch (err) {
-      toast.error('Unable to load plan list');
+      toast.error("Unable to load plan list");
     }
   };
 
@@ -35,13 +35,13 @@ const Calendar = () => {
     try {
       setLoading(true);
       const schedules = await ScheduleService.getSchedules();
-      
+
       // Filter out null events
-      const formattedEvents = schedules.filter(event => event !== null);
-      
+      const formattedEvents = schedules.filter((event) => event !== null);
+
       setEvents(formattedEvents);
     } catch (error) {
-      toast.error('Unable to load schedule');
+      toast.error("Unable to load schedule");
     } finally {
       setLoading(false);
     }
@@ -50,7 +50,7 @@ const Calendar = () => {
   const handleSelect = (selectInfo) => {
     setSelectedTime({
       start: selectInfo.start,
-      end: selectInfo.end
+      end: selectInfo.end,
     });
     setIsCreateModalOpen(true);
   };
@@ -59,10 +59,10 @@ const Calendar = () => {
     const event = clickInfo.event;
     const confirmDelete = window.confirm(
       `Do you want to delete this schedule?\n\n` +
-      `Plan: ${event.extendedProps.planName}\n` +
-      `Note: ${event.extendedProps.note || 'No notes'}\n` +
-      `Date: ${event.extendedProps.startDate}\n` +
-      `Time: ${event.extendedProps.startTime} - ${event.extendedProps.endTime}`
+        `Plan: ${event.extendedProps.planName}\n` +
+        `Note: ${event.extendedProps.note || "No notes"}\n` +
+        `Date: ${event.extendedProps.startDate}\n` +
+        `Time: ${event.extendedProps.startTime} - ${event.extendedProps.endTime}`
     );
 
     if (confirmDelete) {
@@ -73,10 +73,10 @@ const Calendar = () => {
   const handleDeleteSchedule = async (id) => {
     try {
       await ScheduleService.deleteSchedule(id);
-      setEvents(prevEvents => prevEvents.filter(event => event.id !== id));
-      toast.success('Schedule deleted successfully');
+      setEvents((prevEvents) => prevEvents.filter((event) => event.id !== id));
+      toast.success("Schedule deleted successfully");
     } catch (err) {
-      toast.error('Unable to delete schedule. Please try again.');
+      toast.error("Unable to delete schedule. Please try again.");
     }
   };
 
@@ -84,7 +84,7 @@ const Calendar = () => {
     await fetchSchedules();
     setIsCreateModalOpen(false);
     setSelectedTime(null);
-    toast.success('Schedule created successfully');
+    toast.success("Schedule created successfully");
   };
 
   const handleModalClose = () => {
@@ -96,16 +96,20 @@ const Calendar = () => {
     return (
       <div className="p-1">
         <div className="font-semibold">{eventInfo.event.title}</div>
-        <div className="text-sm">{eventInfo.event.extendedProps.note || 'No notes'}</div>
+        <div className="text-sm">
+          {eventInfo.event.extendedProps.note || "No notes"}
+        </div>
         <div className="text-xs mt-1">
-          {new Date(eventInfo.event.start).toLocaleTimeString('en-US', {
-            hour: '2-digit',
-            minute: '2-digit',
-            hour12: false
-          })} - {new Date(eventInfo.event.end).toLocaleTimeString('en-US', {
-            hour: '2-digit',
-            minute: '2-digit',
-            hour12: false
+          {new Date(eventInfo.event.start).toLocaleTimeString("en-US", {
+            hour: "2-digit",
+            minute: "2-digit",
+            hour12: false,
+          })}{" "}
+          -{" "}
+          {new Date(eventInfo.event.end).toLocaleTimeString("en-US", {
+            hour: "2-digit",
+            minute: "2-digit",
+            hour12: false,
           })}
         </div>
       </div>
@@ -120,9 +124,9 @@ const Calendar = () => {
     try {
       // Format time according to server requirements
       const formatTimeToISO = (date) => {
-        const hours = date.getHours().toString().padStart(2, '0');
-        const minutes = date.getMinutes().toString().padStart(2, '0');
-        const day = date.toISOString().split('T')[0];
+        const hours = date.getHours().toString().padStart(2, "0");
+        const minutes = date.getMinutes().toString().padStart(2, "0");
+        const day = date.toISOString().split("T")[0];
         return `${day}T${hours}:${minutes}:00.000Z`;
       };
 
@@ -130,34 +134,36 @@ const Calendar = () => {
       await ScheduleService.updateSchedule(event.id, {
         day: newStart.toISOString(),
         start_hour: formatTimeToISO(newStart),
-        end_hour: formatTimeToISO(newEnd)
+        end_hour: formatTimeToISO(newEnd),
       });
 
       // Update state to display immediately
-      setEvents(prevEvents => {
-        return prevEvents.map(e => {
+      setEvents((prevEvents) => {
+        return prevEvents.map((e) => {
           if (e.id === event.id) {
             return {
               ...e,
               start: newStart,
-              end: newEnd
+              end: newEnd,
             };
           }
           return e;
         });
       });
 
-      toast.success('Schedule updated successfully');
+      toast.success("Schedule updated successfully");
     } catch (error) {
-      toast.error('Unable to update schedule. Please try again.');
+      toast.error("Unable to update schedule. Please try again.");
       dropInfo.revert();
     }
   };
 
   return (
-    <div className="p-4">
+    <div className="">
       <div className="flex justify-between items-center mb-4">
-        <h2 className="text-2xl font-bold text-gray-800">Workout Schedule</h2>
+        <h1 className="text-2xl font-semibold mb-3 text-gray-700">
+          Workout Schedule
+        </h1>
         <button
           onClick={() => {
             setSelectedTime(null);
@@ -176,7 +182,10 @@ const Calendar = () => {
       )}
 
       {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
+        <div
+          className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded relative mb-4"
+          role="alert"
+        >
           <span className="block sm:inline">{error}</span>
         </div>
       )}
@@ -187,9 +196,9 @@ const Calendar = () => {
             plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
             initialView="timeGridWeek"
             headerToolbar={{
-              left: 'prev,next today',
-              center: 'title',
-              right: 'dayGridMonth,timeGridWeek,timeGridDay'
+              left: "prev,next today",
+              center: "title",
+              right: "dayGridMonth,timeGridWeek,timeGridDay",
             }}
             timeZone="local"
             displayEventTime={true}
@@ -215,20 +224,20 @@ const Calendar = () => {
             eventDrop={handleEventDrop}
             businessHours={{
               daysOfWeek: [1, 2, 3, 4, 5, 6, 0],
-              startTime: '05:00',
-              endTime: '22:00',
+              startTime: "05:00",
+              endTime: "22:00",
             }}
             eventTimeFormat={{
-              hour: '2-digit',
-              minute: '2-digit',
+              hour: "2-digit",
+              minute: "2-digit",
               hour12: false,
-              meridiem: false
+              meridiem: false,
             }}
             slotLabelFormat={{
-              hour: '2-digit',
-              minute: '2-digit',
+              hour: "2-digit",
+              minute: "2-digit",
               hour12: false,
-              meridiem: false
+              meridiem: false,
             }}
           />
         </div>

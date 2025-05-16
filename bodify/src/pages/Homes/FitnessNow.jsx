@@ -12,15 +12,17 @@ const FitnessNow = () => {
         <h2 className="text-gray-500 text-xl font-medium mt-4">
         Fitness Now
         </h2>
-        <h1 className="text-black text-[70px] leading-[60px] font-bold mt-2 mb-2">
+        <h1 className="text-black text-[68px] leading-[60px] font-bold mt-2 mb-2">
         Training Anytime, Anywhere
         </h1>
-        <p className="text-gray-700 text-base mt-4">
-        Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed diam nonummy nibh euismod tincidunt ut laoreet dolore magna.
-        </p>
-        <p className="text-gray-700 text-base mt-4">
-        Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed diam nonummy nibh
-        </p>
+<p className="text-gray-700 text-base mt-4">
+            Achieve your goals with flexible, on-demand workouts designed to fit
+            your lifestyle. Join us to stay active, strong, and motivated—no
+            matter where you are.
+          </p>
+          <p className="text-gray-700 text-base mt-4">
+            Stay consistent, stay confident—your fitness journey starts here.
+          </p>
         <button className="mt-6 bg-orange-500 text-white py-2 px-4 rounded-full">
         Join Us Online
         </button>
