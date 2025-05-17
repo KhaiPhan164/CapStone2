@@ -209,7 +209,7 @@ const CreateScheduleModal = ({ isOpen, onClose, onScheduleCreated, selectedTime 
                         name="plan_id"
                         value={formData.plan_id}
                         onChange={handleInputChange}
-                        className="w-full pl-14 px-3 py-2 border border-gray-300 rounded"
+                        className="w-full pl-6 px-3 py-2 border border-gray-300 rounded"
                         required
                       >
                         <option value="">Select a plan</option>

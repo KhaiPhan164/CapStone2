@@ -28,7 +28,7 @@ const Plan = () => {
   // State cho plan slots
   const [planSlots, setPlanSlots] = useState([]);
   const [planId, setPlanId] = useState(planIdFromQuery);
-  const [planName, setPlanName] = useState("Kế hoạch tập luyện mới");
+  const [planName, setPlanName] = useState("New workout plan");
   const [planDescription, setPlanDescription] = useState("");
 
   // State cho drag & drop
@@ -805,13 +805,13 @@ const Plan = () => {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="container mx-auto px-4 py-8 bg-gray-100">
       <h1 className="text-2xl font-bold mb-6">Training Plan</h1>
       
       {/* Plan header */}
       <div className="bg-white shadow-md rounded-lg p-4 mb-6">
         <div className="mb-4">
-          <label className="block text-gray-700 font-bold mb-2">Tên kế hoạch</label>
+          <label className="block text-gray-700 font-bold mb-2">Plan name</label>
           <input
             type="text"
             value={planName}

@@ -85,7 +85,7 @@ export const ExerciseDetail = () => {
 
     return (
         <div>
-            <div className="container mx-auto px-4 py-8">
+            <div className="container mx-auto px-4">
                 <div className="flex flex-col md:flex-row gap-8 mt-10">
                     {/* Left: Video + Information */}
                     <div className="w-full md:w-3/5 mb-10">
@@ -150,24 +150,29 @@ export const ExerciseDetail = () => {
                                 RELATED EXERCISES
                             </h2>
                         </div>
-                        <div className="grid grid-cols-1 gap-4">
+                        <div className="grid grid-cols-1 gap-4 ">
                             {relatedExercises.length > 0 ? (
                                 relatedExercises.map(relatedExercise => (
                                     <Link 
                                         to={`/exercise-post/${relatedExercise.exercisepost_id}`} 
                                         key={relatedExercise.exercisepost_id}
-                                        className="bg-white shadow-md overflow-hidden flex items-center gap-4 hover:shadow-lg transition-shadow"
+                                        className="bg-white shadow-md overflow-hidden flex items-start gap-4 hover:shadow-lg transition-shadow"
                                     >
                                         <img 
                                             alt={relatedExercise.name} 
-                                            className="w-24 h-24 object-cover" 
+                                            className="w-36 h-24 object-cover" 
                                             src={relatedExercise.img_url || "https://placehold.co/600x400"}
                                             onError={(e) => {
                                                 e.target.src = "https://placehold.co/600x400";
                                             }}
                                         />
-                                        <div className="">
-                                            <h3 className="text-sm font-semibold">{relatedExercise.name}</h3>
+                                        <div className="w-[290px] ">
+                                            <h3 className="text-lg font-semibold">{relatedExercise.name}</h3>                                                      
+                                            <p className="text-base text-gray-700 font-medium leading-tight">
+                                            {exercise.description.length > 70
+                                                ? `${exercise.description.substring(0, 70)}...`
+                                                : exercise.description}
+                                            </p>
                                         </div>
                                     </Link>
                                 ))

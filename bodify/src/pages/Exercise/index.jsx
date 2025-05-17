@@ -518,18 +518,18 @@ export const ExerciseHome = () => {
                   to={`/exercise/${exercise.exercisepost_id || exercise.exercise_post_id}`}
                   className="block"
                 >
-                  <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300">
+                  <div className="bg-white h-[340px] rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300">
                     <img
                       src={exercise.img_url || "https://placehold.co/600x400"}
                       alt={exercise.name}
-                      className="w-full h-48 object-cover"
+                      className="w-full h-56 object-cover"
                       onError={(e) => {
                         e.target.src = "https://placehold.co/600x400";
                       }}
                     />
-                    <div className="p-4">
-                      <h3 className="text-xl font-semibold mb-2">{exercise.name}</h3>
-                      <p className="text-gray-600 mb-4 line-clamp-2">{exercise.description}</p>
+                    <div className="px-4 pt-2">
+                      <h3 className="text-xl font-semibold">{exercise.name}</h3>
+                      <p className="text-gray-600 mb-2 line-clamp-2 w-[360px]">{exercise.description}</p>
                       <div className="flex flex-wrap gap-2">
                         {/* Handle different tag structures */}
                         {exercise.exerciseposttag && exercise.exerciseposttag.map((tagObj) => (
