@@ -252,7 +252,6 @@ const PaymentStatus = () => {
     if (loading) {
         return (
             <div>
-                <Header />
                 <div className="flex items-center justify-center min-h-screen">
                     <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary-500"></div>
                 </div>
@@ -263,7 +262,6 @@ const PaymentStatus = () => {
     if (error) {
         return (
             <div>
-                <Header />
                 <div className="flex flex-col items-center justify-center min-h-screen p-4">
                     <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4">
                         <strong className="font-bold">Error!</strong>
@@ -324,7 +322,6 @@ const PaymentStatus = () => {
 
     return (
         <div>
-            <Header />
             <div className="flex flex-col items-center justify-center min-h-screen p-4">
                 <div className="bg-white p-8 rounded-lg shadow-md max-w-md w-full">
                     <div className="text-center mb-6">
