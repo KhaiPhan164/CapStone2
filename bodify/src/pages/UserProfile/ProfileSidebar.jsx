@@ -115,10 +115,10 @@ const ProfileSidebar = ({ initialTab }) => {
   return (
     <div>
       <Header />
-      <div className="flex h-full container-auto bg-gray-100 ">
-        {/* Left module sidebar */}
-        <div className="w-1/4 bg-white p-4 rounded-xl my-5 h-screen">
-          <ul className="space-y-4">
+      <div className="flex h-full container-auto bg-gray-100 relative min-h-screen">
+        {/* Left module sidebar - changed to fixed position with better responsive support */}
+        <div className="w-64 fixed top-16 bottom-0 left-0 overflow-y-auto bg-white p-4 shadow-lg z-10 transition-all duration-300">
+          <ul className="space-y-4 py-2">
             <li
               onClick={() => handleSelection("home")}
               className={`cursor-pointer block p-2 rounded-xl ${
@@ -239,8 +239,8 @@ const ProfileSidebar = ({ initialTab }) => {
           </ul>
         </div>
 
-        {/* User information on the right */}
-        <div className="flex-1 pt-6 pl-6 pb-6">
+        {/* User information on the right - adjusted margin and padding for better layout */}
+        <div className="flex-1 pt-6 pl-6 pb-6 ml-64 transition-all duration-300">
           {/* Render content corresponding to the selected section */}
           {renderContent()}
         </div>
