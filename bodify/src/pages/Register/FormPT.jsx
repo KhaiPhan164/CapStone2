@@ -184,7 +184,9 @@ const FormPT = () => {
         </form>
       </div>
 
-      <div className='bg-gray-400 w-2/5'></div>
+      <div className='bg-gray-400 w-2/5'>
+        <img src="/images/dkpt.jpg" alt="Description" className="w-full h-full object-right" />
+      </div>
     </div>
   );
 };
