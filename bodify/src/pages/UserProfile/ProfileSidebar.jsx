@@ -268,8 +268,8 @@ const ProfileSidebar = ({ initialTab }) => {
           </ul>
         </div>
 
-        {/* User information on the right */}
-        <div className="flex-1 pt-4 md:pt-6 pl-0 md:pl-6 pb-4 md:pb-6">
+        {/* User information on the right - adjusted margin and padding for better layout */}
+        <div className="flex-1 pt-6 pl-6 pb-6 ml-64 transition-all duration-300">
           {/* Render content corresponding to the selected section */}
           {renderContent()}
         </div>
