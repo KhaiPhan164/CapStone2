@@ -69,15 +69,16 @@ const Header = () => {
   }, [showMobileMenu]);
 
   return (
-    <div className=" ">
-      <div className="container mx-auto flex justify-between items-center py-4 px-6">
-        <Link to="/">
+    <div className="">
+      <div className="container mx-auto flex justify-between items-center py-4 px-4 md:px-6">
+        <Link to="/" className="flex-shrink-0">
           <img
             src="/icon/logo.svg"
             alt="Logo"
-            className="h-10 w-auto ml-10 cursor-pointer"
+            className="h-10 w-auto md:ml-10 cursor-pointer"
           />
         </Link>
+        {/* Desktop menu */}
         <ul className="hidden md:flex gap-10 items-center text-lg font-semibold tracking-wide">
           <li>
             <Link
@@ -115,14 +116,14 @@ const Header = () => {
 
         {/* Hiển thị nút Sign up nếu chưa đăng nhập */}
         {!showAccount && (
-          <div className="flex gap-4 mr-10">
+          <div className="hidden md:flex gap-4 mr-10">
             <Link to="/register-pt">
-              <button className="hidden md:block bg-gradient-to-r from-[#ffd26a] to-primary-500 text-white px-8 py-2 rounded-full">
+              <button className="bg-gradient-to-r from-[#ffd26a] to-primary-500 text-white px-8 py-2 rounded-full">
                 Register PT
               </button>
             </Link>
             <button
-              className="hidden md:block border border-primary-500 text-primary-500 px-8 py-2 rounded-full"
+              className="border border-primary-500 text-primary-500 px-8 py-2 rounded-full"
               onClick={() => {
                 navigate("/sign-in");
               }}
@@ -134,7 +135,7 @@ const Header = () => {
 
         {/* Hiển thị avatar và dropdown nếu đã đăng nhập */}
         {showAccount && (
-          <div className="relative">
+          <div className="relative hidden md:block">
             {currentUser && currentUser.imgUrl ? (
               <img
                 src={currentUser.imgUrl}
@@ -207,44 +208,174 @@ const Header = () => {
           </div>
         )}
 
-        {/* ------ mobile menu -------- */}
-        <div
-          className={`md:hidden ${
-            showMobileMenu ? "fixed w-full" : "h-0 w-0"
-          } right-0 top-0 bottom-0 overflow-hidden bg-white transition-all`}
+        {/* Hamburger icon for mobile */}
+        <button
+          className="md:hidden flex items-center justify-center p-2 rounded focus:outline-none"
+          onClick={() => setShowMobileMenu(!showMobileMenu)}
         >
-          <div className="flex justify-end p-6 cursor-pointer"></div>
-          <ul className="flex flex-col items-center gap-2 mt-5 px-5 text-lg font-medium">
-            <a
+          <svg
+            className="w-7 h-7 text-gray-700"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            {showMobileMenu ? (
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M6 18L18 6M6 6l12 12"
+              />
+            ) : (
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M4 6h16M4 12h16M4 18h16"
+              />
+            )}
+          </svg>
+        </button>
+
+        {/* Mobile menu overlay */}
+        {showMobileMenu && (
+          <div className="fixed inset-0 z-50 bg-black bg-opacity-40 flex flex-col">
+            <div className="bg-white w-4/5 max-w-xs h-full shadow-lg flex flex-col p-6">
+              <div className="flex justify-between items-center mb-6">
+                <Link to="/" onClick={() => setShowMobileMenu(false)}>
+                  <img
+                    src="/icon/logo.svg"
+                    alt="Logo"
+                    className="h-10 w-auto"
+                  />
+                </Link>
+                <button
+                  className="p-2"
+                  onClick={() => setShowMobileMenu(false)}
+                  aria-label="Close menu"
+                >
+                  <svg
+                    className="w-6 h-6 text-gray-700"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M6 18L18 6M6 6l12 12"
+                    />
+                  </svg>
+                </button>
+              </div>
+              <ul className="flex flex-col gap-4 text-lg font-medium">
+                <Link
+                  to="/"
+                  className="px-4 py-2 rounded-full inline-block"
+                  onClick={() => setShowMobileMenu(false)}
+                >
+                  Home
+                </Link>
+                <Link
+                  to="/exercise"
+                  className="px-4 py-2 rounded-full inline-block"
+                  onClick={() => setShowMobileMenu(false)}
+                >
+                  Exercise
+                </Link>
+                <Link
+                  to="/gyms"
+                  className="px-4 py-2 rounded-full inline-block"
+                  onClick={() => setShowMobileMenu(false)}
+                >
+                  Gyms
+                </Link>
+                <Link
+                  to="/pt-list"
+                  className="px-4 py-2 rounded-full inline-block"
+                  onClick={() => setShowMobileMenu(false)}
+                >
+                  PT List
+                </Link>
+              </ul>
+            <div className="border-b border-gray-300 my-4"></div>
+              {/* Mobile login/register/account */}
+              <div className=" flex flex-col gap-3">
+                {!showAccount ? (
+                  <>
+                    <Link to="/register-pt" onClick={() => setShowMobileMenu(false)}>
+                      <button className="w-full bg-gradient-to-r from-[#ffd26a] to-primary-500 text-white px-6 py-2 rounded-full">
+                        Register PT
+                      </button>
+                    </Link>
+                    <button
+                      className="w-full border border-primary-500 text-primary-500 px-6 py-2 rounded-full"
+                      onClick={() => {
+                        setShowMobileMenu(false);
+                        navigate("/sign-in");
+                      }}
+                    >
+                      Login
+                    </button>
+                  </>
+                ) : (
+                  <div className="flex flex-col gap-2">
+                    <Link
+                      to="/userprofile"
+                      className="w-full px-4 py-2 rounded-full text-left"
+                      onClick={() => setShowMobileMenu(false)}
+                    >
+                      User Profile
+                    </Link>
+                    {currentUser && currentUser.role_id === 3 && (
+                      <Link
+                        to="/pt/exercises"
+                        className="w-full px-4 py-2 rounded-full text-left"
+                        onClick={() => setShowMobileMenu(false)}
+                      >
+                        Create Exercises
+                      </Link>
+                    )}
+                    {currentUser && currentUser.role_id === 4 && (
+                      <>
+                        <Link
+                          to="/"
+                          className="w-full px-4 py-2 rounded-full text-left"
+                          onClick={() => setShowMobileMenu(false)}
+                        >
+                          DashBoard
+                        </Link>
+                        <Link
+                          to="/gymowner/approve-exercises"
+                          className="w-full px-4 py-2 rounded-full text-left"
+                          onClick={() => setShowMobileMenu(false)}
+                        >
+                          Approve
+                        </Link>
+                      </>
+                    )}
+                    <button
+                      className="w-full px-4 py-2 rounded-full text-left"
+                      onClick={() => {
+                        setShowMobileMenu(false);
+                        handleLogout();
+                      }}
+                    >
+                      Logout
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+            {/* Click outside to close */}
+            <div
+              className="flex-1"
               onClick={() => setShowMobileMenu(false)}
-              href="#Home"
-              className="px-4 py-2 rounded-full inline-block"
-            >
-              Home
-            </a>
-            <a
-              onClick={() => setShowMobileMenu(false)}
-              href="#About"
-              className="px-4 py-2 rounded-full inline-block"
-            >
-              About
-            </a>
-            <a
-              onClick={() => setShowMobileMenu(false)}
-              href="#Projects"
-              className="px-4 py-2 rounded-full inline-block"
-            >
-              Projects
-            </a>
-            <a
-              onClick={() => setShowMobileMenu(false)}
-              href="#Testimonails"
-              className="px-4 py-2 rounded-full inline-block"
-            >
-              Testimonails
-            </a>
-          </ul>
-        </div>
+            ></div>
+          </div>
+        )}
       </div>
     </div>
   );

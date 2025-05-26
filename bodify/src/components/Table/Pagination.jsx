@@ -30,7 +30,7 @@ export const Pagination = ({ totalPages = 9, onPageChange }) => {
           className={`h-8 w-8 rounded-full text-sm font-medium transition-all duration-300 
             ${
               currentPage === page
-                ? " text-text"
+                ? " text-white bg-primary-500"
                 : "text-text hover:bg-gray-300"
             }`}
         >

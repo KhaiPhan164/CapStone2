@@ -250,22 +250,21 @@ BMI: ${bmi}`.trim();
   }
 
   return (
-    <div className="container mx-auto px-4 ">
-<div className="flex justify-between items-center mb-6">
-  <h1 className="text-2xl font-semibold mb-3 text-gray-700">
-    Health Information
-  </h1>
-  {!isEditing && (
-    <button
-      onClick={() => setIsEditing(true)}
-      className="bg-orange-400 text-white px-4 py-2 rounded-lg hover:bg-primary-500 transition-colors duration-200 flex items-center gap-2"
-    >
-      <FontAwesomeIcon icon={faPencilAlt} />
-      Edit Information
-    </button>
-  )}
-</div>
-
+    <div className="container mx-auto ">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6 gap-2">
+        <h1 className="text-xl sm:text-2xl font-semibold mb-3 text-gray-700">
+          Health Information
+        </h1>
+        {!isEditing && (
+          <button
+            onClick={() => setIsEditing(true)}
+            className="w-full sm:w-auto bg-orange-400 text-white px-4 py-2 rounded-lg hover:bg-primary-500 transition-colors duration-200 flex items-center gap-2"
+          >
+            <FontAwesomeIcon icon={faPencilAlt} />
+            Edit Information
+          </button>
+        )}
+      </div>
 
       {isEditing ? (
         <form
@@ -273,7 +272,7 @@ BMI: ${bmi}`.trim();
             e.preventDefault();
             handleSubmit();
           }}
-          className="grid grid-cols-1 md:grid-cols-2 gap-6"
+          className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6"
         >
           {/* Personal Information Card */}
           <div className="bg-white rounded-xl shadow-md p-6 hover:shadow-lg transition-shadow duration-200">
@@ -538,24 +537,24 @@ BMI: ${bmi}`.trim();
             </div>
           </div>
 
-          <div className="col-span-2 flex justify-end space-x-4 mt-6">
+          <div className="col-span-2 flex flex-col md:flex-row justify-end md:space-x-4 space-y-2 md:space-y-0 mt-6">
             <button
               type="button"
               onClick={() => setIsEditing(false)}
-              className="px-6 py-2 rounded-lg bg-gray-300 text-gray-700 hover:bg-gray-400 transition-colors duration-200"
+              className="w-full md:w-auto px-6 py-2 rounded-lg bg-gray-300 text-gray-700 hover:bg-gray-400 transition-colors duration-200"
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="px-6 py-2 rounded-lg bg-orange-400 text-white hover:bg-primary-500 transition-colors duration-200"
+              className="w-full md:w-auto px-6 py-2 rounded-lg bg-orange-400 text-white hover:bg-primary-500 transition-colors duration-200"
             >
               Save Changes
             </button>
           </div>
         </form>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
           {/* Personal Information Display Card */}
           <div className="bg-white rounded-xl shadow-md p-6 hover:shadow-lg transition-shadow duration-200">
             <div className="flex items-center gap-2 mb-4">

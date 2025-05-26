@@ -267,7 +267,9 @@ const PlanListTab = () => {
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
-        <SectionTitle title="Workout Plan List" />
+        <h2 className="text-xl sm:text-2xl font-bold text-gray-800">
+          Workout Plan List
+        </h2>
         <Link
           to="/plan"
           className="bg-orange-400 text-white px-4 py-2 rounded-md hover:bg-primary-500 transition flex items-center"

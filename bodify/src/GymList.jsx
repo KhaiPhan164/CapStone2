@@ -74,7 +74,7 @@ const GymList = () => {
 
   return (
     <div>
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-4">
         <div className="flex flex-col">
           {/* Banner section */}
           <div className="mt-14 flex flex-col gap-y-6 items-center justify-start px-4 md:px-0">
