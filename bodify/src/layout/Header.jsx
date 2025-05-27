@@ -3,8 +3,10 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faUser,
-  faSignOutAlt,
   faUserCircle,
+  faDumbbell,
+  faUserPlus,
+  faHouseUser,
 } from "@fortawesome/free-solid-svg-icons";
 import AuthService from "../services/auth.service";
 
@@ -221,12 +223,7 @@ const Header = () => {
             xmlns="http://www.w3.org/2000/svg"
           >
             {showMobileMenu ? (
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M6 18L18 6M6 6l12 12"
-              />
+              null
             ) : (
               <path
                 strokeLinecap="round"
@@ -273,30 +270,34 @@ const Header = () => {
               <ul className="flex flex-col gap-4 text-lg font-medium">
                 <Link
                   to="/"
-                  className="px-4 py-2 rounded-full inline-block"
+                  className="px-4 py-2 rounded-full items-center gap-2"
                   onClick={() => setShowMobileMenu(false)}
                 >
+                  <FontAwesomeIcon icon={faHouseUser} className="text-orange-500 pr-3" />
                   Home
                 </Link>
                 <Link
                   to="/exercise"
-                  className="px-4 py-2 rounded-full inline-block"
+                  className="px-4 py-2 rounded-full items-center gap-2"
                   onClick={() => setShowMobileMenu(false)}
                 >
+                  <FontAwesomeIcon icon={faDumbbell} className="text-orange-500 pr-3" />
                   Exercise
                 </Link>
                 <Link
                   to="/gyms"
-                  className="px-4 py-2 rounded-full inline-block"
+                  className="px-4 py-2 rounded-full items-center gap-2"
                   onClick={() => setShowMobileMenu(false)}
                 >
+                  <FontAwesomeIcon icon={faUser} className="text-orange-500 pr-5" />
                   Gyms
                 </Link>
                 <Link
                   to="/pt-list"
-                  className="px-4 py-2 rounded-full inline-block"
+                  className="px-4 py-2 rounded-full items-center gap-2"
                   onClick={() => setShowMobileMenu(false)}
                 >
+                  <FontAwesomeIcon icon={faUserPlus} className="text-orange-500 pr-3" />
                   PT List
                 </Link>
               </ul>

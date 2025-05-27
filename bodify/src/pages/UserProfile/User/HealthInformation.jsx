@@ -252,7 +252,7 @@ BMI: ${bmi}`.trim();
   return (
     <div className="container mx-auto ">
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6 gap-2">
-        <h1 className="text-xl sm:text-2xl font-semibold mb-3 text-gray-700">
+        <h1 className="text-xl sm:text-2xl font-semibold md:mb-3 text-gray-700">
           Health Information
         </h1>
         {!isEditing && (
@@ -267,12 +267,13 @@ BMI: ${bmi}`.trim();
       </div>
 
       {isEditing ? (
+        <>
         <form
           onSubmit={(e) => {
             e.preventDefault();
             handleSubmit();
           }}
-          className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6"
+          className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6"
         >
           {/* Personal Information Card */}
           <div className="bg-white rounded-xl shadow-md p-6 hover:shadow-lg transition-shadow duration-200">
@@ -537,6 +538,8 @@ BMI: ${bmi}`.trim();
             </div>
           </div>
 
+        </form>
+        
           <div className="col-span-2 flex flex-col md:flex-row justify-end md:space-x-4 space-y-2 md:space-y-0 mt-6">
             <button
               type="button"
@@ -552,7 +555,8 @@ BMI: ${bmi}`.trim();
               Save Changes
             </button>
           </div>
-        </form>
+        </>
+
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
           {/* Personal Information Display Card */}
