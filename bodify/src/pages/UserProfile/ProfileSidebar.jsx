@@ -14,10 +14,8 @@ import {
   faClipboardList,
   faUsers,
   faDumbbell,
-  faWeightScale,
   faCreditCard,
   faHeartPulse,
-  faUserPlus,
 } from "@fortawesome/free-solid-svg-icons";
 import HealthInformation from "./User/HealthInformation";
 
@@ -27,9 +25,7 @@ const ProfileSidebar = ({ initialTab }) => {
   const isGymOwner = user?.role_id === 4;
   const isPT = user?.role_id === 3;
 
-  // Determine default tab from prop or URL
   const getDefaultTab = () => {
-    // Check if there's an activeTab parameter in the URL
     const queryParams = new URLSearchParams(location.search);
     const tabParam = queryParams.get("activeTab");
 
@@ -38,13 +34,11 @@ const ProfileSidebar = ({ initialTab }) => {
     if (tabParam === "membership-management") return "membership-management";
     if (tabParam === "memberships") return "memberships";
     if (initialTab) return initialTab;
-    return "home"; // Default tab
+    return "home";
   };
 
-  // Use state to track user selection
   const [selectedSection, setSelectedSection] = useState(getDefaultTab());
 
-  // Update tab when URL changes
   useEffect(() => {
     const queryParams = new URLSearchParams(location.search);
     const tabParam = queryParams.get("activeTab");
@@ -60,62 +54,28 @@ const ProfileSidebar = ({ initialTab }) => {
     }
   }, [location.search]);
 
-  // Function to handle changes when a user selects an item
   const handleSelection = (section) => {
     setSelectedSection(section);
   };
 
-  // Function to display content based on selected item
   const renderContent = () => {
     switch (selectedSection) {
       case "home":
-        return (
-          <div className="">
-            <UserInformation />
-          </div>
-        );
+        return <UserInformation />;
       case "schedule":
-        return (
-          <div className="">
-            <FullCalendars />
-          </div>
-        );
+        return <FullCalendars />;
       case "plans":
-        return (
-          <div className="">
-            <PlanListTab />
-          </div>
-        );
+        return <PlanListTab />;
       case "memberships":
-        return (
-          <div className="">
-            <UserMemberships />
-          </div>
-        );
+        return <UserMemberships />;
       case "pt-management":
-        return (
-          <div className="">
-            <PTManagement />
-          </div>
-        );
+        return <PTManagement />;
       case "membership-management":
-        return (
-          <div className="">
-            <MembershipManagement />
-          </div>
-        );
+        return <MembershipManagement />;
       case "pt-membership-management":
-        return (
-          <div className="">
-            <PTMembershipManagement />
-          </div>
-        );
+        return <PTMembershipManagement />;
       case "health":
-        return (
-          <div className="">
-            <HealthInformation />
-          </div>
-        );
+        return <HealthInformation />;
       default:
         return <div className="p-6">No section selected.</div>;
     }
@@ -124,13 +84,13 @@ const ProfileSidebar = ({ initialTab }) => {
   return (
     <div>
       <Header />
-      <div className="flex flex-col md:flex-row h-full container-auto bg-gray-100 ">
+      <div className="flex flex-col md:flex-row h-full container-auto bg-gray-100">
         {/* Left module sidebar */}
         <div className="w-full md:w-1/4 bg-white p-2 md:p-4 rounded-xl my-2 md:my-5 h-auto md:h-screen overflow-x-auto md:overflow-visible">
           <ul className="flex md:flex-col flex-row md:space-y-4 space-x-2 md:space-x-0">
             <li
               onClick={() => handleSelection("home")}
-              className={`cursor-pointer block p-2 rounded-xl min-w-[180px] md:w-full flex-shrink-0 ${
+              className={`cursor-pointer block p-2 rounded-xl w-full ${
                 selectedSection === "home"
                   ? "bg-primary-500 text-gray-600"
                   : "bg-gray-400"
@@ -147,7 +107,7 @@ const ProfileSidebar = ({ initialTab }) => {
             </li>
             <li
               onClick={() => handleSelection("schedule")}
-              className={`cursor-pointer block p-2 rounded-xl min-w-[180px] md:w-full flex-shrink-0 ${
+              className={`cursor-pointer block p-2 rounded-xl w-full ${
                 selectedSection === "schedule"
                   ? "bg-primary-500 text-gray-600"
                   : "bg-gray-400"
@@ -163,9 +123,9 @@ const ProfileSidebar = ({ initialTab }) => {
             </li>
             <li
               onClick={() => handleSelection("plans")}
-              className={`cursor-pointer block p-2 rounded-xl min-w-[180px] md:w-full flex-shrink-0 ${
+              className={`cursor-pointer block p-2 rounded-xl w-full ${
                 selectedSection === "plans"
-                  ? "bg-primary-500 text-gray-600  "
+                  ? "bg-primary-500 text-gray-600"
                   : "bg-gray-400"
               }`}
             >
@@ -180,9 +140,9 @@ const ProfileSidebar = ({ initialTab }) => {
             {!isPT && (
               <li
                 onClick={() => handleSelection("memberships")}
-                className={`cursor-pointer block p-2 rounded-xl min-w-[180px] md:w-full flex-shrink-0 ${
+                className={`cursor-pointer block p-2 rounded-xl w-full ${
                   selectedSection === "memberships"
-                    ? "bg-primary-500 text-gray-600  "
+                    ? "bg-primary-500 text-gray-600"
                     : "bg-gray-400"
                 }`}
               >
@@ -197,9 +157,9 @@ const ProfileSidebar = ({ initialTab }) => {
             )}
             <li
               onClick={() => handleSelection("health")}
-              className={`cursor-pointer block p-2 rounded-xl min-w-[180px] md:w-full flex-shrink-0 ${
+              className={`cursor-pointer block p-2 rounded-xl w-full ${
                 selectedSection === "health"
-                  ? "bg-primary-500 text-gray-600  "
+                  ? "bg-primary-500 text-gray-600"
                   : "bg-gray-400"
               }`}
             >
@@ -215,7 +175,7 @@ const ProfileSidebar = ({ initialTab }) => {
               <>
                 <li
                   onClick={() => handleSelection("pt-management")}
-                  className={`cursor-pointer block p-2 rounded-xl min-w-[180px] md:w-full flex-shrink-0 ${
+                  className={`cursor-pointer block p-2 rounded-xl w-full ${
                     selectedSection === "pt-management"
                       ? "bg-primary-500 text-gray-600"
                       : "bg-gray-400"
@@ -231,7 +191,7 @@ const ProfileSidebar = ({ initialTab }) => {
                 </li>
                 <li
                   onClick={() => handleSelection("membership-management")}
-                  className={`cursor-pointer block p-2 rounded-xl min-w-[180px] md:w-full flex-shrink-0 ${
+                  className={`cursor-pointer block p-2 rounded-xl w-full ${
                     selectedSection === "membership-management"
                       ? "bg-primary-500 text-gray-600"
                       : "bg-gray-400"
@@ -247,10 +207,10 @@ const ProfileSidebar = ({ initialTab }) => {
                 </li>
               </>
             )}
-            {user && user.role_id === 3 && (
+            {isPT && (
               <li
                 onClick={() => handleSelection("pt-membership-management")}
-                className={`cursor-pointer block p-2 rounded-xl min-w-[180px] md:w-full flex-shrink-0 ${
+                className={`cursor-pointer block p-2 rounded-xl w-full ${
                   selectedSection === "pt-membership-management"
                     ? "bg-primary-500 text-gray-600"
                     : "bg-gray-400"
@@ -268,9 +228,8 @@ const ProfileSidebar = ({ initialTab }) => {
           </ul>
         </div>
 
-        {/* User information on the right */}
-        <div className="flex-1 pt-4 md:pt-6 pl-0 md:pl-6 pb-4 md:pb-6">
-          {/* Render content corresponding to the selected section */}
+        {/* Content area */}
+        <div className="flex-1 p-6">
           {renderContent()}
         </div>
       </div>

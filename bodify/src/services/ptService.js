@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_URL = 'http://localhost:3001/api';
+const API_URL = 'http://localhost:3000';
 
 // Lấy danh sách PT theo gym
 export const getPTsByGym = async (gymName) => {
@@ -31,6 +31,16 @@ export const updatePT = async (ptId, ptData) => {
 
 // Xóa PT
 export const deletePT = async (ptId) => {
-  const response = await axios.delete(`${API_URL}/users/${ptId}`);
-  return response.data;
+  try {
+    const token = localStorage.getItem('token');
+    const response = await axios.delete(`${API_URL}/users/${ptId}`, {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Error deleting PT:', error);
+    throw error;
+  }
 }; 

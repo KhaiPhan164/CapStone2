@@ -3,6 +3,7 @@ import AuthService from '../../services/auth.service';
 import ChatService from '../../services/chat.service';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faComments, faTimes, faChevronDown, faPaperPlane } from '@fortawesome/free-solid-svg-icons';
+import axios from 'axios';
 
 // Add Roboto font
 const style = document.createElement('style');
@@ -376,9 +377,27 @@ const Chatbox = () => {
           return prev;
         });
         selectUser(contact);
+        setIsChatOpen(true);
       }
     };
+
+    // Lắng nghe sự kiện updateContacts khi PT bị xóa
+    const handleUpdateContacts = (event) => {
+      const { removedUserId } = event.detail;
+      if (removedUserId) {
+        // Remove from contacts list
+        setContacts(prev => prev.filter(contact => contact.id !== removedUserId));
+        
+        // If currently chatting with removed user, close chat
+        if (selectedUser?.id === removedUserId) {
+          setSelectedUser(null);
+          setMessages([]);
+        }
+      }
+    };
+
     document.querySelector('.chatbox-container')?.addEventListener('selectUser', handleSelectUser);
+    document.querySelector('.chatbox-container')?.addEventListener('updateContacts', handleUpdateContacts);
 
     // Lấy danh sách người dùng đã chat
     const fetchChatUsers = async () => {
@@ -413,24 +432,38 @@ const Chatbox = () => {
       removeNewMessageHandler();
       removeOnlineUsersHandler();
       document.querySelector('.chatbox-container')?.removeEventListener('selectUser', handleSelectUser);
+      document.querySelector('.chatbox-container')?.removeEventListener('updateContacts', handleUpdateContacts);
       ChatService.disconnect();
     };
   }, [currentUser?.user_id]); // Chỉ phụ thuộc vào currentUser.user_id
 
   const selectUser = async (user) => {
-    setSelectedUser(user);
+    // Validate if user still exists before starting chat
     try {
-      console.log('Lấy lịch sử chat với user:', user.id);
-      const history = await ChatService.getChatHistory(currentUser.user_id, user.id);
-      console.log('Lịch sử chat:', history);
-      console.log('Current user ID:', currentUser.user_id);
-      setMessages(history || []);
-      // Auto scroll xuống tin nhắn mới nhất
-      setTimeout(() => {
-        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-      }, 100);
+      const response = await axios.get(`http://localhost:3000/users/${user.id}`);
+      if (!response.data) {
+        throw new Error('User not found');
+      }
+      setSelectedUser(user);
+      try {
+        console.log('Lấy lịch sử chat với user:', user.id);
+        const history = await ChatService.getChatHistory(currentUser.user_id, user.id);
+        console.log('Lịch sử chat:', history);
+        console.log('Current user ID:', currentUser.user_id);
+        setMessages(history || []);
+        // Auto scroll xuống tin nhắn mới nhất
+        setTimeout(() => {
+          messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+        }, 100);
+      } catch (error) {
+        console.error('Lỗi khi lấy lịch sử chat:', error);
+      }
     } catch (error) {
-      console.error('Lỗi khi lấy lịch sử chat:', error);
+      console.error('Error validating user:', error);
+      // Remove invalid user from contacts
+      setContacts(prev => prev.filter(c => c.id !== user.id));
+      setSelectedUser(null);
+      setMessages([]);
     }
   };
 

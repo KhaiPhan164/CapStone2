@@ -202,7 +202,7 @@ export default function Dashboard() {
 
       {/* Sidebar fixed to left */}
       <div 
-        className={`fixed top-0 left-0 h-full bg-gray-800 text-white z-30 transition-all duration-300 shadow-xl ${
+        className={`fixed top-0 left-0 h-full bg-gray-800 text-white z-30 transition-all duration-300 shadow-xl flex flex-col ${
           isSidebarCollapsed ? "w-18" : "w-72"
         }`}
       >
@@ -218,62 +218,64 @@ export default function Dashboard() {
           </button>
         </div>
         
-        <div className="p-4">
-          {!isSidebarCollapsed && (
-            <div className="mb-6 text-center">
-              <div className="w-20 h-20 mx-auto rounded-full bg-gray-600 flex items-center justify-center">
-                <FontAwesomeIcon icon={faUserCircle} className="text-4xl" />
+        <div className="flex-1 flex flex-col h-[calc(100vh-4rem)] justify-between p-4">
+          <div className="flex-1">
+            {!isSidebarCollapsed && (
+              <div className="mb-6 text-center">
+                <div className="w-20 h-20 mx-auto rounded-full bg-gray-600 flex items-center justify-center">
+                  <FontAwesomeIcon icon={faUserCircle} className="text-4xl" />
+                </div>
+                <h2 className="mt-2 font-semibold">{currentUser?.name || "Gym Owner"}</h2>
+                <p className="text-sm text-gray-400">Gym Administrator</p>
               </div>
-              <h2 className="mt-2 font-semibold">{currentUser?.name || "Gym Owner"}</h2>
-              <p className="text-sm text-gray-400">Gym Administrator</p>
-            </div>
-          )}
-          
-          <div className="space-y-1">
-            {menuItems.map((item, index) => {
-              if (item.divider) {
-                return (
-                  <div key={`divider-${index}`} className="pt-2 pb-1 px-3">
-                    <div className="border-t border-gray-700 pt-2">
-                      {!isSidebarCollapsed && (
-                        <span className="text-xs uppercase tracking-wider text-gray-500">
-                          {item.label}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                );
-              }
-              
-              return (
-                <button
-                  key={item.key}
-                  className={`flex items-center w-full px-3 py-2 rounded-md ${
-                    selectedMenu === item.key
-                      ? "bg-primary-500 text-white"
-                      : "hover:bg-gray-700"
-                  } ${isSidebarCollapsed ? "justify-center" : ""}`}
-                  onClick={() => setSelectedMenu(item.key)}
-                >
-                  <FontAwesomeIcon icon={item.icon} className={isSidebarCollapsed ? "text-xl" : ""} />
-                  {!isSidebarCollapsed && (
-                    <span className="ml-3 text-sm overflow-hidden text-ellipsis whitespace-nowrap">{item.label}</span>
-                  )}
-                </button>
-              );
-            })}
+            )}
             
-            <div className="pt-4">
-              <button
-                onClick={handleLogout}
-                className={`flex items-center w-full px-3 py-2 rounded-md text-red-400 hover:bg-gray-700 ${
-                  isSidebarCollapsed ? "justify-center" : ""
-                }`}
-              >
-                <FontAwesomeIcon icon={faSignOutAlt} className={isSidebarCollapsed ? "text-xl" : ""} />
-                {!isSidebarCollapsed && <span className="ml-3">Logout</span>}
-              </button>
+            <div className="space-y-1">
+              {menuItems.map((item, index) => {
+                if (item.divider) {
+                  return (
+                    <div key={`divider-${index}`} className="pt-2 pb-1 px-3">
+                      <div className="border-t border-gray-700 pt-2">
+                        {!isSidebarCollapsed && (
+                          <span className="text-xs uppercase tracking-wider text-gray-500">
+                            {item.label}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  );
+                }
+                
+                return (
+                  <button
+                    key={item.key}
+                    className={`flex items-center w-full px-3 py-2 rounded-md ${
+                      selectedMenu === item.key
+                        ? "bg-primary-500 text-white"
+                        : "hover:bg-gray-700"
+                    } ${isSidebarCollapsed ? "justify-center" : ""}`}
+                    onClick={() => setSelectedMenu(item.key)}
+                  >
+                    <FontAwesomeIcon icon={item.icon} className={isSidebarCollapsed ? "text-xl" : ""} />
+                    {!isSidebarCollapsed && (
+                      <span className="ml-3 text-sm overflow-hidden text-ellipsis whitespace-nowrap">{item.label}</span>
+                    )}
+                  </button>
+                );
+              })}
             </div>
+          </div>
+
+          <div className="pt-4">
+            <button
+              onClick={handleLogout}
+              className={`flex items-center w-full px-3 py-2 rounded-md text-red-400 hover:bg-gray-700 ${
+                isSidebarCollapsed ? "justify-center" : ""
+              }`}
+            >
+              <FontAwesomeIcon icon={faSignOutAlt} className={isSidebarCollapsed ? "text-xl" : ""} />
+              {!isSidebarCollapsed && <span className="ml-3">Logout</span>}
+            </button>
           </div>
         </div>
         

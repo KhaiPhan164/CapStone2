@@ -24,6 +24,7 @@ export const ExerciseHome = () => {
   const [availableTags, setAvailableTags] = useState([]);
   const [selectedTags, setSelectedTags] = useState([]);
   const [isSearchingByTags, setIsSearchingByTags] = useState(false);
+  const [recommendationText, setRecommendationText] = useState('');
   const ITEMS_PER_PAGE = 6;
 
   useEffect(() => {
@@ -49,6 +50,12 @@ export const ExerciseHome = () => {
     setTotalPages(Math.ceil(filtered.length / ITEMS_PER_PAGE));
     setCurrentPage(1);
   }, [exercises, searchTerm]);
+
+  useEffect(() => {
+    if (searchTerm) {
+      setRecommendationText('');
+    }
+  }, [searchTerm]);
 
   const fetchExercises = async () => {
     try {
@@ -181,6 +188,12 @@ export const ExerciseHome = () => {
         setIsRecommending(false);
         return;
       }
+
+      // Set recommendation text instead of alert
+      setRecommendationText({
+        suitable: recommendTags,
+        avoid: excludeTags || []
+      });
       
       // Search for exercises based on recommended tags
       const exerciseResults = await RecommendService.searchExercisesByTags(recommendTags, excludeTags || []);
@@ -359,8 +372,8 @@ export const ExerciseHome = () => {
             </h1>
           </div>
           {/* Search box */}
-          <div className="">
-            <div className="flex items-center max-w-md md:max-w-xl mx-auto rounded-full overflow-hidden shadow-md bg-white">
+          <div className="w-full max-w-xl">
+            <div className="flex items-center rounded-full overflow-hidden shadow-md bg-white">
               <input
                 type="text"
                 placeholder="Search exercises..."
@@ -400,7 +413,42 @@ export const ExerciseHome = () => {
                 </button>
               </div>
             </div>
-            
+
+            {/* Display recommendation text if available */}
+            {recommendationText && (
+              <div className="mt-6 text-center bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-xl shadow-sm border border-blue-100">
+                <div className="mb-4">
+                  <span className="text-xl text-gray-800 font-semibold">Based on your profile</span>
+                </div>
+                <div className="space-y-3">
+                  <div className="flex flex-col gap-2">
+                    <span className="text-sm uppercase tracking-wider text-gray-500 font-medium">Suitable tags</span>
+                    <div className="flex flex-wrap justify-center gap-2">
+                      {recommendationText.suitable.map(tag => (
+                        <span key={tag} className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-medium">
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="flex flex-col gap-2">
+                    <span className="text-sm uppercase tracking-wider text-gray-500 font-medium">Tags to avoid</span>
+                    <div className="flex flex-wrap justify-center gap-2">
+                      {recommendationText.avoid.length > 0 ? (
+                        recommendationText.avoid.map(tag => (
+                          <span key={tag} className="px-3 py-1 bg-red-100 text-red-700 rounded-full text-sm font-medium">
+                            {tag}
+                          </span>
+                        ))
+                      ) : (
+                        <span className="text-gray-500 italic">None</span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Display selected tags if any */}
             {selectedTags.length > 0 && (
               <div className="mt-4 flex flex-wrap items-center justify-center gap-2">

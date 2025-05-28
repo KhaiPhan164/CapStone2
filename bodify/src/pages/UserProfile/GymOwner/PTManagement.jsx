@@ -162,6 +162,16 @@ const PTManagement = () => {
       await deletePT(ptId);
       setPTs(pts.filter(pt => pt.id !== ptId));
       message.success('PT deleted successfully');
+      
+      // Update chat contacts list by dispatching an event
+      const chatboxContainer = document.querySelector('.chatbox-container');
+      if (chatboxContainer) {
+        const updateContactsEvent = new CustomEvent('updateContacts', { 
+          detail: { removedUserId: ptId } 
+        });
+        chatboxContainer.dispatchEvent(updateContactsEvent);
+      }
+      
       fetchPTs(); // Reload the list after deletion
     } catch (error) {
       message.error('Unable to delete PT');
@@ -191,16 +201,27 @@ const PTManagement = () => {
       
       message.success(`Started conversation with PT ${pt.fullname || pt.username}`);
       
-      // Activate chat bubble display
-      const chatToggle = document.querySelector('.chat-toggle');
-      if (chatToggle) {
-        // Open chatbox if it's closed
-        const chatWindow = document.querySelector('.chat-window');
-        if (chatWindow && window.getComputedStyle(chatWindow).display === 'none') {
-          chatToggle.click();
+      // Create and dispatch selectUser event
+      const contact = {
+        id: pt.id,
+        name: pt.fullname || pt.username,
+        avatar: pt.avatar_url
+      };
+
+      const chatboxContainer = document.querySelector('.chatbox-container');
+      if (chatboxContainer) {
+        // First make sure chat window is open
+        const chatToggle = chatboxContainer.querySelector('.chat-toggle');
+        const chatWindow = chatboxContainer.querySelector('.chat-window');
+        if (!chatWindow || window.getComputedStyle(chatWindow).display === 'none') {
+          chatToggle?.click();
         }
-      } else {
-        console.log('Chat toggle button not found');
+
+        // Then select the user after a small delay
+        setTimeout(() => {
+          const selectUserEvent = new CustomEvent('selectUser', { detail: contact });
+          chatboxContainer.dispatchEvent(selectUserEvent);
+        }, 100);
       }
     } catch (error) {
       console.error('Error starting conversation:', error);
