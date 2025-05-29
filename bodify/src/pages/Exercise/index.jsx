@@ -383,16 +383,16 @@ export const ExerciseHome = () => {
               />
               <div className="flex">
                 <button 
-                  className="h-12 px-5 bg-primary-500 text-white hover:bg-primary-600 transition-colors flex items-center justify-center"
+                  className="h-12 md:px-5 px-3 bg-primary-500 text-white hover:bg-primary-600 transition-colors flex items-center justify-center"
                   title="Search exercises"
                 >
-                  <FontAwesomeIcon icon={faSearch} className="text-lg" />
+                  <FontAwesomeIcon icon={faSearch} className="md:text-lg text-sm" />
                 </button>
                 
                 <button
                   onClick={handleRecommendClick}
                   disabled={isRecommending}
-                  className={`h-12 px-5 ${
+                  className={`h-12 md:px-5 px-3 ${
                     isRecommending ? "bg-gray-400" : "bg-orange-500 hover:bg-orange-600"
                   } text-white transition-colors flex items-center justify-center`}
                   title="Recommend suitable exercises"
@@ -400,16 +400,16 @@ export const ExerciseHome = () => {
                   {isRecommending ? (
                     <span className="animate-pulse">...</span>
                   ) : (
-                    <FontAwesomeIcon icon={faThumbsUp} className="text-lg" />
+                    <FontAwesomeIcon icon={faThumbsUp} className="md:text-lg text-sm" />
                   )}
                 </button>
                 
                 <button
                   onClick={() => setShowTagSearch(true)}
-                  className="h-12 px-5 bg-green-500 hover:bg-green-600 text-white transition-colors flex items-center justify-center"
+                  className="h-12 md:px-5 px-3 bg-green-500 hover:bg-green-600 text-white transition-colors flex items-center justify-center"
                   title="Search by tag"
                 >
-                  <FontAwesomeIcon icon={faFilter} className="text-lg" />
+                  <FontAwesomeIcon icon={faFilter} className="md:text-lg text-sm" />
                 </button>
               </div>
             </div>
@@ -566,7 +566,7 @@ export const ExerciseHome = () => {
                   to={`/exercise/${exercise.exercisepost_id || exercise.exercise_post_id}`}
                   className="block"
                 >
-                   <div className="bg-white h-[320px] md:h-[340px] rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300">
+                   <div className="bg-white h-[340px] md:h-[360px] rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300">
                     <img
                       src={exercise.img_url || "https://placehold.co/600x400"}
                       alt={exercise.name}
